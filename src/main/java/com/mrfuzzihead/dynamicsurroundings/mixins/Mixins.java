@@ -1,4 +1,4 @@
-package com.mrfuzzihead.dynamicsurroundings.core;
+package com.mrfuzzihead.dynamicsurroundings.mixins;
 
 import javax.annotation.Nonnull;
 

@@ -35,7 +35,6 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import com.mrfuzzihead.dynamicsurroundings.core.Mixins;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.EntityRendererMixin;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.SoundManagerMixin;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.WorldMixin;
