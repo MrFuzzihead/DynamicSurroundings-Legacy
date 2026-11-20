@@ -19,6 +19,7 @@ import net.minecraftforge.common.config.Property.Type;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.Module;
 import com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry;
+import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.SoundHandlerAccessor;
 import com.mrfuzzihead.dynamicsurroundings.util.ConfigProcessor;
 
 import cpw.mods.fml.client.config.GuiConfig;
@@ -134,7 +135,8 @@ public class DynamicSurroundingsConfigGui extends GuiConfig {
             .getSoundHandler();
         List<String> sounds = new ArrayList<>();
 
-        for (Object resource : handler.sndRegistry.getKeys()) {
+        for (Object resource : ((SoundHandlerAccessor) handler).dynamicsurroundings$getSndRegistry()
+            .getKeys()) {
             sounds.add(resource.toString());
         }
 
@@ -155,7 +157,8 @@ public class DynamicSurroundingsConfigGui extends GuiConfig {
             .getSoundHandler();
         List<String> sounds = new ArrayList<>();
 
-        for (Object resource : handler.sndRegistry.getKeys()) {
+        for (Object resource : ((SoundHandlerAccessor) handler).dynamicsurroundings$getSndRegistry()
+            .getKeys()) {
             sounds.add(resource.toString());
         }
 

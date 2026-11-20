@@ -1,7 +1,6 @@
 package com.mrfuzzihead.dynamicsurroundings.data;
 
 import java.io.File;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,13 +17,13 @@ import com.mrfuzzihead.dynamicsurroundings.ModLog;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.Module;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
+import com.mrfuzzihead.dynamicsurroundings.data.compat.IBOPBiome;
 import com.mrfuzzihead.dynamicsurroundings.data.config.BiomeConfig;
 import com.mrfuzzihead.dynamicsurroundings.data.config.SoundConfig;
 import com.mrfuzzihead.dynamicsurroundings.event.RegistryReloadEvent;
 import com.mrfuzzihead.dynamicsurroundings.util.Color;
 import com.mrfuzzihead.dynamicsurroundings.util.MyUtils;
 
-import cpw.mods.fml.relauncher.ReflectionHelper;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 public final class BiomeRegistry {
@@ -282,9 +281,6 @@ public final class BiomeRegistry {
 
     private static class Entry {
 
-        private static Class<?> bopBiome = null;
-        private static Field bopBiomeFogDensity = null;
-        private static Field bopBiomeFogColor = null;
         public final BiomeGenBase biome;
         public boolean hasPrecipitation;
         public boolean hasDust;
@@ -303,15 +299,16 @@ public final class BiomeRegistry {
             this.sounds = new ArrayList<>();
             this.spotSounds = new ArrayList<>();
             this.spotSoundChance = 1200;
-            if (bopBiome != null && bopBiome.isInstance(biome)) {
-                try {
-                    int color = bopBiomeFogColor.getInt(biome);
-                    if (color > 0) {
-                        this.hasFog = true;
-                        this.fogColor = new Color(color);
-                        this.fogDensity = bopBiomeFogDensity.getFloat(biome);
-                    }
-                } catch (Exception var3) {}
+            if (biome instanceof IBOPBiome) {
+                // The accessor is only merged when Biomes O' Plenty is present (late mixin). The instanceof guard
+                // keeps this a no-op if BOP is absent or its mixin could not be applied.
+                IBOPBiome bopBiome = (IBOPBiome) biome;
+                int color = bopBiome.dynamicsurroundings$getFogColor();
+                if (color > 0) {
+                    this.hasFog = true;
+                    this.fogColor = new Color(color);
+                    this.fogDensity = bopBiome.dynamicsurroundings$getFogDensity();
+                }
             }
         }
 
@@ -398,18 +395,6 @@ public final class BiomeRegistry {
             }
 
             return builder.toString();
-        }
-
-        static {
-            try {
-                bopBiome = Class.forName("biomesoplenty.common.biome.BOPBiome");
-                bopBiomeFogDensity = ReflectionHelper.findField(bopBiome, new String[] { "fogDensity" });
-                bopBiomeFogColor = ReflectionHelper.findField(bopBiome, new String[] { "fogColor" });
-            } catch (Throwable var1) {
-                bopBiome = null;
-                bopBiomeFogDensity = null;
-                bopBiomeFogColor = null;
-            }
         }
     }
 }

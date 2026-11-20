@@ -12,6 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectData;
+import com.mrfuzzihead.dynamicsurroundings.testutil.WorldTestSupport;
 
 /**
  * {@code /rain status} is the only in-game diagnostic the mod has for its weather state, so its formatting is pinned
@@ -29,7 +30,7 @@ public class CommandRainTest {
         world = mock(World.class);
         info = mock(WorldInfo.class);
         provider = mock(WorldProvider.class);
-        world.provider = provider;
+        WorldTestSupport.setProvider(world, provider);
         when(world.getWorldInfo()).thenReturn(info);
 
         data = new DimensionEffectData(0);

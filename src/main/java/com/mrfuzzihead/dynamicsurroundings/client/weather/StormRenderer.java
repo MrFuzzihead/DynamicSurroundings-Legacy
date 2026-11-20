@@ -1,5 +1,6 @@
 package com.mrfuzzihead.dynamicsurroundings.client.weather;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.renderer.EntityRenderer;
 import net.minecraft.client.renderer.OpenGlHelper;
@@ -17,6 +18,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.IAtmosRenderer;
 import com.mrfuzzihead.dynamicsurroundings.client.WeatherUtils;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
+import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.EntityRendererAccessor;
 import com.mrfuzzihead.dynamicsurroundings.util.Color;
 import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
@@ -42,10 +44,12 @@ public class StormRenderer implements IAtmosRenderer {
     @Override
     public void render(EntityRenderer renderer, float partialTicks) {
         Weather.setTextures();
-        WorldClient world = renderer.mc.theWorld;
+        Minecraft mc = Minecraft.getMinecraft();
+        int rendererUpdateCount = ((EntityRendererAccessor) renderer).dynamicsurroundings$getRendererUpdateCount();
+        WorldClient world = mc.theWorld;
         IRenderHandler r = null;
         if ((r = world.provider.getWeatherRenderer()) != null) {
-            r.render(partialTicks, world, renderer.mc);
+            r.render(partialTicks, world, mc);
         } else if (DimensionRegistry.hasWeather(world)) {
             float rainStrength = world.getRainStrength(partialTicks);
             if (!(rainStrength <= 0.0F)) {
@@ -57,7 +61,7 @@ public class StormRenderer implements IAtmosRenderer {
                 }
 
                 renderer.enableLightmap(partialTicks);
-                EntityLivingBase entity = renderer.mc.renderViewEntity;
+                EntityLivingBase entity = mc.renderViewEntity;
                 int playerX = MathHelper.floor_double(entity.posX);
                 int playerY = MathHelper.floor_double(entity.posY);
                 int playerZ = MathHelper.floor_double(entity.posZ);
@@ -70,9 +74,9 @@ public class StormRenderer implements IAtmosRenderer {
                 double spawnY = entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * partialTicks;
                 double spawnZ = entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * partialTicks;
                 int locY = MathHelper.floor_double(spawnY);
-                int b0 = renderer.mc.gameSettings.fancyGraphics ? 10 : 5;
+                int b0 = mc.gameSettings.fancyGraphics ? 10 : 5;
                 byte b1 = -1;
-                float f5 = renderer.rendererUpdateCount + partialTicks;
+                float f5 = rendererUpdateCount + partialTicks;
                 GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
                 Tessellator tessellator = Tessellator.instance;
 
@@ -113,12 +117,12 @@ public class StormRenderer implements IAtmosRenderer {
                                         }
 
                                         b1 = 0;
-                                        renderer.mc.getTextureManager()
+                                        mc.getTextureManager()
                                             .bindTexture(locationRainPng);
                                         tessellator.startDrawingQuads();
                                     }
 
-                                    float f10 = ((renderer.rendererUpdateCount + locX * locX * 3121
+                                    float f10 = ((rendererUpdateCount + locX * locX * 3121
                                         + locX * 45238971
                                         + locZ * locZ * 418711
                                         + locZ * 13761 & 31) + partialTicks) / 32.0F * (3.0F + random.nextFloat());
@@ -169,12 +173,12 @@ public class StormRenderer implements IAtmosRenderer {
                                         }
 
                                         b1 = 1;
-                                        renderer.mc.getTextureManager()
+                                        mc.getTextureManager()
                                             .bindTexture(texture);
                                         tessellator.startDrawingQuads();
                                     }
 
-                                    float f10 = ((renderer.rendererUpdateCount & 511) + partialTicks) / 512.0F;
+                                    float f10 = ((rendererUpdateCount & 511) + partialTicks) / 512.0F;
                                     float factor = hasDust ? 0.2F : 0.01F;
                                     float f16 = random.nextFloat() + f5 * factor * (float) random.nextGaussian();
                                     float f11 = random.nextFloat() + f5 * (float) random.nextGaussian() * 0.001F;

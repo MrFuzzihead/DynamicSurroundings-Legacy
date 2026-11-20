@@ -12,6 +12,7 @@ import net.minecraft.world.WorldProvider;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.mrfuzzihead.dynamicsurroundings.testutil.WorldTestSupport;
 import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils.DayCycle;
 
 /**
@@ -29,7 +30,7 @@ public class DiurnalUtilsTest {
         world = mock(World.class);
         provider = mock(WorldProvider.class);
         // World.provider is a plain field, so it is assigned rather than stubbed.
-        world.provider = provider;
+        WorldTestSupport.setProvider(world, provider);
     }
 
     @Test

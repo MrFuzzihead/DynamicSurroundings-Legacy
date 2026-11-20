@@ -1,7 +1,6 @@
 package com.mrfuzzihead.dynamicsurroundings.client.weather;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.EntityRenderer;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
@@ -33,8 +32,8 @@ public enum Weather {
 
     private Weather() {
         this.level = -10.0F;
-        this.rainTexture = EntityRenderer.locationRainPng;
-        this.snowTexture = EntityRenderer.locationSnowPng;
+        this.rainTexture = new ResourceLocation("textures/environment/rain.png");
+        this.snowTexture = new ResourceLocation("textures/environment/snow.png");
         this.dustTexture = new ResourceLocation("dynamicsurroundings", "textures/environment/dust_calm.png");
         this.rainSound = String.format("%s:%s", "dynamicsurroundings", "rain");
         this.dustSound = String.format("%s:%s", "dynamicsurroundings", "dust");
