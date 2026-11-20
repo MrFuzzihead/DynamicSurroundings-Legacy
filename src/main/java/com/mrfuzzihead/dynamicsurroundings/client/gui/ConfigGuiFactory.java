@@ -15,7 +15,7 @@ public class ConfigGuiFactory implements IModGuiFactory {
     public void initialize(Minecraft minecraftInstance) {}
 
     public Class<? extends GuiScreen> mainConfigGuiClass() {
-        return DynSurroundConfigGui.class;
+        return DynamicSurroundingsConfigGui.class;
     }
 
     public Set<RuntimeOptionCategoryElement> runtimeGuiCategories() {

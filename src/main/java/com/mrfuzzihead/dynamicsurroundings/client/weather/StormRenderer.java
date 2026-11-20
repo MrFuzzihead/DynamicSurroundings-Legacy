@@ -29,7 +29,9 @@ public class StormRenderer implements IAtmosRenderer {
     private static final XorShiftRandom random = new XorShiftRandom();
     public static ResourceLocation locationRainPng = new ResourceLocation("textures/environment/rain.png");
     public static ResourceLocation locationSnowPng = new ResourceLocation("textures/environment/snow.png");
-    public static ResourceLocation locationDustPng = new ResourceLocation("dynamicsurroundings", "textures/environment/dust.png");
+    public static ResourceLocation locationDustPng = new ResourceLocation(
+        "dynamicsurroundings",
+        "textures/environment/dust.png");
     private static final float[] RAIN_X_COORDS = new float[1024];
     private static final float[] RAIN_Y_COORDS = new float[1024];
 

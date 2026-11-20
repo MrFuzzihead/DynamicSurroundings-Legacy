@@ -26,7 +26,8 @@ public final class SoundCache {
     private static final IResourceManager manager = Minecraft.getMinecraft()
         .getResourceManager();
     private static final Map<ResourceLocation, URL> cache = new HashMap<>(256);
-    private static final byte[] SILENCE = getBuffer(new ResourceLocation("dynamicsurroundings:sounds/ambient/silence.ogg"));
+    private static final byte[] SILENCE = getBuffer(
+        new ResourceLocation("dynamicsurroundings:sounds/ambient/silence.ogg"));
 
     private static byte[] getBuffer(@Nonnull ResourceLocation resource) {
         InputStream stream = null;

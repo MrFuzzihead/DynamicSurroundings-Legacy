@@ -257,7 +257,10 @@ public final class ModOptions {
     @ConfigProcessor.RestartRequired
     public static String[] culledSounds = new String[] { "^minecraft:liquid.*", "minecraft:mob.sheep.say",
         "minecraft:mob.chicken.say", "minecraft:mob.cow.say", "minecraft:mob.pig.say" };
-    @ConfigProcessor.Parameter(category = "sound", property = "Blocked Sounds", defaultValue = "dynamicsurroundings:bison")
+    @ConfigProcessor.Parameter(
+        category = "sound",
+        property = "Blocked Sounds",
+        defaultValue = "dynamicsurroundings:bison")
     @ConfigProcessor.Comment("Sounds to block from playing")
     @ConfigProcessor.Hidden
     public static String[] blockedSounds = new String[] { "dynamicsurroundings:bison" };

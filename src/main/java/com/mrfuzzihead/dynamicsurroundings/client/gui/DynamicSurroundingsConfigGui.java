@@ -27,7 +27,7 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
-public class DynSurroundConfigGui extends GuiConfig {
+public class DynamicSurroundingsConfigGui extends GuiConfig {
 
     private final Configuration config = Module.config();
     private final ConfigElement soundElement;
@@ -35,7 +35,7 @@ public class DynSurroundConfigGui extends GuiConfig {
     private final ConfigElement soundVolumeElement;
     private final ConfigCategory soundVolumeCategory;
 
-    public DynSurroundConfigGui(GuiScreen parentScreen) {
+    public DynamicSurroundingsConfigGui(GuiScreen parentScreen) {
         super(parentScreen, new ArrayList(), "dynamicsurroundings", false, false, "Dynamic Surroundings");
         this.titleLine2 = this.config.getConfigFile()
             .getAbsolutePath();

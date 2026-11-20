@@ -1,5 +1,0 @@
-Manifest-Version: 1.0
-FMLCorePlugin: com.mrfuzzihead.dynamicsurroundings.asm.TransformLoader
-FMLCorePluginContainsFMLMod: true
-FMLAT: dsurround_at.cfg
-
