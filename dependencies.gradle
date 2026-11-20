@@ -37,3 +37,23 @@ dependencies {
     devOnlyNonPublishable("com.github.GTNewHorizons:waila:1.20.2:dev") { transitive = false }
     compileOnly(rfg.deobf("curse.maven:CalendarApi-241515:2280303"))
 }
+
+// Minecraft 1.7.10's launcher library list pins three Scala modules in the old `org.scala-lang` group.
+// Those exact coordinates were never published to Maven Central or Mojang's library host - they only ever
+// existed on the OvermindDL1 forge mirror (see repositories.gradle, which drops that repo). The same
+// modules are published to Maven Central under the `org.scala-lang.modules` group at identical versions,
+// so redirect RFG's `patchedMinecraft` classpath entries there and the build no longer depends on a dead host.
+configurations.configureEach {
+    resolutionStrategy.dependencySubstitution {
+        [
+            ("scala-parser-combinators_2.11"): "1.0.1",
+            ("scala-swing_2.11")             : "1.0.1",
+            ("scala-xml_2.11")               : "1.0.2",
+        ].each { name, version ->
+            substitute module("org.scala-lang:${name}:${version}") using module("org.scala-lang.modules:${name}:${version}") because(
+                "The org.scala-lang coordinate is only hosted on the unreachable OvermindDL1 mirror; org.scala-lang.modules is the published location on Maven Central"
+            )
+        }
+    }
+}
+

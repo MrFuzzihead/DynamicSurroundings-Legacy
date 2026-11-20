@@ -1,5 +1,11 @@
 // Add any additional repositories for your dependencies here.
 
 repositories {
-
+    // GTNHGradle unconditionally registers "OvermindDL1 Forge repo mirror" (https://gregtech.overminddl1.com/).
+    // That host is frequently unreachable (connect timeouts from GitHub-hosted runners), and Gradle treats a
+    // repository network failure as fatal for the resolution that hit it - it does not fall through to the
+    // next repository. Nothing we build needs that mirror: the 1.7.10-era Scala artifacts it was used for are
+    // also published to Maven Central under the org.scala-lang.modules group, which dependencies.gradle
+    // substitutes to. Dropping it keeps setupCIWorkspace/assemble from depending on a dead third party.
+    removeAll { it.name == "OvermindDL1 Forge repo mirror" }
 }
