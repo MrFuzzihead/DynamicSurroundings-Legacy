@@ -1,0 +1,69 @@
+name: Game test
+
+# Boots a real dedicated server so the mod is exercised against Forge once per change. The reusable GTNH
+# build-and-test workflow already runs `./gradlew build`, which executes the JUnit suite and the JaCoCo floor;
+# this workflow adds the in-game assertions that only a loaded game can make.
+#
+# `./gradlew gameTestServer` puts the non-shipped `src/gameTest` mod on the classpath, runs its assertions at
+# FMLServerStartedEvent, and exits with status 0 only when every check passed (see GameTestMod/ServerGameTests).
+# It also writes build/jacoco/gameTest.exec and finalises build/reports/jacoco/gameTest/.
+
+on:
+  pull_request:
+    branches: [ master, main ]
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  game-test:
+    name: In-game assertions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Accept the Minecraft EULA
+        run: mkdir -p run/server && echo "eula=true" > run/server/eula.txt
+
+      - name: Run the game tests
+        run: ./gradlew gameTestServer --stacktrace
+
+      - name: Check the marker
+        # The mod prints DS_GAMETEST_OK only after every assertion has passed and the server has to shut down
+        # cleanly; a crash mid-run therefore fails here instead of silently passing.
+        # Grep every log: FML also writes fml-junk-earlystartup.log, which sorts before latest.log.
+        run: |
+          ls -l run/server/logs/ || true
+          test -n "$(ls run/server/logs/*.log 2>/dev/null)" || { echo "no server log was written"; exit 1; }
+          grep -hE "DS-GAMETEST\] [0-9]+/[0-9]+ checks passed" run/server/logs/*.log || true
+          grep -hq "DS_GAMETEST_OK" run/server/logs/*.log
+          ! grep -hq "DS_GAMETEST_FAILED" run/server/logs/*.log
+
+      - name: Upload the server log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-test-log
+          path: run/server/logs/
+          if-no-files-found: warn
+
+      - name: Upload the in-game coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-test-coverage
+          path: build/reports/jacoco/gameTest/
+          if-no-files-found: warn

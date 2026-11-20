@@ -36,6 +36,13 @@
 dependencies {
     devOnlyNonPublishable("com.github.GTNewHorizons:waila:1.20.2:dev") { transitive = false }
     compileOnly(rfg.deobf("curse.maven:CalendarApi-241515:2280303"))
+
+    // Unit tests. JUnit 4.13.2 is the newest 4.x and the suite runs on a Java 8 toolchain because the mod
+    // ships Java 8 bytecode. Mockito 4.11.0 is the newest Mockito that still runs there (5.x needs Java 11);
+    // mockito-inline lets us mock final classes and static-adjacent Minecraft types.
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.mockito:mockito-core:4.11.0")
+    testImplementation("org.mockito:mockito-inline:4.11.0")
 }
 
 // Minecraft 1.7.10's launcher library list pins three Scala modules in the old `org.scala-lang` group.
