@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.weather;
+package com.mrfuzzihead.dynamicsurroundings.client.weather;
 
 import net.minecraft.client.renderer.EntityRenderer;
 

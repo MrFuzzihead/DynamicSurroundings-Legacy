@@ -1,8 +1,8 @@
-package org.blockartistry.mod.DynSurround.server;
+package com.mrfuzzihead.dynamicsurroundings.server;
 
 import net.minecraft.world.WorldServer;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 
 public class PlayerSleepHandler {
 

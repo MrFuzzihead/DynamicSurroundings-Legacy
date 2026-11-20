@@ -1,9 +1,9 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.engine.implem;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.implem;
 
 import java.util.EnumMap;
 import java.util.Map;
 
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.IOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.IOptions;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client;
+package com.mrfuzzihead.dynamicsurroundings.client;
 
 import java.util.List;
 import java.util.Random;
@@ -29,15 +29,15 @@ import net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerUseItemEvent.Start;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.sound.SoundEffect;
-import org.blockartistry.mod.DynSurround.client.sound.SoundManager;
-import org.blockartistry.mod.DynSurround.client.weather.Weather;
-import org.blockartistry.mod.DynSurround.data.BiomeRegistry;
-import org.blockartistry.mod.DynSurround.data.DimensionRegistry;
-import org.blockartistry.mod.DynSurround.event.DiagnosticEvent;
-import org.blockartistry.mod.DynSurround.util.PlayerUtils;
-import org.blockartistry.mod.DynSurround.util.random.XorShiftRandom;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
+import com.mrfuzzihead.dynamicsurroundings.client.weather.Weather;
+import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
+import com.mrfuzzihead.dynamicsurroundings.event.DiagnosticEvent;
+import com.mrfuzzihead.dynamicsurroundings.util.PlayerUtils;
+import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -159,27 +159,27 @@ public class EnvironStateHandler implements IClientEffectHandler {
 
     static {
         if (ModOptions.enableJumpSound) {
-            JUMP = new SoundEffect("dsurround:jump", 0.2F, 1.0F, true);
+            JUMP = new SoundEffect("dynamicsurroundings:jump", 0.2F, 1.0F, true);
         } else {
             JUMP = null;
         }
 
         if (ModOptions.enableSwingSound) {
-            SWORD = new SoundEffect("dsurround:swoosh", 1.0F, 1.0F);
-            AXE = new SoundEffect("dsurround:swoosh", 1.0F, 0.5F);
+            SWORD = new SoundEffect("dynamicsurroundings:swoosh", 1.0F, 1.0F);
+            AXE = new SoundEffect("dynamicsurroundings:swoosh", 1.0F, 0.5F);
         } else {
             SWORD = null;
             AXE = null;
         }
 
         if (ModOptions.enableCraftingSound) {
-            CRAFTING = new SoundEffect("dsurround:crafting");
+            CRAFTING = new SoundEffect("dynamicsurroundings:crafting");
         } else {
             CRAFTING = null;
         }
 
         if (ModOptions.enableBowPullSound) {
-            BOW_PULL = new SoundEffect("dsurround:bowpull");
+            BOW_PULL = new SoundEffect("dynamicsurroundings:bowpull");
         } else {
             BOW_PULL = null;
         }

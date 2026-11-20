@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.asm;
+package com.mrfuzzihead.dynamicsurroundings.asm;
 
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
@@ -26,7 +26,7 @@ public class PatchSoundManagerClampPitch extends Transmorgrifier {
             .findMethod(cn, "(Lnet/minecraft/client/audio/ISound;Lnet/minecraft/client/audio/SoundPoolEntry;)F", names);
         if (m != null) {
             this.logMethod(Transformer.log(), m, "Found!");
-            String owner = "org/blockartistry/mod/DynSurround/client/sound/SoundManager";
+            String owner = "com/mrfuzzihead/dynamicsurroundings/client/sound/SoundManager";
             String targetName = "getNormalizedPitch";
             InsnList list = new InsnList();
             list.add(new VarInsnNode(25, 1));
@@ -34,7 +34,7 @@ public class PatchSoundManagerClampPitch extends Transmorgrifier {
             list.add(
                 new MethodInsnNode(
                     184,
-                    "org/blockartistry/mod/DynSurround/client/sound/SoundManager",
+                    "com/mrfuzzihead/dynamicsurroundings/client/sound/SoundManager",
                     "getNormalizedPitch",
                     "(Lnet/minecraft/client/audio/ISound;Lnet/minecraft/client/audio/SoundPoolEntry;)F",
                     false));

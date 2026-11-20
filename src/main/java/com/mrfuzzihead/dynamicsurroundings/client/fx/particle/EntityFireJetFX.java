@@ -1,13 +1,13 @@
-package org.blockartistry.mod.DynSurround.client.fx.particle;
+package com.mrfuzzihead.dynamicsurroundings.client.fx.particle;
 
 import net.minecraft.client.particle.EntityFX;
 import net.minecraft.client.particle.EntityFlameFX;
 import net.minecraft.client.particle.EntityLavaFX;
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.client.sound.SoundEffect;
-import org.blockartistry.mod.DynSurround.client.sound.SoundManager;
-import org.blockartistry.mod.DynSurround.compat.BlockPos;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
+import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

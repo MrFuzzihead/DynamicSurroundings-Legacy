@@ -1,9 +1,9 @@
-package org.blockartistry.mod.DynSurround.data;
+package com.mrfuzzihead.dynamicsurroundings.data;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 
-import org.blockartistry.mod.DynSurround.util.INBTSerialization;
+import com.mrfuzzihead.dynamicsurroundings.util.INBTSerialization;
 
 public final class AuroraData implements INBTSerialization {
 

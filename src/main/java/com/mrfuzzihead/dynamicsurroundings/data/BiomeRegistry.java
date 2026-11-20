@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.data;
+package com.mrfuzzihead.dynamicsurroundings.data;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -13,15 +13,16 @@ import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraftforge.common.MinecraftForge;
 
 import org.apache.commons.lang3.StringUtils;
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.Module;
-import org.blockartistry.mod.DynSurround.client.sound.SoundEffect;
-import org.blockartistry.mod.DynSurround.data.config.BiomeConfig;
-import org.blockartistry.mod.DynSurround.data.config.SoundConfig;
-import org.blockartistry.mod.DynSurround.event.RegistryReloadEvent;
-import org.blockartistry.mod.DynSurround.util.Color;
-import org.blockartistry.mod.DynSurround.util.MyUtils;
+
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.Module;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
+import com.mrfuzzihead.dynamicsurroundings.data.config.BiomeConfig;
+import com.mrfuzzihead.dynamicsurroundings.data.config.SoundConfig;
+import com.mrfuzzihead.dynamicsurroundings.event.RegistryReloadEvent;
+import com.mrfuzzihead.dynamicsurroundings.util.Color;
+import com.mrfuzzihead.dynamicsurroundings.util.MyUtils;
 
 import cpw.mods.fml.relauncher.ReflectionHelper;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -38,7 +39,7 @@ public final class BiomeRegistry {
     public static final BiomeGenBase UNDERRIVER = new FakeBiome(-6, "UnderRVR");
     public static final BiomeGenBase OUTERSPACE = new FakeBiome(-7, "OuterSpace");
     public static final BiomeGenBase CLOUDS = new FakeBiome(-8, "Clouds");
-    public static final SoundEffect WATER_DRIP = new SoundEffect("dsurround:waterdrops");
+    public static final SoundEffect WATER_DRIP = new SoundEffect("dynamicsurroundings:waterdrops");
     private static final BiomeGenBase WTF = new FakeBiome(-256, "(FooBar)");
 
     public static String resolveName(BiomeGenBase biome) {
@@ -182,7 +183,7 @@ public final class BiomeRegistry {
 
     private static void processConfig() {
         try {
-            process(BiomeConfig.load("dsurround"));
+            process(BiomeConfig.load("dynamicsurroundings"));
         } catch (Exception var8) {
             var8.printStackTrace();
         }

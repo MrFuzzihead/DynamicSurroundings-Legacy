@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.fog;
+package com.mrfuzzihead.dynamicsurroundings.client.fog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,7 +7,7 @@ import javax.annotation.Nonnull;
 
 import net.minecraftforge.client.event.EntityViewRenderEvent.FogColors;
 
-import org.blockartistry.mod.DynSurround.util.Color;
+import com.mrfuzzihead.dynamicsurroundings.util.Color;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

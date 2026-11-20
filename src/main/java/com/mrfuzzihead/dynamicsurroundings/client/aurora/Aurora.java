@@ -1,12 +1,12 @@
-package org.blockartistry.mod.DynSurround.client.aurora;
+package com.mrfuzzihead.dynamicsurroundings.client.aurora;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.data.AuroraData;
-import org.blockartistry.mod.DynSurround.data.AuroraPreset;
-import org.blockartistry.mod.DynSurround.data.ColorPair;
-import org.blockartistry.mod.DynSurround.util.Color;
-import org.blockartistry.mod.DynSurround.util.MathStuff;
-import org.blockartistry.mod.DynSurround.util.random.XorShiftRandom;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.data.AuroraData;
+import com.mrfuzzihead.dynamicsurroundings.data.AuroraPreset;
+import com.mrfuzzihead.dynamicsurroundings.data.ColorPair;
+import com.mrfuzzihead.dynamicsurroundings.util.Color;
+import com.mrfuzzihead.dynamicsurroundings.util.MathStuff;
+import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

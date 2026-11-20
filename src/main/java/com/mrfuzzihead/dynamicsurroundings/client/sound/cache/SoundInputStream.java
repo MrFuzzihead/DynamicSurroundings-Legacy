@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.sound.cache;
+package com.mrfuzzihead.dynamicsurroundings.client.sound.cache;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.fog;
+package com.mrfuzzihead.dynamicsurroundings.client.fog;
 
 import javax.annotation.Nonnull;
 
@@ -7,10 +7,10 @@ import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraftforge.client.event.EntityViewRenderEvent.RenderFogEvent;
 
-import org.blockartistry.mod.DynSurround.client.EnvironStateHandler;
-import org.blockartistry.mod.DynSurround.client.weather.Weather;
-import org.blockartistry.mod.DynSurround.data.BiomeRegistry;
-import org.blockartistry.mod.DynSurround.util.MathStuff;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.weather.Weather;
+import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
+import com.mrfuzzihead.dynamicsurroundings.util.MathStuff;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

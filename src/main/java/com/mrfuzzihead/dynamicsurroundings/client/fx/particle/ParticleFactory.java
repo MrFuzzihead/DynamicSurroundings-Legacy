@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.fx.particle;
+package com.mrfuzzihead.dynamicsurroundings.client.fx.particle;
 
 import net.minecraft.client.particle.EntityFX;
 import net.minecraft.client.particle.EntityLavaFX;
@@ -6,7 +6,7 @@ import net.minecraft.client.particle.EntityRainFX;
 import net.minecraft.client.particle.EntitySmokeFX;
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.compat.IParticleFactory;
+import com.mrfuzzihead.dynamicsurroundings.compat.IParticleFactory;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

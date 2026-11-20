@@ -1,11 +1,11 @@
-package org.blockartistry.mod.DynSurround.client.fog;
+package com.mrfuzzihead.dynamicsurroundings.client.fog;
 
 import javax.annotation.Nonnull;
 
 import net.minecraftforge.client.event.EntityViewRenderEvent.RenderFogEvent;
 
-import org.blockartistry.mod.DynSurround.client.EnvironStateHandler;
-import org.blockartistry.mod.DynSurround.data.DimensionRegistry;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

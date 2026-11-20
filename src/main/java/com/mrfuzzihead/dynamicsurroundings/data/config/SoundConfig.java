@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.data.config;
+package com.mrfuzzihead.dynamicsurroundings.data.config;
 
 import com.google.gson.annotations.SerializedName;
 

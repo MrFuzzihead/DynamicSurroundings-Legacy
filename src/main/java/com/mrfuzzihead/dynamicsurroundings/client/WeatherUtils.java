@@ -1,10 +1,10 @@
-package org.blockartistry.mod.DynSurround.client;
+package com.mrfuzzihead.dynamicsurroundings.client;
 
 import net.minecraft.world.biome.BiomeGenBase;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.weather.Weather;
-import org.blockartistry.mod.DynSurround.data.BiomeRegistry;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.weather.Weather;
+import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 
 public class WeatherUtils {
 

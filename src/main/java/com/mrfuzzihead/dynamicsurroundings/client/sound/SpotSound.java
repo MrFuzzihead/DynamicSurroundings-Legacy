@@ -1,13 +1,13 @@
-package org.blockartistry.mod.DynSurround.client.sound;
+package com.mrfuzzihead.dynamicsurroundings.client.sound;
 
 import net.minecraft.client.audio.PositionedSound;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.EnvironStateHandler;
-import org.blockartistry.mod.DynSurround.compat.BlockPos;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

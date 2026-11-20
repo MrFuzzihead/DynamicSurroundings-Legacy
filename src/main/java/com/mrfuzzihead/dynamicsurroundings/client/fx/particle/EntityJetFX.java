@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.fx.particle;
+package com.mrfuzzihead.dynamicsurroundings.client.fx.particle;
 
 import java.util.Random;
 
@@ -7,7 +7,7 @@ import net.minecraft.client.particle.EntityFX;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.util.random.XorShiftRandom;
+import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.compat;
+package com.mrfuzzihead.dynamicsurroundings.compat;
 
 import java.util.Iterator;
 

@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.data;
+package com.mrfuzzihead.dynamicsurroundings.data;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,9 +7,10 @@ import java.util.regex.Pattern;
 import net.minecraftforge.common.MinecraftForge;
 
 import org.apache.commons.lang3.StringUtils;
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.event.SoundConfigEvent;
+
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.event.SoundConfigEvent;
 
 import gnu.trove.map.hash.TObjectFloatHashMap;
 

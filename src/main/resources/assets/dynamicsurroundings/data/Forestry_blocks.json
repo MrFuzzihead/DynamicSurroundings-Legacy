@@ -2,39 +2,39 @@
 	"entries":[
 		{
 			"blocks":[
-				"Growthcraft|Bamboo:grc.bambooBlock",
-				"Growthcraft|Bamboo:grc.bambooStairs"
+				"Forestry:planks",
+				"Forestry:stairs",
+				"Forestry:planksFireproof",
+				"Forestry:stairsFireproof"
 			],
 			"stepChance":150,
 			"sounds":[
 				{
-					"sound":"dsurround:floorsqueak",
+					"sound":"dynamicsurroundings:floorsqueak",
 					"soundType":"step",
 					"volume":0.2,
 					"variable":true
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"blocks":[
-				"Growthcraft|Bees:grc.beeBox",
-				"harvestcraft:apiary"
+				"Forestry:beehives"
 			],
 			"chance":5,
 			"sounds":[
 				{
-					"sound":"dsurround:bees",
+					"sound":"dynamicsurroundings:bees",
 					"conditions":"(?i)(?!.*#raining#.*)(.*#day#.*)",
 					"volume":0.2,
 					"variable":true
 				}
-				
+
 			]
-			
+
 		}
-		
-		
+
 	]
 }

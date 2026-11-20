@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.hud;
+package com.mrfuzzihead.dynamicsurroundings.client.hud;
 
 import java.util.Collection;
 
@@ -13,8 +13,9 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
 import org.lwjgl.opengl.GL11;
+
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

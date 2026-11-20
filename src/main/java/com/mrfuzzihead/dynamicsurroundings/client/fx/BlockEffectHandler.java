@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.fx;
+package com.mrfuzzihead.dynamicsurroundings.client.fx;
 
 import java.util.List;
 import java.util.Random;
@@ -9,15 +9,15 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.EnvironStateHandler;
-import org.blockartistry.mod.DynSurround.client.IClientEffectHandler;
-import org.blockartistry.mod.DynSurround.client.sound.SoundEffect;
-import org.blockartistry.mod.DynSurround.compat.BlockPos;
-import org.blockartistry.mod.DynSurround.compat.MCHelper;
-import org.blockartistry.mod.DynSurround.data.BlockRegistry;
-import org.blockartistry.mod.DynSurround.util.random.LCGRandom;
-import org.blockartistry.mod.DynSurround.util.random.XorShiftRandom;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.IClientEffectHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
+import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
+import com.mrfuzzihead.dynamicsurroundings.compat.MCHelper;
+import com.mrfuzzihead.dynamicsurroundings.data.BlockRegistry;
+import com.mrfuzzihead.dynamicsurroundings.util.random.LCGRandom;
+import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

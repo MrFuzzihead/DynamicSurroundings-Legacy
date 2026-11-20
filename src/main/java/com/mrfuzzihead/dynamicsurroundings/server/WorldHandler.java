@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.server;
+package com.mrfuzzihead.dynamicsurroundings.server;
 
 import java.util.Random;
 
@@ -6,10 +6,10 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.WorldInfo;
 
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.data.DimensionEffectData;
-import org.blockartistry.mod.DynSurround.data.DimensionEffectDataFile;
-import org.blockartistry.mod.DynSurround.util.random.XorShiftRandom;
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectData;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectDataFile;
+import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 public class WorldHandler {
 

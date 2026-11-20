@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.weather;
+package com.mrfuzzihead.dynamicsurroundings.client.weather;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -13,15 +13,16 @@ import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.gen.NoiseGeneratorSimplex;
 
 import org.apache.commons.lang3.StringUtils;
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.EnvironStateHandler;
-import org.blockartistry.mod.DynSurround.client.WeatherUtils;
-import org.blockartistry.mod.DynSurround.client.fx.particle.ParticleFactory;
-import org.blockartistry.mod.DynSurround.compat.IParticleFactory;
-import org.blockartistry.mod.DynSurround.data.BiomeRegistry;
-import org.blockartistry.mod.DynSurround.data.DimensionRegistry;
-import org.blockartistry.mod.DynSurround.util.DiurnalUtils;
-import org.blockartistry.mod.DynSurround.util.random.XorShiftRandom;
+
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.WeatherUtils;
+import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.ParticleFactory;
+import com.mrfuzzihead.dynamicsurroundings.compat.IParticleFactory;
+import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
+import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
+import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

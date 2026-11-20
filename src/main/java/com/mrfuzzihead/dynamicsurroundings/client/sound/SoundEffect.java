@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.sound;
+package com.mrfuzzihead.dynamicsurroundings.client.sound;
 
 import java.util.Random;
 import java.util.regex.Pattern;
@@ -7,8 +7,9 @@ import net.minecraft.block.Block;
 import net.minecraft.world.World;
 
 import org.apache.commons.lang3.StringUtils;
-import org.blockartistry.mod.DynSurround.compat.BlockPos;
-import org.blockartistry.mod.DynSurround.data.config.SoundConfig;
+
+import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
+import com.mrfuzzihead.dynamicsurroundings.data.config.SoundConfig;
 
 public final class SoundEffect {
 

@@ -1,9 +1,9 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.implem;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IPrimitiveMap;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IPrimitiveMap;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

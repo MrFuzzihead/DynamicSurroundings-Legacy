@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.data;
+package com.mrfuzzihead.dynamicsurroundings.data;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -9,11 +9,11 @@ import net.minecraft.world.WorldProvider;
 import net.minecraft.world.WorldType;
 import net.minecraftforge.common.DimensionManager;
 
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.Module;
-import org.blockartistry.mod.DynSurround.data.config.DimensionConfig;
-import org.blockartistry.mod.DynSurround.util.DiurnalUtils;
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.Module;
+import com.mrfuzzihead.dynamicsurroundings.data.config.DimensionConfig;
+import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
 
 import cpw.mods.fml.common.Loader;
 import foxie.calendar.api.CalendarAPI;

@@ -35,4 +35,5 @@
  */
 dependencies {
     devOnlyNonPublishable("com.github.GTNewHorizons:waila:1.20.2:dev") { transitive = false }
+    compileOnly(rfg.deobf("curse.maven:CalendarApi-241515:2280303"))
 }

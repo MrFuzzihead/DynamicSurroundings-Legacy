@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client;
+package com.mrfuzzihead.dynamicsurroundings.client;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,14 +16,14 @@ import net.minecraftforge.client.event.sound.PlaySoundEvent17;
 import net.minecraftforge.event.entity.EntityEvent.EntityConstructing;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.sound.SoundEffect;
-import org.blockartistry.mod.DynSurround.client.sound.SoundManager;
-import org.blockartistry.mod.DynSurround.client.weather.Weather;
-import org.blockartistry.mod.DynSurround.compat.BlockPos;
-import org.blockartistry.mod.DynSurround.data.BiomeRegistry;
-import org.blockartistry.mod.DynSurround.event.DiagnosticEvent;
-import org.blockartistry.mod.DynSurround.event.RegistryReloadEvent;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
+import com.mrfuzzihead.dynamicsurroundings.client.weather.Weather;
+import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
+import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
+import com.mrfuzzihead.dynamicsurroundings.event.DiagnosticEvent;
+import com.mrfuzzihead.dynamicsurroundings.event.RegistryReloadEvent;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;

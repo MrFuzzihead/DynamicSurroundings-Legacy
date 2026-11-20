@@ -1,8 +1,8 @@
-package org.blockartistry.mod.DynSurround.util.random;
+package com.mrfuzzihead.dynamicsurroundings.util.random;
 
 import java.util.Random;
 
-import org.blockartistry.mod.DynSurround.util.MathStuff;
+import com.mrfuzzihead.dynamicsurroundings.util.MathStuff;
 
 public final class XorShiftRandom extends Random {
 

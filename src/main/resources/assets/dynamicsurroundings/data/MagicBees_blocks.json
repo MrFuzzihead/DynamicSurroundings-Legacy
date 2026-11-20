@@ -7,15 +7,15 @@
 			"chance":5,
 			"sounds":[
 				{
-					"sound":"dsurround:bees",
+					"sound":"dynamicsurroundings:bees",
 					"conditions":"(?i)(?!.*#raining#.*)(.*#day#.*)",
 					"volume":0.2,
 					"variable":true
 				}
-				
+
 			]
-			
+
 		}
-		
+
 	]
 }

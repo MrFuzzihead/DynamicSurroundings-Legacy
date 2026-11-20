@@ -4,22 +4,22 @@
 			"biomeName":"(?i)(?!.*forest.*|.*taiga.*|.*jungle.*|.*\\+.*|.*savanna.*)(.*hills.*|.*plateau.*|.*wasteland.*|.*canyon.*|tundra|highlands)",
 			"sounds":[
 				{
-					"sound":"dsurround:wind",
+					"sound":"dynamicsurroundings:wind",
 					"volume":0.5
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"(?i)(.*mountain.*|.*hills\\+.*|crag|alps)",
 			"sounds":[
 				{
-					"sound":"dsurround:wind"
+					"sound":"dynamicsurroundings:wind"
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"(?i)(.*jungle.*)",
@@ -27,173 +27,173 @@
 			"soundReset":true,
 			"sounds":[
 				{
-					"sound":"dsurround:jungle",
+					"sound":"dynamicsurroundings:jungle",
 					"conditions":"(?i)(?!.*#raining#.*)(.*)",
 					"volume":0.3,
 					"pitch":0.8
 				},
 				{
-					"sound":"dsurround:insectbuzz",
+					"sound":"dynamicsurroundings:insectbuzz",
 					"conditions":"(?i)(?!.*#raining#.*)(.*)",
 					"soundType":"spot",
 					"volume":0.5,
 					"variable":true
 				},
 				{
-					"sound":"dsurround:primates",
+					"sound":"dynamicsurroundings:primates",
 					"conditions":"(?i)(?!.*#raining#.*)(.*#day#.*)",
 					"soundType":"spot",
 					"volume":0.3
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"(?i)(?!.*ice.*)(.*plains.*|.*meadow.*|grassland|prairie|.*field.*|.*chaparral.*)",
 			"sounds":[
 				{
-					"sound": "dsurround:plains",
+					"sound": "dynamicsurroundings:plains",
 					"conditions": "(?i)(?!.*#raining#.*)(.*#day#.*)"
 				},
 				{
-					"sound":"dsurround:crickets",
+					"sound":"dynamicsurroundings:crickets",
 					"conditions":"(?i)(?!.*#raining#.*)(.*#night#.*)"
 				},
 				{
-					"sound":"dsurround:insectbuzz",
+					"sound":"dynamicsurroundings:insectbuzz",
 					"conditions":"(?i)(?!.*#raining#.*)(.*)",
 					"soundType":"spot",
 					"volume":0.5,
 					"variable":true
 				},
 				{
-					"sound": "dsurround:coyote",
+					"sound": "dynamicsurroundings:coyote",
 					"conditions": "(?i)(?!.*#raining#.*)(.*#night#.*)",
 					"soundType": "spot"
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"(?i)(?!.*ice.*)(.*plains.*|grassland|prairie)",
 			"sounds":[
 				{
-					"sound":"dsurround:bison",
+					"sound":"dynamicsurroundings:bison",
 					"conditions":"(?i)(?!.*#raining#.*)(.*#day#.*)",
 					"soundType":"spot",
 					"volume":0.5
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"(?i)(?!.*dead.*|.*flower.*|.*fungi.*|.*frost.*|.*snow.*|.*kelp.*|.*wasteland.*)(.*forest.*|.*cherry.*|.*orchard.*|.*wood.*|.*wetland.*|thicket|grove)",
 			"sounds":[
 				{
-					"sound":"dsurround:forest",
+					"sound":"dynamicsurroundings:forest",
 					"conditions":"(?i)(?!.*#raining#.*).*#day#.*"
 				},
 				{
-					"sound": "dsurround:bird",
+					"sound": "dynamicsurroundings:bird",
 					"conditions": "(?i)(?!.*#raining#.*).*#day#.*",
 					"soundType": "spot"
 				},
 				{
-					"sound": "dsurround:woodpecker",
+					"sound": "dynamicsurroundings:woodpecker",
 					"conditions": "(?i)(?!.*#raining#.*).*#day#.*",
 					"soundType": "spot"
 				},
 				{
-					"sound":"dsurround:crickets",
+					"sound":"dynamicsurroundings:crickets",
 					"conditions":"(?i)(?!.*#raining#.*).*#night#.*"
 				},
 				{
-					"sound":"dsurround:owl",
+					"sound":"dynamicsurroundings:owl",
 					"conditions":"(?i)(?!.*#raining#.*).*#night#.*",
 					"soundType":"spot",
 					"volume":0.3
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"(?i)(?!.*cold.*|.*snow.*)(.*taiga.*)",
 			"sounds":[
 				{
-					"sound":"dsurround:forest",
+					"sound":"dynamicsurroundings:forest",
 					"conditions":"(?i)(?!.*#raining#.*).*#day#.*"
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"(?i)(.*taiga.*)",
 			"sounds":[
 				{
-					"sound":"dsurround:owl",
+					"sound":"dynamicsurroundings:owl",
 					"conditions":"(?i)(?!.*#raining#.*).*#night#.*",
 					"soundType":"spot",
 					"volume":0.3
 				},
 				{
-					"sound":"dsurround:wolf",
+					"sound":"dynamicsurroundings:wolf",
 					"conditions":"(?i)(?!.*#raining#.*).*#night#.*",
 					"soundType":"spot",
 					"volume":0.3
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"(?i)(?!.*frozen.*|.*cold.*)(.*beach.*|.*ocean.*|.*kelp.*|.*reef.*)",
 			"sounds":[
 				{
-					"sound":"dsurround:beach"
+					"sound":"dynamicsurroundings:beach"
 				},
 				{
-					"sound":"dsurround:seagulls",
+					"sound":"dynamicsurroundings:seagulls",
 					"conditions":"(?i).*#day#.*",
 					"soundType":"spot",
 					"volume":0.3
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"(?i)(?!.*frozen.*|.*dry.*)(.*river.*)",
 			"sounds":[
 				{
-					"sound":"dsurround:river"
+					"sound":"dynamicsurroundings:river"
 				},
 				{
-					"sound":"dsurround:insectbuzz",
+					"sound":"dynamicsurroundings:insectbuzz",
 					"conditions":"(?i)(?!.*#raining#.*)(.*)",
 					"soundType":"spot",
 					"volume":0.5,
 					"variable":true
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"Deep Ocean",
 			"soundReset":true,
 			"sounds":[
 				{
-					"sound":"dsurround:beach",
+					"sound":"dynamicsurroundings:beach",
 					"pitch":0.4
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"(?i)(.*swamp.*)",
@@ -206,35 +206,35 @@
 			"spotSoundChance":600,
 			"sounds":[
 				{
-					"sound":"dsurround:crickets"
+					"sound":"dynamicsurroundings:crickets"
 				},
 				{
-					"sound":"dsurround:insectbuzz",
+					"sound":"dynamicsurroundings:insectbuzz",
 					"conditions":"(?i)(?!.*#raining#.*)(.*)",
 					"soundType":"spot",
 					"volume":0.5,
 					"variable":true
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"(?i)(.*fen.*|.*bog.*|.*marsh.*|.*moor.*|.*bayou.*|quagmire|silkglades)",
 			"spotSoundChance":600,
 			"sounds":[
 				{
-					"sound":"dsurround:crickets",
+					"sound":"dynamicsurroundings:crickets",
 					"conditions":"(?i).*#night#.*"
 				},
 				{
-					"sound":"dsurround:insectbuzz",
+					"sound":"dynamicsurroundings:insectbuzz",
 					"conditions":"(?i)(?!.*#raining#.*)(.*)",
 					"soundType":"spot",
 					"volume":0.5,
 					"variable":true
 				}
-				
+
 			],
 			"fog":true,
 			"fogColor":"128,128,128",
@@ -244,13 +244,13 @@
 			"biomeName":"(?i)(?!.*dead.*)(.*swamp.*|.*marsh.*|.*bayou.*)",
 			"sounds":[
 				{
-					"sound":"dsurround:crocodile",
+					"sound":"dynamicsurroundings:crocodile",
 					"soundType":"spot",
 					"volume":0.7
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"(?i)(.*desert.*|.*sand.*|.*mesa.*|.*wasteland.*|.*sahara.*)",
@@ -261,52 +261,52 @@
 			"biomeName":"(?i)(?!.*cold.*|.*frozen.*)(.*desert.*|.*sand.*|.*mesa.*)",
 			"sounds":[
 				{
-					"sound":"dsurround:rattlesnake",
+					"sound":"dynamicsurroundings:rattlesnake",
 					"conditions":"(?i)(?!.*#raining#.*).*#day#.*",
 					"soundType":"spot",
 					"volume":1.0
 				},
 				{
-					"sound": "dsurround:coyote",
+					"sound": "dynamicsurroundings:coyote",
 					"conditions": "(?i)(?!.*#raining#.*).*#night#.*",
 					"soundType": "spot"
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"(?i)(.*savanna.*)",
 			"sounds":[
 				{
-					"sound":"dsurround:elephant",
+					"sound":"dynamicsurroundings:elephant",
 					"conditions":"(?i).*#day#.*",
 					"soundType":"spot",
 					"volume":0.7
 				},
 				{
-					"sound":"dsurround:insectbuzz",
+					"sound":"dynamicsurroundings:insectbuzz",
 					"conditions":"(?i)(.*)",
 					"soundType":"spot",
 					"volume":0.5,
 					"weight":20,
 					"variable":true
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"(?i)(the end|sky)",
 			"aurora":true,
 			"sounds":[
 				{
-					"sound":"dsurround:theend",
+					"sound":"dynamicsurroundings:theend",
 					"volume":0.2
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"(?i)(.*taiga.*|.*frozen.*|.*ice.*|.*tundra.*|.*polar.*|.*snow.*|.*glacier.*|.*arctic.*)",
@@ -321,73 +321,73 @@
 			"biomeName":"Underground",
 			"sounds":[
 				{
-					"sound":"dsurround:underground",
+					"sound":"dynamicsurroundings:underground",
 					"volume":0.3
 				},
 				{
-					"sound": "dsurround:rockfall",
+					"sound": "dynamicsurroundings:rockfall",
 					"soundType": "spot",
 					"weight": 30
 				},
 				{
-					"sound": "dsurround:bigrockfall",
+					"sound": "dynamicsurroundings:bigrockfall",
 					"soundType": "spot",
 					"volume": 0.4,
 					"weight": 15
 				},
 				{
-					"sound":"dsurround:monstergrowl",
+					"sound":"dynamicsurroundings:monstergrowl",
 					"conditions":"(?i).*#night#.*",
 					"soundType":"spot",
 					"volume":0.3,
 					"weight":10
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"UnderOCN",
 			"sounds":[
 				{
-					"sound":"dsurround:underocean",
+					"sound":"dynamicsurroundings:underocean",
 					"volume":0.1
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"UnderDOCN",
 			"sounds":[
 				{
-					"sound":"dsurround:underdeepocean",
+					"sound":"dynamicsurroundings:underdeepocean",
 					"volume":0.1
 				},
 				{
-					"sound":"dsurround:whale",
+					"sound":"dynamicsurroundings:whale",
 					"soundType":"spot",
 					"volume":0.3
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"UnderRVR",
 			"sounds":[
 				{
-					"sound":"dsurround:underriver"
+					"sound":"dynamicsurroundings:underriver"
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName": "Underwater",
 			"sounds": [
 				{
-					"sound": "dsurround:underwater"
+					"sound": "dynamicsurroundings:underwater"
 				}
 			]
 		},
@@ -395,30 +395,30 @@
 			"biomeName":"Clouds",
 			"sounds":[
 				{
-					"sound":"dsurround:wind"
+					"sound":"dynamicsurroundings:wind"
 				}
-				
+
 			]
-			
+
 		},
 		{
 			"biomeName":"Player",
 			"sounds":[
 				{
-					"sound":"dsurround:heartbeat",
+					"sound":"dynamicsurroundings:heartbeat",
 					"conditions":"(?i).*#hurt#.*"
 				},
 				{
-					"sound":"dsurround:tummy",
+					"sound":"dynamicsurroundings:tummy",
 					"conditions":"(?i).*#hungry#.*",
 					"soundType":"periodic",
 					"repeatDelay":300
 				}
-				
+
 			]
-			
+
 		}
-		
+
 	]
-	
+
 }

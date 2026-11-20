@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround;
+package com.mrfuzzihead.dynamicsurroundings;
 
 import org.apache.logging.log4j.Logger;
 

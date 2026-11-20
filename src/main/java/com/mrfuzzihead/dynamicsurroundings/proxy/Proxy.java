@@ -1,17 +1,17 @@
-package org.blockartistry.mod.DynSurround.proxy;
+package com.mrfuzzihead.dynamicsurroundings.proxy;
 
 import net.minecraft.command.ICommandManager;
 import net.minecraft.command.ServerCommandManager;
 import net.minecraft.server.MinecraftServer;
 
-import org.blockartistry.mod.DynSurround.VersionCheck;
-import org.blockartistry.mod.DynSurround.client.DamageEffectHandler;
-import org.blockartistry.mod.DynSurround.client.waila.WailaHandler;
-import org.blockartistry.mod.DynSurround.commands.CommandRain;
-import org.blockartistry.mod.DynSurround.data.BiomeRegistry;
-import org.blockartistry.mod.DynSurround.data.DimensionRegistry;
-import org.blockartistry.mod.DynSurround.network.Network;
-import org.blockartistry.mod.DynSurround.server.ServerEffectHandler;
+import com.mrfuzzihead.dynamicsurroundings.VersionCheck;
+import com.mrfuzzihead.dynamicsurroundings.client.DamageEffectHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.waila.WailaHandler;
+import com.mrfuzzihead.dynamicsurroundings.commands.CommandRain;
+import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
+import com.mrfuzzihead.dynamicsurroundings.network.Network;
+import com.mrfuzzihead.dynamicsurroundings.server.ServerEffectHandler;
 
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;

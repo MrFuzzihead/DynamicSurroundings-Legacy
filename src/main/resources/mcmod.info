@@ -3,14 +3,17 @@
 	"modList": [{
 		"modid": "${modId}",
 		"name": "${modName}",
-		"description": "An example mod for Minecraft 1.7.10 with Forge focused on a stable setup.",
+		"description": "Improving Minecraft's sight and sound experience",
 		"version": "${modVersion}",
 		"mcversion": "${minecraftVersion}",
-		"url": "https://github.com/SinTh0r4s/MyMod",
-		"updateUrl": "",
-		"authorList": ["SinTho0r4s"],
-		"credits": "",
-		"logoFile": "",
+		"url": "https://github.com/MrFuzzihead/DynamicSurroundings-Legacy",
+		"updateUrl": "https://github.com/MrFuzzihead/DynamicSurroundings-Legacy/releases/latest",
+		"authorList": [
+      "MrFuzzihead",
+      "OreCruncher"
+    ],
+		"credits": "Wirsbo for BetterRain; MrRube for Aurora Rubealis; Hurricaaane for Presence Footsteps",
+		"logoFile": "logo.png",
 		"screenshots": [],
 		"parent": "",
 		"requiredMods": [],

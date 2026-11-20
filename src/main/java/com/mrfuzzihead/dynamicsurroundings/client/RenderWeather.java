@@ -1,13 +1,13 @@
-package org.blockartistry.mod.DynSurround.client;
+package com.mrfuzzihead.dynamicsurroundings.client;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.client.renderer.EntityRenderer;
 
-import org.blockartistry.mod.DynSurround.client.aurora.AuroraRenderer;
-import org.blockartistry.mod.DynSurround.client.weather.StormRenderer;
-import org.blockartistry.mod.DynSurround.client.weather.StormSplashRenderer;
+import com.mrfuzzihead.dynamicsurroundings.client.aurora.AuroraRenderer;
+import com.mrfuzzihead.dynamicsurroundings.client.weather.StormRenderer;
+import com.mrfuzzihead.dynamicsurroundings.client.weather.StormSplashRenderer;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

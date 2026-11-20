@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.gui;
+package com.mrfuzzihead.dynamicsurroundings.client.gui;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,10 +16,10 @@ import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
 import net.minecraftforge.common.config.Property.Type;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.Module;
-import org.blockartistry.mod.DynSurround.data.SoundRegistry;
-import org.blockartistry.mod.DynSurround.util.ConfigProcessor;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.Module;
+import com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry;
+import com.mrfuzzihead.dynamicsurroundings.util.ConfigProcessor;
 
 import cpw.mods.fml.client.config.GuiConfig;
 import cpw.mods.fml.client.config.GuiConfigEntries.NumberSliderEntry;
@@ -36,7 +36,7 @@ public class DynSurroundConfigGui extends GuiConfig {
     private final ConfigCategory soundVolumeCategory;
 
     public DynSurroundConfigGui(GuiScreen parentScreen) {
-        super(parentScreen, new ArrayList(), "dsurround", false, false, "Dynamic Surroundings");
+        super(parentScreen, new ArrayList(), "dynamicsurroundings", false, false, "Dynamic Surroundings");
         this.titleLine2 = this.config.getConfigFile()
             .getAbsolutePath();
         this.configElements.add(this.getPropertyConfigElement("aurora", "Enabled", "Aurora Feature"));

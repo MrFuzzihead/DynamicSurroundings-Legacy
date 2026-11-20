@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.fx.particle;
+package com.mrfuzzihead.dynamicsurroundings.client.fx.particle;
 
 import net.minecraft.client.particle.EntityBubbleFX;
 import net.minecraft.client.particle.EntityFX;

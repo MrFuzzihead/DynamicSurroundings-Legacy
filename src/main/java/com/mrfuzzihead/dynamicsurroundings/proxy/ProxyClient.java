@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.proxy;
+package com.mrfuzzihead.dynamicsurroundings.proxy;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -7,15 +7,15 @@ import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SoundHandler;
 
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.ClientEffectHandler;
-import org.blockartistry.mod.DynSurround.client.footsteps.game.system.ForgeDictionary;
-import org.blockartistry.mod.DynSurround.client.footsteps.game.user.GenerateBlockReport;
-import org.blockartistry.mod.DynSurround.client.hud.GuiHUDHandler;
-import org.blockartistry.mod.DynSurround.client.sound.SoundManager;
-import org.blockartistry.mod.DynSurround.data.BlockRegistry;
-import org.blockartistry.mod.DynSurround.data.SoundRegistry;
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.ClientEffectHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system.ForgeDictionary;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.user.GenerateBlockReport;
+import com.mrfuzzihead.dynamicsurroundings.client.hud.GuiHUDHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
+import com.mrfuzzihead.dynamicsurroundings.data.BlockRegistry;
+import com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry;
 
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;

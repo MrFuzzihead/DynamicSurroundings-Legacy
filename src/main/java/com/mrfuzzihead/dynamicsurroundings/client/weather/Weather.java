@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.weather;
+package com.mrfuzzihead.dynamicsurroundings.client.weather;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.EntityRenderer;
@@ -6,8 +6,8 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -35,24 +35,24 @@ public enum Weather {
         this.level = -10.0F;
         this.rainTexture = EntityRenderer.locationRainPng;
         this.snowTexture = EntityRenderer.locationSnowPng;
-        this.dustTexture = new ResourceLocation("dsurround", "textures/environment/dust_calm.png");
-        this.rainSound = String.format("%s:%s", "dsurround", "rain");
-        this.dustSound = String.format("%s:%s", "dsurround", "dust");
+        this.dustTexture = new ResourceLocation("dynamicsurroundings", "textures/environment/dust_calm.png");
+        this.rainSound = String.format("%s:%s", "dynamicsurroundings", "rain");
+        this.dustSound = String.format("%s:%s", "dynamicsurroundings", "dust");
     }
 
     private Weather(float level, String intensity) {
         this.level = level;
         this.rainTexture = new ResourceLocation(
-            "dsurround",
+            "dynamicsurroundings",
             String.format("textures/environment/rain_%s.png", intensity));
         this.snowTexture = new ResourceLocation(
-            "dsurround",
+            "dynamicsurroundings",
             String.format("textures/environment/snow_%s.png", intensity));
         this.dustTexture = new ResourceLocation(
-            "dsurround",
+            "dynamicsurroundings",
             String.format("textures/environment/dust_%s.png", intensity));
-        this.rainSound = String.format("%s:%s", "dsurround", "rain");
-        this.dustSound = String.format("%s:%s", "dsurround", "dust");
+        this.rainSound = String.format("%s:%s", "dynamicsurroundings", "rain");
+        this.dustSound = String.format("%s:%s", "dynamicsurroundings", "dust");
     }
 
     private static World getWorld() {

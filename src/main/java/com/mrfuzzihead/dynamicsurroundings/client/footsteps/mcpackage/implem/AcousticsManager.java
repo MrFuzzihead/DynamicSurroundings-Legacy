@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.implem;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -12,16 +12,16 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Blocks;
 
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.client.EnvironStateHandler;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.implem.AcousticsLibrary;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.IOptions;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.ISoundPlayer;
-import org.blockartistry.mod.DynSurround.client.footsteps.game.system.Association;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IDefaultStepPlayer;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IIsolator;
-import org.blockartistry.mod.DynSurround.util.MyUtils;
-import org.blockartistry.mod.DynSurround.util.random.XorShiftRandom;
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.implem.AcousticsLibrary;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.IOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.ISoundPlayer;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system.Association;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IDefaultStepPlayer;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IIsolator;
+import com.mrfuzzihead.dynamicsurroundings.util.MyUtils;
+import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

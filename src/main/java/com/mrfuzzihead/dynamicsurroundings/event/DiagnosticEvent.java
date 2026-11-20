@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.event;
+package com.mrfuzzihead.dynamicsurroundings.event;
 
 import java.util.ArrayList;
 import java.util.List;

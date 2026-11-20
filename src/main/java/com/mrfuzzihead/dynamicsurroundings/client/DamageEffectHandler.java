@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client;
+package com.mrfuzzihead.dynamicsurroundings.client;
 
 import java.util.UUID;
 
@@ -18,11 +18,11 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingHealEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.fx.particle.EntityCriticalPopOffFX;
-import org.blockartistry.mod.DynSurround.client.fx.particle.EntityDamagePopOffFX;
-import org.blockartistry.mod.DynSurround.client.fx.particle.EntityHealPopOffFX;
-import org.blockartistry.mod.DynSurround.network.Network;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.EntityCriticalPopOffFX;
+import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.EntityDamagePopOffFX;
+import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.EntityHealPopOffFX;
+import com.mrfuzzihead.dynamicsurroundings.network.Network;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;

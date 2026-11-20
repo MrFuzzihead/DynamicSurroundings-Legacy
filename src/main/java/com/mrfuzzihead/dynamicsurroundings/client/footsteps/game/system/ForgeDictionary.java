@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.game.system;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -8,9 +8,9 @@ import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.oredict.OreDictionary;
 
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IBlockMap;
-import org.blockartistry.mod.DynSurround.compat.MCHelper;
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IBlockMap;
+import com.mrfuzzihead.dynamicsurroundings.compat.MCHelper;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

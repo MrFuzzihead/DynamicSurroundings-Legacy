@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces;
 
 import java.util.Random;
 

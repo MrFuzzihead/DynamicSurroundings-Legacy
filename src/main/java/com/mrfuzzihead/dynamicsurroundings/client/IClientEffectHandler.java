@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client;
+package com.mrfuzzihead.dynamicsurroundings.client;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;

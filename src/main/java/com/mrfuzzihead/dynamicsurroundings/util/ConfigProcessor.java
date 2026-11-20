@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.util;
+package com.mrfuzzihead.dynamicsurroundings.util;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -10,7 +10,8 @@ import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
 
 import org.apache.commons.lang3.StringUtils;
-import org.blockartistry.mod.DynSurround.ModLog;
+
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
 
 public final class ConfigProcessor {
 

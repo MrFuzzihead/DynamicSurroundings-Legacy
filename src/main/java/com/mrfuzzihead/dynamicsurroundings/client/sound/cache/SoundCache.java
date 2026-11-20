@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.sound.cache;
+package com.mrfuzzihead.dynamicsurroundings.client.sound.cache;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -12,9 +12,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.util.ResourceLocation;
 
-import org.blockartistry.mod.DynSurround.ModLog;
-
 import com.google.common.io.ByteStreams;
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -27,7 +26,7 @@ public final class SoundCache {
     private static final IResourceManager manager = Minecraft.getMinecraft()
         .getResourceManager();
     private static final Map<ResourceLocation, URL> cache = new HashMap<>(256);
-    private static final byte[] SILENCE = getBuffer(new ResourceLocation("dsurround:sounds/ambient/silence.ogg"));
+    private static final byte[] SILENCE = getBuffer(new ResourceLocation("dynamicsurroundings:sounds/ambient/silence.ogg"));
 
     private static byte[] getBuffer(@Nonnull ResourceLocation resource) {
         InputStream stream = null;

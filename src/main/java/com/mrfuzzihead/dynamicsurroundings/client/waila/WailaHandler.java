@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.waila;
+package com.mrfuzzihead.dynamicsurroundings.client.waila;
 
 import java.util.List;
 
@@ -14,10 +14,11 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 
 import org.apache.commons.lang3.StringUtils;
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.footsteps.Footsteps;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IBlockMap;
+
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.Footsteps;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IBlockMap;
 
 import cpw.mods.fml.common.Optional.Interface;
 import cpw.mods.fml.common.Optional.Method;
@@ -36,7 +37,7 @@ public final class WailaHandler implements IWailaDataProvider {
     private List<String> gatherText(ItemStack stack, List<String> text, IWailaDataAccessor accessor,
         IWailaConfigHandler config) {
         if (stack != null && stack.getItem() != null) {
-            text.add(EnumChatFormatting.GOLD + "dsurround");
+            text.add(EnumChatFormatting.GOLD + "dynamicsurroundings");
             Item item = stack.getItem();
             String blockName = GameData.getItemRegistry()
                 .getNameForObject(item);

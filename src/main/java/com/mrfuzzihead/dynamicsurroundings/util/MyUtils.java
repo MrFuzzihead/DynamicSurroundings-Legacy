@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.util;
+package com.mrfuzzihead.dynamicsurroundings.util;
 
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.Vec3;

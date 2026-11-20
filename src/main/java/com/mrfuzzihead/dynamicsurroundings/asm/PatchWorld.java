@@ -1,12 +1,13 @@
-package org.blockartistry.mod.DynSurround.asm;
+package com.mrfuzzihead.dynamicsurroundings.asm;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.VarInsnNode;
+
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 
 public class PatchWorld extends Transmorgrifier {
 
@@ -30,13 +31,13 @@ public class PatchWorld extends Transmorgrifier {
         if (m != null) {
             InsnList list = new InsnList();
             list.add(new VarInsnNode(25, 0));
-            String owner = "org/blockartistry/mod/DynSurround/server/WorldHandler";
+            String owner = "com/mrfuzzihead/dynamicsurroundings/server/WorldHandler";
             String targetName = "updateWeatherBody";
             String sig = "(Lnet/minecraft/world/World;)V";
             list.add(
                 new MethodInsnNode(
                     184,
-                    "org/blockartistry/mod/DynSurround/server/WorldHandler",
+                    "com/mrfuzzihead/dynamicsurroundings/server/WorldHandler",
                     "updateWeatherBody",
                     "(Lnet/minecraft/world/World;)V",
                     false));

@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.asm;
+package com.mrfuzzihead.dynamicsurroundings.asm;
 
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
@@ -22,10 +22,10 @@ public class SoundCrashFixStreamThread extends Transmorgrifier {
     public boolean transmorgrify(ClassNode cn) {
         MethodNode m = this.findMethod(cn, "()V", "run");
         if (m != null) {
-            for (AbstractInsnNode insn : m.instructions) {
-                if (insn instanceof MethodInsnNode && ((MethodInsnNode) insn).owner.equals("java/util/ListIterator")
-                    && ((MethodInsnNode) insn).name.equals("next")) {
-                    insn = insn.getNext()
+            for (AbstractInsnNode node = m.instructions.getFirst(); node != null; node = node.getNext()) {
+                if (node instanceof MethodInsnNode && ((MethodInsnNode) node).owner.equals("java/util/ListIterator")
+                    && ((MethodInsnNode) node).name.equals("next")) {
+                    AbstractInsnNode insn = node.getNext()
                         .getNext();
                     LocalVariableNode var = this.findLocalVariable(m, "src");
                     if (var != null) {
@@ -34,7 +34,7 @@ public class SoundCrashFixStreamThread extends Transmorgrifier {
                             insn,
                             new MethodInsnNode(
                                 184,
-                                "org/blockartistry/mod/DynSurround/client/sound/fix/SoundFixMethods",
+                                "com/mrfuzzihead/dynamicsurroundings/client/sound/fix/SoundFixMethods",
                                 "removeSource",
                                 "(Lpaulscode/sound/Source;)Lpaulscode/sound/Source;",
                                 false));

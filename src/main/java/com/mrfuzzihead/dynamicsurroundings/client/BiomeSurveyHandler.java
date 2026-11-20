@@ -1,11 +1,11 @@
-package org.blockartistry.mod.DynSurround.client;
+package com.mrfuzzihead.dynamicsurroundings.client;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
 
-import org.blockartistry.mod.DynSurround.data.FakeBiome;
+import com.mrfuzzihead.dynamicsurroundings.data.FakeBiome;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

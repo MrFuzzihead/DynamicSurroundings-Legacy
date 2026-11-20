@@ -1,11 +1,11 @@
-package org.blockartistry.mod.DynSurround.client.fx;
+package com.mrfuzzihead.dynamicsurroundings.client.fx;
 
 import java.util.Random;
 
 import net.minecraft.block.Block;
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.compat.BlockPos;
+import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
 
 public abstract class BlockEffect {
 

@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.data;
+package com.mrfuzzihead.dynamicsurroundings.data;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -11,14 +11,15 @@ import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 
 import org.apache.commons.lang3.StringUtils;
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.Module;
-import org.blockartistry.mod.DynSurround.client.fx.BlockEffect;
-import org.blockartistry.mod.DynSurround.client.fx.JetEffect;
-import org.blockartistry.mod.DynSurround.client.sound.SoundEffect;
-import org.blockartistry.mod.DynSurround.data.config.BlockConfig;
-import org.blockartistry.mod.DynSurround.data.config.SoundConfig;
+
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.Module;
+import com.mrfuzzihead.dynamicsurroundings.client.fx.BlockEffect;
+import com.mrfuzzihead.dynamicsurroundings.client.fx.JetEffect;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
+import com.mrfuzzihead.dynamicsurroundings.data.config.BlockConfig;
+import com.mrfuzzihead.dynamicsurroundings.data.config.SoundConfig;
 
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.ModContainer;

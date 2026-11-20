@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.util;
+package com.mrfuzzihead.dynamicsurroundings.util;
 
 import javax.annotation.Nonnull;
 

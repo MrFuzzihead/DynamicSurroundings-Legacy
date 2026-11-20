@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-FMLCorePlugin: org.blockartistry.mod.DynSurround.asm.TransformLoader
+FMLCorePlugin: com.mrfuzzihead.dynamicsurroundings.asm.TransformLoader
 FMLCorePluginContainsFMLMod: true
 FMLAT: dsurround_at.cfg
 

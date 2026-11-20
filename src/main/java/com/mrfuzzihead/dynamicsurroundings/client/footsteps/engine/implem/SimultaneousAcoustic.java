@@ -1,13 +1,13 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.engine.implem;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.implem;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.EventType;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.IAcoustic;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.IOptions;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.ISoundPlayer;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.EventType;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.IAcoustic;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.IOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.ISoundPlayer;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

@@ -1,10 +1,10 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.util.property.simple;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.util.property.simple;
 
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.blockartistry.mod.DynSurround.util.JsonUtils;
+import com.mrfuzzihead.dynamicsurroundings.util.JsonUtils;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

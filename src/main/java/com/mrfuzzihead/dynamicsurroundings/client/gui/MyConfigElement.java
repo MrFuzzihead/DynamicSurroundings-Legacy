@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.gui;
+package com.mrfuzzihead.dynamicsurroundings.client.gui;
 
 import net.minecraftforge.common.config.ConfigCategory;
 import net.minecraftforge.common.config.ConfigElement;

@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.game.user;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.user;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,7 +20,7 @@ import net.minecraft.block.BlockSlab;
 import net.minecraft.block.BlockStairs;
 import net.minecraft.block.BlockTorch;
 
-import org.blockartistry.mod.DynSurround.compat.MCHelper;
+import com.mrfuzzihead.dynamicsurroundings.compat.MCHelper;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

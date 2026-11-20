@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.game.system;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -14,8 +14,8 @@ import net.minecraft.client.resources.data.IMetadataSection;
 import net.minecraft.client.resources.data.IMetadataSerializer;
 import net.minecraft.util.ResourceLocation;
 
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.Module;
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.Module;
 
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.ModContainer;
@@ -93,7 +93,7 @@ public class PFResourcePackDealer {
 
         public InputStream getInputStream(ResourceLocation loc) throws IOException {
             StringBuilder builder = new StringBuilder();
-            builder.append("/assets/dsurround/data/");
+            builder.append("/assets/dynamicsurroundings/data/");
             builder.append(loc.getResourceDomain());
             builder.append('/');
             if (this.mod != null) {

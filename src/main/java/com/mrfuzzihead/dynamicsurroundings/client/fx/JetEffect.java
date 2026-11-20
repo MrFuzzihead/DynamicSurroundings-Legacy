@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.fx;
+package com.mrfuzzihead.dynamicsurroundings.client.fx;
 
 import java.util.Random;
 
@@ -8,13 +8,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.init.Blocks;
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.client.fx.particle.EntityBubbleJetFX;
-import org.blockartistry.mod.DynSurround.client.fx.particle.EntityDustJetFX;
-import org.blockartistry.mod.DynSurround.client.fx.particle.EntityFireJetFX;
-import org.blockartistry.mod.DynSurround.client.fx.particle.EntityFountainJetFX;
-import org.blockartistry.mod.DynSurround.client.fx.particle.EntityJetFX;
-import org.blockartistry.mod.DynSurround.client.fx.particle.EntitySteamJetFX;
-import org.blockartistry.mod.DynSurround.compat.BlockPos;
+import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.EntityBubbleJetFX;
+import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.EntityDustJetFX;
+import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.EntityFireJetFX;
+import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.EntityFountainJetFX;
+import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.EntityJetFX;
+import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.EntitySteamJetFX;
+import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
 
 public abstract class JetEffect extends BlockEffect {
 

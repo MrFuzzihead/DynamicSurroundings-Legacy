@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.asm;
+package com.mrfuzzihead.dynamicsurroundings.asm;
 
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
@@ -27,13 +27,13 @@ public class PatchSoundManager extends Transmorgrifier {
             this.logMethod(Transformer.log(), m, "Found!");
             InsnList list = new InsnList();
             list.add(new VarInsnNode(25, 0));
-            String owner = "org/blockartistry/mod/DynSurround/client/sound/cache/SoundCache";
+            String owner = "com/mrfuzzihead/dynamicsurroundings/client/sound/cache/SoundCache";
             String targetName = "getURLForSoundResource";
             String sig1 = "(Lnet/minecraft/util/ResourceLocation;)Ljava/net/URL;";
             list.add(
                 new MethodInsnNode(
                     184,
-                    "org/blockartistry/mod/DynSurround/client/sound/cache/SoundCache",
+                    "com/mrfuzzihead/dynamicsurroundings/client/sound/cache/SoundCache",
                     "getURLForSoundResource",
                     "(Lnet/minecraft/util/ResourceLocation;)Ljava/net/URL;",
                     false));

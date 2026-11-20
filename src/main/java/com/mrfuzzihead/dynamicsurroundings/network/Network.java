@@ -1,7 +1,7 @@
-package org.blockartistry.mod.DynSurround.network;
+package com.mrfuzzihead.dynamicsurroundings.network;
 
-import org.blockartistry.mod.DynSurround.client.DamageEffectHandler;
-import org.blockartistry.mod.DynSurround.data.AuroraData;
+import com.mrfuzzihead.dynamicsurroundings.client.DamageEffectHandler;
+import com.mrfuzzihead.dynamicsurroundings.data.AuroraData;
 
 import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
@@ -15,7 +15,7 @@ public final class Network {
     private Network() {}
 
     public static void initialize() {
-        network = NetworkRegistry.INSTANCE.newSimpleChannel("dsurround");
+        network = NetworkRegistry.INSTANCE.newSimpleChannel("dynamicsurroundings");
         network.registerMessage(PacketRainIntensity.class, PacketRainIntensity.class, ++discriminator, Side.CLIENT);
         network.registerMessage(PacketAurora.class, PacketAurora.class, ++discriminator, Side.CLIENT);
         network.registerMessage(PacketHealthChange.class, PacketHealthChange.class, ++discriminator, Side.CLIENT);

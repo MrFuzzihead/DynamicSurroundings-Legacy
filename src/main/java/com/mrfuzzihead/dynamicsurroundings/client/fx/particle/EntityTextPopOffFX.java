@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.fx.particle;
+package com.mrfuzzihead.dynamicsurroundings.client.fx.particle;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -8,8 +8,9 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.util.Color;
 import org.lwjgl.opengl.GL11;
+
+import com.mrfuzzihead.dynamicsurroundings.util.Color;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

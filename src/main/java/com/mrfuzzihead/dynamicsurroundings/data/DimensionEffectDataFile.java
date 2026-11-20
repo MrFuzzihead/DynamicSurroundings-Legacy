@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.data;
+package com.mrfuzzihead.dynamicsurroundings.data;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -9,11 +9,11 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 
 public final class DimensionEffectDataFile extends WorldSavedData {
 
-    private static final String IDENTIFIER = "dsurround";
+    private static final String IDENTIFIER = "dynamicsurroundings";
     private final TIntObjectHashMap<DimensionEffectData> dataList = new TIntObjectHashMap();
 
     public DimensionEffectDataFile() {
-        this("dsurround");
+        this("dynamicsurroundings");
     }
 
     public DimensionEffectDataFile(String id) {
@@ -22,10 +22,10 @@ public final class DimensionEffectDataFile extends WorldSavedData {
 
     private static DimensionEffectDataFile getFile(World world) {
         DimensionEffectDataFile data = (DimensionEffectDataFile) world
-            .loadItemData(DimensionEffectDataFile.class, "dsurround");
+            .loadItemData(DimensionEffectDataFile.class, "dynamicsurroundings");
         if (data == null) {
             data = new DimensionEffectDataFile();
-            world.setItemData("dsurround", data);
+            world.setItemData("dynamicsurroundings", data);
         }
 
         data.markDirty();

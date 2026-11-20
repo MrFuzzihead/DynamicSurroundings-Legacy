@@ -1,9 +1,9 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.implem;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem;
 
 import net.minecraft.block.Block;
 
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.compat.MCHelper;
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.compat.MCHelper;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

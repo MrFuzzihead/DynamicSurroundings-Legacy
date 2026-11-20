@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client;
+package com.mrfuzzihead.dynamicsurroundings.client;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -9,10 +9,10 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.sound.PlaySoundEvent17;
 
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.data.SoundRegistry;
-import org.blockartistry.mod.DynSurround.event.SoundConfigEvent;
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry;
+import com.mrfuzzihead.dynamicsurroundings.event.SoundConfigEvent;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;

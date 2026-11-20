@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.hud;
+package com.mrfuzzihead.dynamicsurroundings.client.hud;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,7 +6,7 @@ import java.util.List;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.MinecraftForge;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;

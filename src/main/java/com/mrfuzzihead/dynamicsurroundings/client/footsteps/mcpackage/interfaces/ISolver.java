@@ -1,9 +1,9 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces;
 
 import net.minecraft.entity.player.EntityPlayer;
 
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.EventType;
-import org.blockartistry.mod.DynSurround.client.footsteps.game.system.Association;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.EventType;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system.Association;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

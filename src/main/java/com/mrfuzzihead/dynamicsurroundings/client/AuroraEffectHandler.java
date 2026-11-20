@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client;
+package com.mrfuzzihead.dynamicsurroundings.client;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -6,11 +6,11 @@ import java.util.Set;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.aurora.Aurora;
-import org.blockartistry.mod.DynSurround.data.AuroraData;
-import org.blockartistry.mod.DynSurround.util.DiurnalUtils;
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.aurora.Aurora;
+import com.mrfuzzihead.dynamicsurroundings.data.AuroraData;
+import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

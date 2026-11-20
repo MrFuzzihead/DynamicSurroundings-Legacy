@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.weather;
+package com.mrfuzzihead.dynamicsurroundings.client.weather;
 
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.renderer.EntityRenderer;
@@ -11,13 +11,14 @@ import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraftforge.client.IRenderHandler;
 
-import org.blockartistry.mod.DynSurround.client.IAtmosRenderer;
-import org.blockartistry.mod.DynSurround.client.WeatherUtils;
-import org.blockartistry.mod.DynSurround.data.BiomeRegistry;
-import org.blockartistry.mod.DynSurround.data.DimensionRegistry;
-import org.blockartistry.mod.DynSurround.util.Color;
-import org.blockartistry.mod.DynSurround.util.random.XorShiftRandom;
 import org.lwjgl.opengl.GL11;
+
+import com.mrfuzzihead.dynamicsurroundings.client.IAtmosRenderer;
+import com.mrfuzzihead.dynamicsurroundings.client.WeatherUtils;
+import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
+import com.mrfuzzihead.dynamicsurroundings.util.Color;
+import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -28,7 +29,7 @@ public class StormRenderer implements IAtmosRenderer {
     private static final XorShiftRandom random = new XorShiftRandom();
     public static ResourceLocation locationRainPng = new ResourceLocation("textures/environment/rain.png");
     public static ResourceLocation locationSnowPng = new ResourceLocation("textures/environment/snow.png");
-    public static ResourceLocation locationDustPng = new ResourceLocation("dsurround", "textures/environment/dust.png");
+    public static ResourceLocation locationDustPng = new ResourceLocation("dynamicsurroundings", "textures/environment/dust.png");
     private static final float[] RAIN_X_COORDS = new float[1024];
     private static final float[] RAIN_Y_COORDS = new float[1024];
 

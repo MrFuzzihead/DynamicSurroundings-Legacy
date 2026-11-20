@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.game.system;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system;
 
 import net.minecraft.block.Block;
 

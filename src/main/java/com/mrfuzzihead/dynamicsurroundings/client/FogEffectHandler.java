@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client;
+package com.mrfuzzihead.dynamicsurroundings.client;
 
 import javax.annotation.Nonnull;
 
@@ -9,18 +9,19 @@ import net.minecraftforge.client.event.EntityViewRenderEvent.FogColors;
 import net.minecraftforge.client.event.EntityViewRenderEvent.RenderFogEvent;
 import net.minecraftforge.event.world.WorldEvent.Load;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.fog.BiomeFogColorCalculator;
-import org.blockartistry.mod.DynSurround.client.fog.BiomeFogRangeCalculator;
-import org.blockartistry.mod.DynSurround.client.fog.FogResult;
-import org.blockartistry.mod.DynSurround.client.fog.HazeFogRangeCalculator;
-import org.blockartistry.mod.DynSurround.client.fog.HolisticFogColorCalculator;
-import org.blockartistry.mod.DynSurround.client.fog.HolisticFogRangeCalculator;
-import org.blockartistry.mod.DynSurround.client.fog.MorningFogRangeCalculator;
-import org.blockartistry.mod.DynSurround.client.fog.WeatherFogRangeCalculator;
-import org.blockartistry.mod.DynSurround.event.DiagnosticEvent;
-import org.blockartistry.mod.DynSurround.util.Color;
 import org.lwjgl.opengl.GL11;
+
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.fog.BiomeFogColorCalculator;
+import com.mrfuzzihead.dynamicsurroundings.client.fog.BiomeFogRangeCalculator;
+import com.mrfuzzihead.dynamicsurroundings.client.fog.FogResult;
+import com.mrfuzzihead.dynamicsurroundings.client.fog.HazeFogRangeCalculator;
+import com.mrfuzzihead.dynamicsurroundings.client.fog.HolisticFogColorCalculator;
+import com.mrfuzzihead.dynamicsurroundings.client.fog.HolisticFogRangeCalculator;
+import com.mrfuzzihead.dynamicsurroundings.client.fog.MorningFogRangeCalculator;
+import com.mrfuzzihead.dynamicsurroundings.client.fog.WeatherFogRangeCalculator;
+import com.mrfuzzihead.dynamicsurroundings.event.DiagnosticEvent;
+import com.mrfuzzihead.dynamicsurroundings.util.Color;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;

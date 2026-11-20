@@ -1,11 +1,11 @@
-package org.blockartistry.mod.DynSurround.asm;
+package com.mrfuzzihead.dynamicsurroundings.asm;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class Transformer extends MyTransformer {
 
-    private static final Logger logger = LogManager.getLogger("dsurround Transform");
+    private static final Logger logger = LogManager.getLogger("dynamicsurroundings Transform");
 
     public static Logger log() {
         return logger;

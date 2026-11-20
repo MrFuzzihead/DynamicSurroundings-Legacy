@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.event;
+package com.mrfuzzihead.dynamicsurroundings.event;
 
 import cpw.mods.fml.common.eventhandler.Event;
 

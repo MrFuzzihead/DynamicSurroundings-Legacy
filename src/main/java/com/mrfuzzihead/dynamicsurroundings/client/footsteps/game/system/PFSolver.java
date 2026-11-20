@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.game.system;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system;
 
 import java.util.Locale;
 
@@ -9,15 +9,15 @@ import net.minecraft.init.Blocks;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.client.EnvironStateHandler;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.implem.ConfigOptions;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.EventType;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.IOptions;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.implem.Substrate;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IIsolator;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.ISolver;
-import org.blockartistry.mod.DynSurround.util.MathStuff;
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.implem.ConfigOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.EventType;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.IOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem.Substrate;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IIsolator;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.ISolver;
+import com.mrfuzzihead.dynamicsurroundings.util.MathStuff;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

@@ -1,7 +1,7 @@
-package org.blockartistry.mod.DynSurround.network;
+package com.mrfuzzihead.dynamicsurroundings.network;
 
-import org.blockartistry.mod.DynSurround.client.AuroraEffectHandler;
-import org.blockartistry.mod.DynSurround.data.AuroraData;
+import com.mrfuzzihead.dynamicsurroundings.client.AuroraEffectHandler;
+import com.mrfuzzihead.dynamicsurroundings.data.AuroraData;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;

@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.commands;
+package com.mrfuzzihead.dynamicsurroundings.commands;
 
 import java.text.DecimalFormat;
 import java.util.List;
@@ -11,16 +11,15 @@ import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.data.BiomeRegistry;
-import org.blockartistry.mod.DynSurround.data.BlockRegistry;
-import org.blockartistry.mod.DynSurround.data.DimensionEffectData;
-
 import com.google.common.collect.ImmutableList;
+import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
+import com.mrfuzzihead.dynamicsurroundings.data.BlockRegistry;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectData;
 
 public final class CommandRain extends CommandBase {
 
-    private static final List<String> ALIAS = ImmutableList.builder()
-        .add(new String[] { "r", "br" })
+    private static final List<String> ALIAS = ImmutableList.<String>builder()
+        .add("r", "br")
         .build();
     private static final DecimalFormat FORMATTER = new DecimalFormat("0.0");
 

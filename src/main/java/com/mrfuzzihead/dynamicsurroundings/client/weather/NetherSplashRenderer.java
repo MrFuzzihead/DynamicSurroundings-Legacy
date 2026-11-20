@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.weather;
+package com.mrfuzzihead.dynamicsurroundings.client.weather;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.particle.EntityFX;
@@ -6,8 +6,8 @@ import net.minecraft.init.Blocks;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.client.EnvironStateHandler;
-import org.blockartistry.mod.DynSurround.client.fx.particle.ParticleFactory;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.ParticleFactory;
 
 public class NetherSplashRenderer extends StormSplashRenderer {
 

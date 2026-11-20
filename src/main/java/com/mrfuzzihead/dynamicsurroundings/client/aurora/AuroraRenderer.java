@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.aurora;
+package com.mrfuzzihead.dynamicsurroundings.client.aurora;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.EntityRenderer;
@@ -6,14 +6,15 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.AuroraEffectHandler;
-import org.blockartistry.mod.DynSurround.client.IAtmosRenderer;
-import org.blockartistry.mod.DynSurround.data.DimensionRegistry;
-import org.blockartistry.mod.DynSurround.util.Color;
-import org.blockartistry.mod.DynSurround.util.DiurnalUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
+
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.AuroraEffectHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.IAtmosRenderer;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
+import com.mrfuzzihead.dynamicsurroundings.util.Color;
+import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
 
 import cpw.mods.fml.client.FMLClientHandler;
 import cpw.mods.fml.relauncher.Side;

@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.util.random;
+package com.mrfuzzihead.dynamicsurroundings.util.random;
 
 public final class LCGRandom {
 

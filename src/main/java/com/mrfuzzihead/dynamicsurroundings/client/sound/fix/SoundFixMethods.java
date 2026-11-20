@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.sound.fix;
+package com.mrfuzzihead.dynamicsurroundings.client.sound.fix;
 
 import java.lang.reflect.Field;
 

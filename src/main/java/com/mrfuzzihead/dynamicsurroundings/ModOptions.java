@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround;
+package com.mrfuzzihead.dynamicsurroundings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,9 +10,9 @@ import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
 
 import org.apache.commons.lang3.StringUtils;
-import org.blockartistry.mod.DynSurround.util.ConfigProcessor;
 
 import com.google.common.collect.ImmutableList;
+import com.mrfuzzihead.dynamicsurroundings.util.ConfigProcessor;
 
 public final class ModOptions {
 
@@ -93,8 +93,8 @@ public final class ModOptions {
     public static final String CONFIG_MIN_RAIN_STRENGTH = "Default Minimum Rain Strength";
     public static final String CONFIG_MAX_RAIN_STRENGTH = "Default Maximum Rain Strength";
     public static final String CONFIG_FX_RANGE = "Special Effect Range";
-    private static final List<String> generalSort = ImmutableList.builder()
-        .add(new String[] { "Special Effect Range", "Default Minimum Rain Strength", "Default Maximum Rain Strength" })
+    private static final List<String> generalSort = ImmutableList.<String>builder()
+        .add(CONFIG_FX_RANGE, CONFIG_MIN_RAIN_STRENGTH, CONFIG_MAX_RAIN_STRENGTH)
         .build();
     @ConfigProcessor.Parameter(category = "general", property = "Default Minimum Rain Strength", defaultValue = "0.0")
     @ConfigProcessor.MinMaxFloat(min = 0.0F, max = 1.0F)
@@ -257,10 +257,10 @@ public final class ModOptions {
     @ConfigProcessor.RestartRequired
     public static String[] culledSounds = new String[] { "^minecraft:liquid.*", "minecraft:mob.sheep.say",
         "minecraft:mob.chicken.say", "minecraft:mob.cow.say", "minecraft:mob.pig.say" };
-    @ConfigProcessor.Parameter(category = "sound", property = "Blocked Sounds", defaultValue = "dsurround:bison")
+    @ConfigProcessor.Parameter(category = "sound", property = "Blocked Sounds", defaultValue = "dynamicsurroundings:bison")
     @ConfigProcessor.Comment("Sounds to block from playing")
     @ConfigProcessor.Hidden
-    public static String[] blockedSounds = new String[] { "dsurround:bison" };
+    public static String[] blockedSounds = new String[] { "dynamicsurroundings:bison" };
     @ConfigProcessor.Parameter(category = "sound", property = "Sound Volume", defaultValue = "")
     @ConfigProcessor.Comment("Individual sound scaling factors")
     @ConfigProcessor.Hidden

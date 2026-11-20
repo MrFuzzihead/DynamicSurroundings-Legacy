@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround;
+package com.mrfuzzihead.dynamicsurroundings;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -40,7 +40,7 @@ public final class VersionCheck implements Runnable {
             NBTTagCompound nbt = new NBTTagCompound();
             nbt.setString("curseProjectName", "238891");
             nbt.setString("curseFilenameParser", "DynamicSurroundings-1.7.10-[].jar");
-            FMLInterModComms.sendRuntimeMessage("dsurround", "VersionChecker", "addVersionCheck", nbt);
+            FMLInterModComms.sendRuntimeMessage("dynamicsurroundings", "VersionChecker", "addVersionCheck", nbt);
         }
 
         if (ModOptions.enableVersionChecking) {
@@ -56,7 +56,7 @@ public final class VersionCheck implements Runnable {
     public void playerLogin(PlayerLoggedInEvent event) {
         if (event.player instanceof EntityPlayer && status == VersionCheck.UpdateStatus.OUTDATED) {
             String msg = StatCollector.translateToLocalFormatted(
-                "msg.NewVersionAvailable.dsurround",
+                "msg.NewVersionAvailable.dynamicsurroundings",
                 new Object[] { "Dynamic Surroundings", currentVersion, "238891" });
             IChatComponent component = Serializer.func_150699_a(msg);
             event.player.addChatMessage(component);

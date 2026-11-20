@@ -1,11 +1,11 @@
-package org.blockartistry.mod.DynSurround.data;
+package com.mrfuzzihead.dynamicsurroundings.data;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.util.MathHelper;
 
-import org.blockartistry.mod.DynSurround.util.random.XorShiftRandom;
+import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 public final class AuroraPreset {
 

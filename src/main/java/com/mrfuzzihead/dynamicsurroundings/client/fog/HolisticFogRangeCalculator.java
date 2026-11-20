@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.fog;
+package com.mrfuzzihead.dynamicsurroundings.client.fog;
 
 import java.util.ArrayList;
 import java.util.List;

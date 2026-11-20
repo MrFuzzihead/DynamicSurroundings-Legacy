@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.server;
+package com.mrfuzzihead.dynamicsurroundings.server;
 
 import java.util.Set;
 
@@ -6,17 +6,17 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.data.AuroraData;
-import org.blockartistry.mod.DynSurround.data.AuroraPreset;
-import org.blockartistry.mod.DynSurround.data.BiomeRegistry;
-import org.blockartistry.mod.DynSurround.data.ColorPair;
-import org.blockartistry.mod.DynSurround.data.DimensionEffectData;
-import org.blockartistry.mod.DynSurround.data.DimensionRegistry;
-import org.blockartistry.mod.DynSurround.network.Network;
-import org.blockartistry.mod.DynSurround.util.DiurnalUtils;
-import org.blockartistry.mod.DynSurround.util.PlayerUtils;
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.data.AuroraData;
+import com.mrfuzzihead.dynamicsurroundings.data.AuroraPreset;
+import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
+import com.mrfuzzihead.dynamicsurroundings.data.ColorPair;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectData;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
+import com.mrfuzzihead.dynamicsurroundings.network.Network;
+import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
+import com.mrfuzzihead.dynamicsurroundings.util.PlayerUtils;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;

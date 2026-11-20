@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.data;
+package com.mrfuzzihead.dynamicsurroundings.data;
 
 import java.text.DecimalFormat;
 import java.util.HashSet;
@@ -9,9 +9,9 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.util.INBTSerialization;
-import org.blockartistry.mod.DynSurround.util.random.XorShiftRandom;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.util.INBTSerialization;
+import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 public final class DimensionEffectData implements INBTSerialization {
 

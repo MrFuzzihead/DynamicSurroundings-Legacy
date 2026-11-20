@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.sound;
+package com.mrfuzzihead.dynamicsurroundings.client.sound;
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
@@ -18,17 +18,19 @@ import net.minecraft.client.settings.GameSettings;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MathHelper;
 
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.EnvironStateHandler;
-import org.blockartistry.mod.DynSurround.compat.BlockPos;
-import org.blockartistry.mod.DynSurround.data.SoundRegistry;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.openal.AL;
 import org.lwjgl.openal.ALC10;
 
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
+import com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry;
+
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import paulscode.sound.SoundSystem;
 import paulscode.sound.SoundSystemConfig;
 
 @SideOnly(Side.CLIENT)
@@ -117,7 +119,9 @@ public class SoundManager {
     public static void flushSound() {
         SoundHandler h = Minecraft.getMinecraft()
             .getSoundHandler();
-        h.sndManager.sndSystem.CommandQueue(null);
+        // SoundManager$SoundSystemStarterThread is package-private, so the inherited public
+        // SoundSystem.CommandQueue(...) must be invoked through the public supertype.
+        ((SoundSystem) h.sndManager.sndSystem).CommandQueue(null);
     }
 
     static void playSound(ISound sound) {

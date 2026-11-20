@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.parsers;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.parsers;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

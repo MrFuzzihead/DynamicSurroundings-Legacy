@@ -1,10 +1,10 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.game.system;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system;
 
 import java.util.Random;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.IOptions;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.ISoundPlayer;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.IOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.ISoundPlayer;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

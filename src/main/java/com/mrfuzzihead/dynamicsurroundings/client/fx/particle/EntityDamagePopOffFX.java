@@ -1,8 +1,8 @@
-package org.blockartistry.mod.DynSurround.client.fx.particle;
+package com.mrfuzzihead.dynamicsurroundings.client.fx.particle;
 
 import net.minecraft.world.World;
 
-import org.blockartistry.mod.DynSurround.util.Color;
+import com.mrfuzzihead.dynamicsurroundings.util.Color;
 
 public class EntityDamagePopOffFX extends EntityTextPopOffFX {
 

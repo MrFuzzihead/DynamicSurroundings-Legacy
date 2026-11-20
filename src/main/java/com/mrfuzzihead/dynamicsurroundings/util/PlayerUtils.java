@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.util;
+package com.mrfuzzihead.dynamicsurroundings.util;
 
 import java.util.regex.Pattern;
 
@@ -8,8 +8,8 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
 
-import org.blockartistry.mod.DynSurround.data.BiomeRegistry;
-import org.blockartistry.mod.DynSurround.data.DimensionRegistry;
+import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 
 import cpw.mods.fml.client.FMLClientHandler;
 import cpw.mods.fml.relauncher.Side;

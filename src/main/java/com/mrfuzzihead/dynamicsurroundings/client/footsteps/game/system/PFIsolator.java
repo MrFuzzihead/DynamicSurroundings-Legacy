@@ -1,17 +1,17 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.game.system;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system;
 
-import org.blockartistry.mod.DynSurround.client.EnvironStateHandler;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.ILibrary;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.ISoundPlayer;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IBlockMap;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IDefaultStepPlayer;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IGenerator;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IGeneratorSettable;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IIsolator;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IPrimitiveMap;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.ISolver;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IVariator;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IVariatorSettable;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.ILibrary;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.ISoundPlayer;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IBlockMap;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IDefaultStepPlayer;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IGenerator;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IGeneratorSettable;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IIsolator;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IPrimitiveMap;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.ISolver;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IVariator;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IVariatorSettable;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

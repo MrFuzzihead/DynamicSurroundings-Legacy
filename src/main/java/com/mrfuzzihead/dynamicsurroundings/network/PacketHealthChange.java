@@ -1,8 +1,8 @@
-package org.blockartistry.mod.DynSurround.network;
+package com.mrfuzzihead.dynamicsurroundings.network;
 
 import java.util.UUID;
 
-import org.blockartistry.mod.DynSurround.client.DamageEffectHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.DamageEffectHandler;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;

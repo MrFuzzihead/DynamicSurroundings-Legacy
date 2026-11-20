@@ -1,16 +1,16 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.game.system;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MathHelper;
 
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.EventType;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.implem.NormalVariator;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IGenerator;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IIsolator;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.ISolver;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IVariator;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IVariatorSettable;
-import org.blockartistry.mod.DynSurround.util.MyUtils;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.EventType;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem.NormalVariator;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IGenerator;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IIsolator;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.ISolver;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IVariator;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IVariatorSettable;
+import com.mrfuzzihead.dynamicsurroundings.util.MyUtils;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

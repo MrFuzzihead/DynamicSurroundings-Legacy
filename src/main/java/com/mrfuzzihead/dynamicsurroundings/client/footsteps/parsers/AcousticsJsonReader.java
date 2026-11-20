@@ -1,23 +1,22 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.parsers;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.parsers;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.implem.BasicAcoustic;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.implem.DelayedAcoustic;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.implem.EventSelectorAcoustics;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.implem.ProbabilityWeightsAcoustic;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.implem.SimultaneousAcoustic;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.EventType;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.IAcoustic;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.ILibrary;
-
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.implem.BasicAcoustic;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.implem.DelayedAcoustic;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.implem.EventSelectorAcoustics;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.implem.ProbabilityWeightsAcoustic;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.implem.SimultaneousAcoustic;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.EventType;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.IAcoustic;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.ILibrary;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -210,7 +209,7 @@ public class AcousticsJsonReader {
 
     private void setupSoundName(BasicAcoustic a, String soundName) {
         if (soundName.charAt(0) != '@') {
-            a.setSoundName("dsurround:" + this.soundRoot + soundName);
+            a.setSoundName("dynamicsurroundings:" + this.soundRoot + soundName);
         } else {
             a.setSoundName(soundName.replace("@", ""));
         }

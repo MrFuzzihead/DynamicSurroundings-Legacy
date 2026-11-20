@@ -1,10 +1,10 @@
-package org.blockartistry.mod.DynSurround.client.fog;
+package com.mrfuzzihead.dynamicsurroundings.client.fog;
 
 import javax.annotation.Nonnull;
 
 import net.minecraftforge.client.event.EntityViewRenderEvent.RenderFogEvent;
 
-import org.blockartistry.mod.DynSurround.client.weather.Weather;
+import com.mrfuzzihead.dynamicsurroundings.client.weather.Weather;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

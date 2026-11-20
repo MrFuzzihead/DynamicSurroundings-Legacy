@@ -1,12 +1,13 @@
-package org.blockartistry.mod.DynSurround.asm;
+package com.mrfuzzihead.dynamicsurroundings.asm;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.VarInsnNode;
+
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 
 public class PatchWorldServer extends Transmorgrifier {
 
@@ -34,13 +35,13 @@ public class PatchWorldServer extends Transmorgrifier {
             m.localVariables = null;
             InsnList list = new InsnList();
             list.add(new VarInsnNode(25, 0));
-            String owner = "org/blockartistry/mod/DynSurround/server/PlayerSleepHandler";
+            String owner = "com/mrfuzzihead/dynamicsurroundings/server/PlayerSleepHandler";
             String targetName = "resetRainAndThunder";
             String sig = "(Lnet/minecraft/world/WorldServer;)V";
             list.add(
                 new MethodInsnNode(
                     184,
-                    "org/blockartistry/mod/DynSurround/server/PlayerSleepHandler",
+                    "com/mrfuzzihead/dynamicsurroundings/server/PlayerSleepHandler",
                     "resetRainAndThunder",
                     "(Lnet/minecraft/world/WorldServer;)V",
                     false));

@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client.sound;
+package com.mrfuzzihead.dynamicsurroundings.client.sound;
 
 import java.util.Random;
 
@@ -7,10 +7,10 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Vec3;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.EnvironStateHandler;
-import org.blockartistry.mod.DynSurround.util.MyUtils;
-import org.blockartistry.mod.DynSurround.util.random.XorShiftRandom;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.util.MyUtils;
+import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

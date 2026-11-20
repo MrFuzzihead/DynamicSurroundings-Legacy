@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.compat;
+package com.mrfuzzihead.dynamicsurroundings.compat;
 
 import net.minecraft.client.particle.EntityFX;
 import net.minecraft.world.World;

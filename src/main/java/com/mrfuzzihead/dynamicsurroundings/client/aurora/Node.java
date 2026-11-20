@@ -1,6 +1,6 @@
-package org.blockartistry.mod.DynSurround.client.aurora;
+package com.mrfuzzihead.dynamicsurroundings.client.aurora;
 
-import org.blockartistry.mod.DynSurround.util.MathStuff;
+import com.mrfuzzihead.dynamicsurroundings.util.MathStuff;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

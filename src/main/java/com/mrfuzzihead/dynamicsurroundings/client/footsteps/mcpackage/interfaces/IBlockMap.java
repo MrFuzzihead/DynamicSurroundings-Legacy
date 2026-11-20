@@ -1,10 +1,10 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces;
 
 import java.util.List;
 
 import net.minecraft.block.Block;
 
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.implem.Substrate;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem.Substrate;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

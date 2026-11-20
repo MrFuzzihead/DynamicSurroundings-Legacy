@@ -1,7 +1,7 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.implem;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem;
 
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.IOptions;
-import org.blockartistry.mod.DynSurround.client.footsteps.engine.interfaces.ISoundPlayer;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.IOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.ISoundPlayer;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

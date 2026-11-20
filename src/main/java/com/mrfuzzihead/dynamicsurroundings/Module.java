@@ -1,11 +1,12 @@
-package org.blockartistry.mod.DynSurround;
+package com.mrfuzzihead.dynamicsurroundings;
 
 import java.io.File;
 
 import net.minecraftforge.common.config.Configuration;
 
 import org.apache.logging.log4j.LogManager;
-import org.blockartistry.mod.DynSurround.proxy.Proxy;
+
+import com.mrfuzzihead.dynamicsurroundings.proxy.Proxy;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
@@ -18,23 +19,23 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 
 @Mod(
-    modid = "dsurround",
+    modid = "dynamicsurroundings",
     useMetadata = true,
     dependencies = "required-after:Forge@[10.13.4.1614,)",
     version = "1.0.6.4",
-    guiFactory = "org.blockartistry.mod.DynSurround.client.gui.ConfigGuiFactory")
+    guiFactory = "com.mrfuzzihead.dynamicsurroundings.client.gui.ConfigGuiFactory")
 public class Module {
 
-    public static final String MOD_ID = "dsurround";
+    public static final String MOD_ID = "dynamicsurroundings";
     public static final String MOD_NAME = "Dynamic Surroundings";
     public static final String VERSION = "1.0.6.4";
     public static final String DEPENDENCIES = "required-after:Forge@[10.13.4.1614,)";
-    public static final String GUI_FACTORY = "org.blockartistry.mod.DynSurround.client.gui.ConfigGuiFactory";
-    @Instance("dsurround")
+    public static final String GUI_FACTORY = "com.mrfuzzihead.dynamicsurroundings.client.gui.ConfigGuiFactory";
+    @Instance("dynamicsurroundings")
     protected static Module instance;
     @SidedProxy(
-        clientSide = "org.blockartistry.mod.DynSurround.proxy.ProxyClient",
-        serverSide = "org.blockartistry.mod.DynSurround.proxy.Proxy")
+        clientSide = "com.mrfuzzihead.dynamicsurroundings.proxy.ProxyClient",
+        serverSide = "com.mrfuzzihead.dynamicsurroundings.proxy.Proxy")
     protected static Proxy proxy;
     protected static Configuration config;
     protected static File dataDirectory;
@@ -56,7 +57,7 @@ public class Module {
     }
 
     public Module() {
-        ModLog.setLogger(LogManager.getLogger("dsurround"));
+        ModLog.setLogger(LogManager.getLogger(MOD_ID));
     }
 
     @EventHandler
@@ -64,9 +65,9 @@ public class Module {
         FMLCommonHandler.instance()
             .bus()
             .register(this);
-        dataDirectory = new File(event.getModConfigurationDirectory(), "dsurround");
+        dataDirectory = new File(event.getModConfigurationDirectory(), "dynamicsurroundings");
         dataDirectory.mkdirs();
-        config = new Configuration(new File(dataDirectory, "dsurround.cfg"));
+        config = new Configuration(new File(dataDirectory, "dynamicsurroundings.cfg"));
         config.load();
         ModOptions.load(config);
         config.save();

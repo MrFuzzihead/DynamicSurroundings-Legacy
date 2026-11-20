@@ -1,12 +1,11 @@
-package org.blockartistry.mod.DynSurround.data.config;
+package com.mrfuzzihead.dynamicsurroundings.data.config;
 
 import java.io.File;
 import java.util.List;
 
-import org.blockartistry.mod.DynSurround.util.JsonUtils;
-
 import com.google.common.collect.ImmutableList;
 import com.google.gson.annotations.SerializedName;
+import com.mrfuzzihead.dynamicsurroundings.util.JsonUtils;
 
 public final class DimensionConfig {
 

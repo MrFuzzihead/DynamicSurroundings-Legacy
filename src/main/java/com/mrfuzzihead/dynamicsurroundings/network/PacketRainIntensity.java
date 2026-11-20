@@ -1,7 +1,7 @@
-package org.blockartistry.mod.DynSurround.network;
+package com.mrfuzzihead.dynamicsurroundings.network;
 
-import org.blockartistry.mod.DynSurround.client.weather.Weather;
-import org.blockartistry.mod.DynSurround.util.PlayerUtils;
+import com.mrfuzzihead.dynamicsurroundings.client.weather.Weather;
+import com.mrfuzzihead.dynamicsurroundings.util.PlayerUtils;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;

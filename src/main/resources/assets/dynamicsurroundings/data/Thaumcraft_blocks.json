@@ -10,15 +10,15 @@
 			"stepChance":150,
 			"sounds":[
 				{
-					"sound":"dsurround:floorsqueak",
+					"sound":"dynamicsurroundings:floorsqueak",
 					"soundType":"step",
 					"volume":0.2,
 					"variable":true
 				}
-				
+
 			]
-			
+
 		}
-		
+
 	]
 }

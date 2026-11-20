@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.util;
+package com.mrfuzzihead.dynamicsurroundings.util;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,7 +34,7 @@ public class JsonUtils {
         InputStream stream = null;
 
         try {
-            stream = clazz.getResourceAsStream("/assets/dsurround/data/" + fileName + ".json");
+            stream = clazz.getResourceAsStream("/assets/dynamicsurroundings/data/" + fileName + ".json");
             if (stream != null) {
                 return load(stream, clazz);
             }

@@ -1,12 +1,13 @@
-package org.blockartistry.mod.DynSurround.asm;
+package com.mrfuzzihead.dynamicsurroundings.asm;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.VarInsnNode;
+
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 
 public class PatchEntityRenderer extends Transmorgrifier {
 
@@ -37,13 +38,13 @@ public class PatchEntityRenderer extends Transmorgrifier {
             m.localVariables = null;
             InsnList list = new InsnList();
             list.add(new VarInsnNode(25, 0));
-            String owner = "org/blockartistry/mod/DynSurround/client/RenderWeather";
+            String owner = "com/mrfuzzihead/dynamicsurroundings/client/RenderWeather";
             String targetName = "addRainParticles";
             String sig = "(Lnet/minecraft/client/renderer/EntityRenderer;)V";
             list.add(
                 new MethodInsnNode(
                     184,
-                    "org/blockartistry/mod/DynSurround/client/RenderWeather",
+                    "com/mrfuzzihead/dynamicsurroundings/client/RenderWeather",
                     "addRainParticles",
                     "(Lnet/minecraft/client/renderer/EntityRenderer;)V",
                     false));
@@ -59,13 +60,13 @@ public class PatchEntityRenderer extends Transmorgrifier {
             InsnList list = new InsnList();
             list.add(new VarInsnNode(25, 0));
             list.add(new VarInsnNode(23, 1));
-            String owner = "org/blockartistry/mod/DynSurround/client/RenderWeather";
+            String owner = "com/mrfuzzihead/dynamicsurroundings/client/RenderWeather";
             String targetName = "renderRainSnow";
             String sig = "(Lnet/minecraft/client/renderer/EntityRenderer;F)V";
             list.add(
                 new MethodInsnNode(
                     184,
-                    "org/blockartistry/mod/DynSurround/client/RenderWeather",
+                    "com/mrfuzzihead/dynamicsurroundings/client/RenderWeather",
                     "renderRainSnow",
                     "(Lnet/minecraft/client/renderer/EntityRenderer;F)V",
                     false));

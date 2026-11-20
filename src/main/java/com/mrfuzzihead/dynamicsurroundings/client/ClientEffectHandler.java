@@ -1,4 +1,4 @@
-package org.blockartistry.mod.DynSurround.client;
+package com.mrfuzzihead.dynamicsurroundings.client;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,10 +9,10 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.world.WorldEvent.Load;
 
-import org.blockartistry.mod.DynSurround.ModOptions;
-import org.blockartistry.mod.DynSurround.client.footsteps.Footsteps;
-import org.blockartistry.mod.DynSurround.client.fx.BlockEffectHandler;
-import org.blockartistry.mod.DynSurround.data.DimensionRegistry;
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.Footsteps;
+import com.mrfuzzihead.dynamicsurroundings.client.fx.BlockEffectHandler;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 
 import cpw.mods.fml.client.FMLClientHandler;
 import cpw.mods.fml.common.FMLCommonHandler;

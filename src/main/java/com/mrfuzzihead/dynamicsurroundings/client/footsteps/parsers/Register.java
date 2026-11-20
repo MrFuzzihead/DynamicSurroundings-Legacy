@@ -1,11 +1,11 @@
-package org.blockartistry.mod.DynSurround.client.footsteps.parsers;
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.parsers;
 
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.blockartistry.mod.DynSurround.ModLog;
-import org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.interfaces.IRegistration;
-import org.blockartistry.mod.DynSurround.client.footsteps.util.property.simple.ConfigProperty;
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IRegistration;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.util.property.simple.ConfigProperty;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
