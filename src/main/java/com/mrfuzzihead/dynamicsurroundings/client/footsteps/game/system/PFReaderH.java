@@ -10,6 +10,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.ISolver;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IVariator;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IVariatorSettable;
+import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.EntityLivingBaseAccessor;
 import com.mrfuzzihead.dynamicsurroundings.util.MyUtils;
 
 import cpw.mods.fml.relauncher.Side;
@@ -184,7 +185,7 @@ public class PFReaderH implements IGenerator, IVariatorSettable {
     protected void simulateJumpingLanding(EntityPlayer ply) {
         if (!this.mod.getSolver()
             .hasSpecialStoppingConditions(ply)) {
-            boolean isJumping = ply.isJumping;
+            boolean isJumping = ((EntityLivingBaseAccessor) ply).dynamicsurroundings$isJumping();
             if (this.isFlying && isJumping) {
                 if (this.VAR.EVENT_ON_JUMP) {
                     double speed = ply.motionX * ply.motionX + ply.motionZ * ply.motionZ;

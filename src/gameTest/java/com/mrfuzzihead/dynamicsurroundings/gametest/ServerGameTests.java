@@ -29,7 +29,7 @@ import cpw.mods.fml.relauncher.Side;
  *
  * <p>
  * Everything here needs the real game: the loaded config, the dimension/biome registries built in post-init, a live
- * {@link World} with its saved data, and the coremod transformer that the {@code -PgameTest} launch runs with.
+ * {@link World} with its saved data, and the mixins that the {@code -PgameTest} launch runs with.
  * </p>
  */
 public final class ServerGameTests {
@@ -56,7 +56,8 @@ public final class ServerGameTests {
         checkDimensionRegistry();
         checkBiomeRegistry();
         checkDiurnalCycle();
-        checkWeatherTransformerIsLive();
+        checkWeatherMixinIsLive();
+        checkSleepResetMixinIsLive();
         checkDimensionDataIsPerWorldSavedData();
         checkRainCommand();
         checkNetworkChannel();
@@ -214,10 +215,10 @@ public final class ServerGameTests {
     }
 
     // ---------------------------------------------------------------------------------------------------------
-    // Coremod: the weather transformer replaced World.updateWeatherBody
+    // Mixin: the weather patch replaced World.updateWeatherBody
     // ---------------------------------------------------------------------------------------------------------
 
-    private static void checkWeatherTransformerIsLive() {
+    private static void checkWeatherMixinIsLive() {
         WorldServer world = overworld();
         if (world == null) return;
 
@@ -243,7 +244,7 @@ public final class ServerGameTests {
 
             // Vanilla's own updateWeatherBody never touches DimensionEffectData, so a non-zero intensity proves
             // that WorldHandler.updateWeatherBody is the method that ran.
-            check("the weather transformer replaced World.updateWeatherBody", data.getRainIntensity() > 0.0F);
+            check("the weather mixin replaced World.updateWeatherBody", data.getRainIntensity() > 0.0F);
             check(
                 "the randomised intensity is in range",
                 data.getRainIntensity() >= 0.01F && data.getRainIntensity() <= 1.0F);
@@ -253,6 +254,54 @@ public final class ServerGameTests {
             info.setRainTime(wasRainTime);
             info.setThunderTime(wasThunderTime);
             data.setRainIntensity(wasIntensity);
+        }
+    }
+
+    /**
+     * The sleep mixin routes {@code WorldServer.resetRainAndThunder} through {@link PlayerSleepHandler}. Turning the
+     * config switch off is the cheapest way to prove the mixin, rather than vanilla, ran: vanilla ignores the switch
+     * and always clears the weather.
+     */
+    private static void checkSleepResetMixinIsLive() {
+        WorldServer world = overworld();
+        if (world == null) return;
+
+        WorldInfo info = world.getWorldInfo();
+        boolean wasRaining = info.isRaining();
+        boolean wasThundering = info.isThundering();
+        int wasRainTime = info.getRainTime();
+        int wasThunderTime = info.getThunderTime();
+        boolean wasResetRainOnSleep = ModOptions.resetRainOnSleep;
+
+        try {
+            ModOptions.resetRainOnSleep = false;
+            info.setRaining(true);
+            info.setThundering(true);
+            invokeResetRainAndThunder(world);
+            check("the sleep mixin suppresses the reset when disabled", info.isRaining() && info.isThundering());
+
+            ModOptions.resetRainOnSleep = true;
+            invokeResetRainAndThunder(world);
+            check("the sleep mixin forwards the reset when enabled", !info.isRaining() && !info.isThundering());
+        } finally {
+            ModOptions.resetRainOnSleep = wasResetRainOnSleep;
+            info.setRaining(wasRaining);
+            info.setThundering(wasThundering);
+            info.setRainTime(wasRainTime);
+            info.setThunderTime(wasThunderTime);
+        }
+    }
+
+    /**
+     * Calls the private, possibly mixin-replaced {@code WorldServer.resetRainAndThunder} on the live world.
+     */
+    private static void invokeResetRainAndThunder(WorldServer world) {
+        try {
+            Method method = WorldServer.class.getDeclaredMethod("resetRainAndThunder");
+            method.setAccessible(true);
+            method.invoke(world);
+        } catch (Exception e) {
+            check("WorldServer.resetRainAndThunder is callable: " + e, false);
         }
     }
 

@@ -2,6 +2,7 @@ package com.mrfuzzihead.dynamicsurroundings.client.weather;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.particle.EntityFX;
 import net.minecraft.client.renderer.EntityRenderer;
@@ -21,6 +22,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.ParticleFactory;
 import com.mrfuzzihead.dynamicsurroundings.compat.IParticleFactory;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
+import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.EntityRendererAccessor;
 import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
 import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
@@ -107,22 +109,24 @@ public class StormSplashRenderer {
                 pitch = 0.5F;
             }
 
-            renderer.mc.theWorld.playSound(x, y, z, sound, volume, pitch, false);
+            Minecraft.getMinecraft().theWorld.playSound(x, y, z, sound, volume, pitch, false);
         }
     }
 
     public void addRainParticles(EntityRenderer theThis) {
-        if (theThis.mc.gameSettings.particleSetting != 2) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.gameSettings.particleSetting != 2) {
             if (DimensionRegistry.hasWeather(EnvironStateHandler.EnvironState.getWorld())) {
-                float rainStrengthFactor = theThis.mc.theWorld.getRainStrength(1.0F);
-                if (!theThis.mc.gameSettings.fancyGraphics) {
+                float rainStrengthFactor = mc.theWorld.getRainStrength(1.0F);
+                if (!mc.gameSettings.fancyGraphics) {
                     rainStrengthFactor /= 2.0F;
                 }
 
                 if (!(rainStrengthFactor <= 0.0F)) {
-                    RANDOM.setSeed(theThis.rendererUpdateCount * 312987231L);
-                    EntityLivingBase entity = theThis.mc.renderViewEntity;
-                    WorldClient worldclient = theThis.mc.theWorld;
+                    EntityRendererAccessor rendererAccess = (EntityRendererAccessor) theThis;
+                    RANDOM.setSeed(rendererAccess.dynamicsurroundings$getRendererUpdateCount() * 312987231L);
+                    EntityLivingBase entity = mc.renderViewEntity;
+                    WorldClient worldclient = mc.theWorld;
                     int playerX = MathHelper.floor_double(entity.posX);
                     int playerY = MathHelper.floor_double(entity.posY);
                     int playerZ = MathHelper.floor_double(entity.posZ);
@@ -131,7 +135,7 @@ public class StormSplashRenderer {
                     double spawnZ = 0.0;
                     int particlesSpawned = 0;
                     int particleCount = (int) (ModOptions.particleCountBase * rainStrengthFactor * rainStrengthFactor);
-                    if (theThis.mc.gameSettings.particleSetting == 1) {
+                    if (mc.gameSettings.particleSetting == 1) {
                         particleCount >>= 1;
                     }
 
@@ -150,7 +154,7 @@ public class StormSplashRenderer {
                             double posZ = locZ + RANDOM.nextFloat();
                             EntityFX particle = this.getBlockParticleFX(block, hasDust, worldclient, posX, posY, posZ);
                             if (particle != null) {
-                                theThis.mc.effectRenderer.addEffect(particle);
+                                mc.effectRenderer.addEffect(particle);
                             }
 
                             if (RANDOM.nextInt(++particlesSpawned) == 0) {
@@ -161,9 +165,13 @@ public class StormSplashRenderer {
                         }
                     }
 
-                    if (particlesSpawned > 0 && RANDOM.nextInt(20) < theThis.rainSoundCounter++) {
-                        theThis.rainSoundCounter = 0;
-                        this.playSplashSound(theThis, worldclient, entity, spawnX, spawnY, spawnZ);
+                    if (particlesSpawned > 0) {
+                        int rainSoundCounter = rendererAccess.dynamicsurroundings$getRainSoundCounter();
+                        rendererAccess.dynamicsurroundings$setRainSoundCounter(rainSoundCounter + 1);
+                        if (RANDOM.nextInt(20) < rainSoundCounter) {
+                            rendererAccess.dynamicsurroundings$setRainSoundCounter(0);
+                            this.playSplashSound(theThis, worldclient, entity, spawnX, spawnY, spawnZ);
+                        }
                     }
                 }
             }

@@ -8,6 +8,7 @@ import net.minecraft.world.World;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
 import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
+import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.EntityFlameFXAccessor;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -40,7 +41,8 @@ public class EntityFireJetFX extends EntityJetFX {
                 0.0,
                 this.jetStrength / 10.0,
                 0.0);
-            flame.flameScale = flame.flameScale * this.jetStrength;
+            EntityFlameFXAccessor accessor = (EntityFlameFXAccessor) flame;
+            accessor.dynamicsurroundings$setFlameScale(accessor.dynamicsurroundings$getFlameScale() * this.jetStrength);
             return flame;
         }
     }

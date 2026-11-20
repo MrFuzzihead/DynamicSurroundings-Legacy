@@ -16,6 +16,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.hud.GuiHUDHandler;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
 import com.mrfuzzihead.dynamicsurroundings.data.BlockRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry;
+import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.SoundHandlerAccessor;
 
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
@@ -49,7 +50,8 @@ public class ProxyClient extends Proxy {
                 .getSoundHandler();
             List<String> sounds = new ArrayList<>();
 
-            for (Object resource : handler.sndRegistry.getKeys()) {
+            for (Object resource : ((SoundHandlerAccessor) handler).dynamicsurroundings$getSndRegistry()
+                .getKeys()) {
                 sounds.add(resource.toString());
             }
 

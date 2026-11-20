@@ -1,10 +1,13 @@
 package com.mrfuzzihead.dynamicsurroundings;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
 
+import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.common.config.ConfigCategory;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
@@ -320,7 +323,37 @@ public final class ModOptions {
     @ConfigProcessor.Comment("Size scale of icons (lower is smaller)")
     public static float potionHudScale = 0.5F;
 
+    /** Canonical path of the config file that has already been loaded, if any. */
+    private static File synchronizedConfigurationFile;
+
     private ModOptions() {}
+
+    /**
+     * Loads the configuration early, before FML pre-init, so that the mixin catalogue can gate entries on it (for
+     * example {@code disableWeatherEffects}). Resolves the file from {@code Launch.minecraftHome} when no explicit
+     * path is given and is a no-op when the same file has already been loaded.
+     *
+     * @param configFile the config to load, or {@code null} to resolve the default path
+     */
+    public static synchronized void synchronizeConfiguration(File configFile) {
+        File resolved = resolveConfigurationFile(configFile);
+        if (resolved.equals(synchronizedConfigurationFile)) {
+            return;
+        }
+
+        load(new Configuration(resolved));
+        synchronizedConfigurationFile = resolved;
+    }
+
+    private static File resolveConfigurationFile(File suggestedFile) {
+        File file = suggestedFile != null ? suggestedFile
+            : new File(Launch.minecraftHome, "config/dynamicsurroundings/dynamicsurroundings.cfg");
+        try {
+            return file.getCanonicalFile();
+        } catch (IOException e) {
+            return file.getAbsoluteFile();
+        }
+    }
 
     public static void load(Configuration config) {
         ConfigProcessor.process(config, ModOptions.class);

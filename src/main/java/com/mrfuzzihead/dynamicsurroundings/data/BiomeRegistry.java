@@ -1,7 +1,6 @@
 package com.mrfuzzihead.dynamicsurroundings.data;
 
 import java.io.File;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,19 +17,21 @@ import com.mrfuzzihead.dynamicsurroundings.ModLog;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.Module;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
+import com.mrfuzzihead.dynamicsurroundings.data.compat.BOPFogIntegration;
+import com.mrfuzzihead.dynamicsurroundings.data.compat.IBOPFog;
 import com.mrfuzzihead.dynamicsurroundings.data.config.BiomeConfig;
 import com.mrfuzzihead.dynamicsurroundings.data.config.SoundConfig;
 import com.mrfuzzihead.dynamicsurroundings.event.RegistryReloadEvent;
 import com.mrfuzzihead.dynamicsurroundings.util.Color;
 import com.mrfuzzihead.dynamicsurroundings.util.MyUtils;
 
-import cpw.mods.fml.relauncher.ReflectionHelper;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 public final class BiomeRegistry {
 
     private static final TIntObjectHashMap<BiomeRegistry.Entry> registry = new TIntObjectHashMap();
     private static final Map<String, String> biomeAliases = new HashMap<>();
+    private static final boolean BOP_PRESENT = isClassPresent("biomesoplenty.BiomesOPlenty");
     public static final BiomeGenBase UNDERGROUND = new FakeBiome(-1, "Underground");
     public static final BiomeGenBase PLAYER = new FakeBiome(-2, "Player");
     public static final BiomeGenBase UNDERWATER = new FakeBiome(-3, "Underwater");
@@ -41,6 +42,19 @@ public final class BiomeRegistry {
     public static final BiomeGenBase CLOUDS = new FakeBiome(-8, "Clouds");
     public static final SoundEffect WATER_DRIP = new SoundEffect("dynamicsurroundings:waterdrops");
     private static final BiomeGenBase WTF = new FakeBiome(-256, "(FooBar)");
+
+    /**
+     * Optional-mod probe that also works in a headless unit test (FML's own {@code Loader} is not initialised
+     * there). The class is resolved without running BOP's static initialisers, and no BOP type is referenced.
+     */
+    private static boolean isClassPresent(String className) {
+        try {
+            Class.forName(className, false, BiomeRegistry.class.getClassLoader());
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
 
     public static String resolveName(BiomeGenBase biome) {
         if (biome == null) {
@@ -282,9 +296,6 @@ public final class BiomeRegistry {
 
     private static class Entry {
 
-        private static Class<?> bopBiome = null;
-        private static Field bopBiomeFogDensity = null;
-        private static Field bopBiomeFogColor = null;
         public final BiomeGenBase biome;
         public boolean hasPrecipitation;
         public boolean hasDust;
@@ -303,15 +314,18 @@ public final class BiomeRegistry {
             this.sounds = new ArrayList<>();
             this.spotSounds = new ArrayList<>();
             this.spotSoundChance = 1200;
-            if (bopBiome != null && bopBiome.isInstance(biome)) {
-                try {
-                    int color = bopBiomeFogColor.getInt(biome);
+            if (BOP_PRESENT) {
+                // Optional integration: BOP biomes expose their fog through IBiomeFog. BOPFogIntegration loads the
+                // bridge only when BOP is present, so no BOP class is touched when the mod is absent.
+                IBOPFog bopFog = BOPFogIntegration.get();
+                if (bopFog.isFogBiome(biome)) {
+                    int color = bopFog.getFogColor(biome);
                     if (color > 0) {
                         this.hasFog = true;
                         this.fogColor = new Color(color);
-                        this.fogDensity = bopBiomeFogDensity.getFloat(biome);
+                        this.fogDensity = bopFog.getFogDensity(biome);
                     }
-                } catch (Exception var3) {}
+                }
             }
         }
 
@@ -398,18 +412,6 @@ public final class BiomeRegistry {
             }
 
             return builder.toString();
-        }
-
-        static {
-            try {
-                bopBiome = Class.forName("biomesoplenty.common.biome.BOPBiome");
-                bopBiomeFogDensity = ReflectionHelper.findField(bopBiome, new String[] { "fogDensity" });
-                bopBiomeFogColor = ReflectionHelper.findField(bopBiome, new String[] { "fogColor" });
-            } catch (Throwable var1) {
-                bopBiome = null;
-                bopBiomeFogDensity = null;
-                bopBiomeFogColor = null;
-            }
         }
     }
 }

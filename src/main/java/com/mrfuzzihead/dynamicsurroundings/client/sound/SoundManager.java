@@ -27,10 +27,11 @@ import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
 import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
 import com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry;
+import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.SoundHandlerAccessor;
+import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.SoundManagerAccessor;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import paulscode.sound.SoundSystem;
 import paulscode.sound.SoundSystemConfig;
 
 @SideOnly(Side.CLIENT)
@@ -104,8 +105,8 @@ public class SoundManager {
     }
 
     public static int currentSoundCount() {
-        return Minecraft.getMinecraft()
-            .getSoundHandler().sndManager.playingSounds.size();
+        return ((SoundManagerAccessor) liveSoundManager()).dynamicsurroundings$getPlayingSounds()
+            .size();
     }
 
     public static int maxSoundCount() {
@@ -114,14 +115,6 @@ public class SoundManager {
 
     private static boolean canFitSound() {
         return currentSoundCount() < SoundSystemConfig.getNumberNormalChannels() - 6;
-    }
-
-    public static void flushSound() {
-        SoundHandler h = Minecraft.getMinecraft()
-            .getSoundHandler();
-        // SoundManager$SoundSystemStarterThread is package-private, so the inherited public
-        // SoundSystem.CommandQueue(...) must be invoked through the public supertype.
-        ((SoundSystem) h.sndManager.sndSystem).CommandQueue(null);
     }
 
     static void playSound(ISound sound) {
@@ -166,10 +159,17 @@ public class SoundManager {
     }
 
     public static boolean isSoundPlaying(@Nonnull ISound sound) {
-        net.minecraft.client.audio.SoundManager manager = Minecraft.getMinecraft()
-            .getSoundHandler().sndManager;
-        return manager.isSoundPlaying(sound) || manager.playingSounds.containsValue(sound)
-            || manager.delayedSounds.containsKey(sound);
+        net.minecraft.client.audio.SoundManager manager = liveSoundManager();
+        SoundManagerAccessor accessor = (SoundManagerAccessor) manager;
+        return manager.isSoundPlaying(sound) || accessor.dynamicsurroundings$getPlayingSounds()
+            .containsValue(sound)
+            || accessor.dynamicsurroundings$getDelayedSounds()
+                .containsKey(sound);
+    }
+
+    private static net.minecraft.client.audio.SoundManager liveSoundManager() {
+        return ((SoundHandlerAccessor) Minecraft.getMinecraft()
+            .getSoundHandler()).dynamicsurroundings$getSndManager();
     }
 
     public static List<String> getSounds() {

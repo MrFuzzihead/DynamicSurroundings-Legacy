@@ -21,7 +21,7 @@ import cpw.mods.fml.common.event.FMLServerStartedEvent;
  * <p>
  * The assertions run on the server thread at {@link FMLServerStartedEvent}, where the overworld exists and block,
  * weather and world-time mutations are legal without a tick-loop hand-off. Everything that needs the real
- * registries, a live {@code World}, the coremod transformer or the saved-data store is asserted here; pure logic is
+ * registries, a live {@code World}, the mixins or the saved-data store is asserted here; pure logic is
  * covered by the JUnit suite in {@code src/test/java}.
  * </p>
  */

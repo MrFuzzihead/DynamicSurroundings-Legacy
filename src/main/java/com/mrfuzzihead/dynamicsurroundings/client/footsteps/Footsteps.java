@@ -31,6 +31,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.parsers.AcousticsJsonReader;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.parsers.Register;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.util.property.simple.ConfigProperty;
+import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.EntityAccessor;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -184,10 +185,11 @@ public class Footsteps implements IResourceManagerReloadListener, IClientEffectH
         }
 
         this.isolator.onFrame();
+        EntityAccessor accessor = (EntityAccessor) player;
         if (ModOptions.footstepsSoundFactor > 0.0F) {
-            player.nextStepDistance = Integer.MAX_VALUE;
-        } else if (player.nextStepDistance == Integer.MAX_VALUE) {
-            player.nextStepDistance = 0;
+            accessor.dynamicsurroundings$setNextStepDistance(Integer.MAX_VALUE);
+        } else if (accessor.dynamicsurroundings$getNextStepDistance() == Integer.MAX_VALUE) {
+            accessor.dynamicsurroundings$setNextStepDistance(0);
         }
     }
 

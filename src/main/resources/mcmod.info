@@ -17,7 +17,9 @@
 		"screenshots": [],
 		"parent": "",
 		"requiredMods": [],
-		"dependencies": [],
+		"dependencies": [
+		  "UniMixins"
+		],
 		"dependants": [],
 		"useDependencyInformation": false
 	}]

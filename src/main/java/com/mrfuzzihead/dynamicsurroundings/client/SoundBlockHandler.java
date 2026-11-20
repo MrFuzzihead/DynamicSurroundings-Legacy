@@ -13,6 +13,7 @@ import com.mrfuzzihead.dynamicsurroundings.ModLog;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry;
 import com.mrfuzzihead.dynamicsurroundings.event.SoundConfigEvent;
+import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.SoundHandlerAccessor;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -41,7 +42,8 @@ public class SoundBlockHandler implements IClientEffectHandler {
         SoundHandler handler = Minecraft.getMinecraft()
             .getSoundHandler();
 
-        for (Object resource : handler.sndRegistry.getKeys()) {
+        for (Object resource : ((SoundHandlerAccessor) handler).dynamicsurroundings$getSndRegistry()
+            .getKeys()) {
             String rs = resource.toString();
             if (SoundRegistry.isSoundBlocked(rs)) {
                 ModLog.debug("Blocking sound '%s'", rs);
