@@ -1,0 +1,59 @@
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem;
+
+import java.lang.reflect.Field;
+import java.util.HashSet;
+import java.util.Set;
+
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IVariator;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.util.property.simple.ConfigProperty;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+
+@SideOnly(Side.CLIENT)
+public class NormalVariator implements IVariator {
+
+    public int IMMOBILE_DURATION = 200;
+    public boolean EVENT_ON_JUMP = true;
+    public float LAND_HARD_DISTANCE_MIN = 0.9F;
+    public float SPEED_TO_JUMP_AS_MULTIFOOT = 0.005F;
+    public float SPEED_TO_RUN = 0.022F;
+    public float DISTANCE_HUMAN = 0.95F;
+    public float DISTANCE_STAIR = 0.61749995F;
+    public float DISTANCE_LADDER = 0.5F;
+    public boolean PLAY_WANDER = true;
+
+    @Override
+    public void loadConfig(ConfigProperty config) {
+        Set<String> keysFromConfig = config.getAllProperties()
+            .keySet();
+        Set<String> keys = new HashSet<>();
+
+        for (String key : keysFromConfig) {
+            keys.add(key.toUpperCase());
+        }
+
+        Field[] fields = NormalVariator.class.getDeclaredFields();
+
+        for (Field field : fields) {
+            try {
+                String fieldName = field.getName();
+                if (keys.contains(fieldName)) {
+                    String lowercaseField = fieldName.toLowerCase();
+                    if (field.getType() == float.class) {
+                        field.setFloat(this, config.getFloat(lowercaseField));
+                    } else if (field.getType() == int.class) {
+                        field.setInt(this, config.getInteger(lowercaseField));
+                    } else if (field.getType() == boolean.class) {
+                        field.setBoolean(this, config.getBoolean(lowercaseField));
+                    }
+                }
+            } catch (Throwable var11) {
+                ModLog.info(
+                    "Incompatible type: " + var11.getClass()
+                        .getName() + ": " + field.getName());
+            }
+        }
+    }
+}

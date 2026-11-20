@@ -1,9 +1,0 @@
-{
-  "replace": false,
-  "values": [
-    {
-      "id": "biomesoplenty:forested_field",
-      "required": false
-    }
-  ]
-}

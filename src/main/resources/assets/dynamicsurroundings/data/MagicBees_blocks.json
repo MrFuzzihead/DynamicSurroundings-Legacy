@@ -1,0 +1,21 @@
+{
+	"entries":[
+		{
+			"blocks":[
+				"MagicBees:hive"
+			],
+			"chance":5,
+			"sounds":[
+				{
+					"sound":"dynamicsurroundings:bees",
+					"conditions":"(?i)(?!.*#raining#.*)(.*#day#.*)",
+					"volume":0.2,
+					"variable":true
+				}
+
+			]
+
+		}
+
+	]
+}

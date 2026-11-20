@@ -1,0 +1,24 @@
+{
+	"modListVersion": 2,
+	"modList": [{
+		"modid": "${modId}",
+		"name": "${modName}",
+		"description": "Improving Minecraft's sight and sound experience",
+		"version": "${modVersion}",
+		"mcversion": "${minecraftVersion}",
+		"url": "https://github.com/MrFuzzihead/DynamicSurroundings-Legacy",
+		"updateUrl": "https://github.com/MrFuzzihead/DynamicSurroundings-Legacy/releases/latest",
+		"authorList": [
+      "MrFuzzihead",
+      "OreCruncher"
+    ],
+		"credits": "Wirsbo for BetterRain; MrRube for Aurora Rubealis; Hurricaaane for Presence Footsteps",
+		"logoFile": "logo.png",
+		"screenshots": [],
+		"parent": "",
+		"requiredMods": [],
+		"dependencies": [],
+		"dependants": [],
+		"useDependencyInformation": false
+	}]
+}

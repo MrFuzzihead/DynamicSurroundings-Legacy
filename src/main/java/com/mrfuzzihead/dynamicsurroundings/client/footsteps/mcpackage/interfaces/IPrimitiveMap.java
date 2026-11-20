@@ -1,0 +1,12 @@
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+
+@SideOnly(Side.CLIENT)
+public interface IPrimitiveMap extends IRegistration {
+
+    String getPrimitiveMap(String var1);
+
+    String getPrimitiveMapSubstrate(String var1, String var2);
+}

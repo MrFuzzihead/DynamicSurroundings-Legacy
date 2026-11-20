@@ -1,0 +1,66 @@
+package com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.implem;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.EventType;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.IAcoustic;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.ILibrary;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.INamedAcoustic;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.IOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.ISoundPlayer;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system.Association;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+
+@SideOnly(Side.CLIENT)
+public abstract class AcousticsLibrary implements ILibrary {
+
+    private final Map<String, IAcoustic> acoustics = new LinkedHashMap<>();
+
+    @Override
+    public void addAcoustic(INamedAcoustic acoustic) {
+        this.acoustics.put(acoustic.getName(), acoustic);
+    }
+
+    @Override
+    public void playAcoustic(Object location, Association acousticName, EventType event) {
+        this.playAcoustic(location, acousticName.getData(), event, null);
+    }
+
+    @Override
+    public void playAcoustic(Object location, String acousticName, EventType event, IOptions inputOptions) {
+        if (StringUtils.isEmpty(acousticName)) {
+            ModLog.debug("Attempt to play acoustic with no name");
+        } else {
+            String[] fragments = acousticName.split(",");
+
+            for (String fragment : fragments) {
+                IAcoustic acoustic = this.acoustics.get(fragment);
+                if (acoustic == null) {
+                    this.onAcousticNotFound(location, fragment, event, inputOptions);
+                } else {
+                    if (ModLog.DEBUGGING) {
+                        ModLog.debug(
+                            "  Playing acoustic " + acousticName
+                                + " for event "
+                                + event.toString()
+                                    .toUpperCase());
+                    }
+
+                    acoustic.playSound(this.mySoundPlayer(), location, event, inputOptions);
+                }
+            }
+        }
+    }
+
+    protected void onAcousticNotFound(Object location, String acousticName, EventType event, IOptions inputOptions) {
+        ModLog.debug("Tried to play a missing acoustic: " + acousticName);
+    }
+
+    protected abstract ISoundPlayer mySoundPlayer();
+}

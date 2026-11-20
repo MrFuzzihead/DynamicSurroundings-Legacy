@@ -1,9 +1,0 @@
-{
-  "values": [
-    "minecraft:player",
-    "#minecraft:skeletons",
-    "#dsurround:villagers",
-    "#minecraft:raiders",
-    "#minecraft:zombies"
-  ]
-}
