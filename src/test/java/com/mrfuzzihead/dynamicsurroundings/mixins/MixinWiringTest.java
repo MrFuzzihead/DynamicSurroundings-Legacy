@@ -36,7 +36,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.mrfuzzihead.dynamicsurroundings.core.Mixins;
-import com.mrfuzzihead.dynamicsurroundings.data.compat.IBOPBiome;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.EntityRendererMixin;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.SoundManagerMixin;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.WorldMixin;
@@ -49,7 +48,6 @@ import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.SoundHandlerAc
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.SoundManagerAccessor;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.paulscode.LibraryMixin;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.paulscode.StreamThreadMixin;
-import com.mrfuzzihead.dynamicsurroundings.mixins.late.bop.BOPBiomeMixin;
 
 import paulscode.sound.Library;
 import paulscode.sound.StreamThread;
@@ -210,13 +208,6 @@ public class MixinWiringTest {
         assertAccessor(SoundManagerAccessor.class, "dynamicsurroundings$getDelayedSounds", "delayedSounds");
     }
 
-    @Test
-    public void bopMixinExposesTheFogFields() {
-        assertTrue(IBOPBiome.class.isAssignableFrom(BOPBiomeMixin.class));
-        assertTrue(methodExists(IBOPBiome.class, "dynamicsurroundings$getFogColor"));
-        assertTrue(methodExists(IBOPBiome.class, "dynamicsurroundings$getFogDensity"));
-    }
-
     private static void assertAccessor(Class<?> accessor, String method, String expectedField) throws Exception {
         for (Method candidate : accessor.getDeclaredMethods()) {
             if (!candidate.getName()
@@ -292,12 +283,11 @@ public class MixinWiringTest {
 
     @Test
     public void catalogueKeepsTheFourFeatureGroups() {
-        assertEquals(5, Mixins.values().length);
+        assertEquals(4, Mixins.values().length);
         assertNotNull(Mixins.valueOf("ACCESSORS"));
         assertNotNull(Mixins.valueOf("WEATHER"));
         assertNotNull(Mixins.valueOf("SOUND"));
         assertNotNull(Mixins.valueOf("SOUND_CRASH_FIX"));
-        assertNotNull(Mixins.valueOf("BOP_FOG"));
         for (Mixins entry : Mixins.values()) {
             assertNotNull(entry.name(), entry.getBuilder());
         }
@@ -313,14 +303,5 @@ public class MixinWiringTest {
         }
         assertTrue(json, json.contains("\"package\": \"com.mrfuzzihead.dynamicsurroundings.mixins.early\""));
         assertTrue(json, json.contains("\"refmap\": \"mixins.dynamicsurroundings.refmap.json\""));
-
-        InputStream lateStream = getClass().getResourceAsStream("/mixins.dynamicsurroundings.late.json");
-        assertNotNull("the late mixin config must be in the jar", lateStream);
-        try (Scanner scanner = new Scanner(lateStream).useDelimiter("\\A")) {
-            assertTrue(scanner.hasNext());
-            assertTrue(
-                scanner.next()
-                    .contains("\"package\": \"com.mrfuzzihead.dynamicsurroundings.mixins.late\""));
-        }
     }
 }

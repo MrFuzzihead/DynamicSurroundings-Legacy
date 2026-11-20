@@ -49,15 +49,7 @@ public enum Mixins implements IMixins {
      * {@code SoundCrashFixStreamThread}. Only the client ever loads the sound library.
      */
     SOUND_CRASH_FIX(new MixinBuilder().setPhase(Phase.EARLY)
-        .addClientMixins("paulscode.SourceMixin", "paulscode.LibraryMixin", "paulscode.StreamThreadMixin")),
-
-    /**
-     * Optional-mod integration. Biomes O' Plenty keeps its fog colour/density on the biome class; the accessor
-     * replaces the reflection that used to read those fields. Late phase because BOP's classes must already exist.
-     */
-    BOP_FOG(new MixinBuilder().setPhase(Phase.LATE)
-        .addCommonMixins("bop.BOPBiomeMixin")
-        .addRequiredMod(TargetMods.BIOMESOPLENTY));
+        .addClientMixins("paulscode.SourceMixin", "paulscode.LibraryMixin", "paulscode.StreamThreadMixin"));
 
     private final MixinBuilder builder;
 

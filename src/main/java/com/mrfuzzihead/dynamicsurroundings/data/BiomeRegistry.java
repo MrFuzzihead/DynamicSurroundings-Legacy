@@ -17,7 +17,8 @@ import com.mrfuzzihead.dynamicsurroundings.ModLog;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.Module;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
-import com.mrfuzzihead.dynamicsurroundings.data.compat.IBOPBiome;
+import com.mrfuzzihead.dynamicsurroundings.data.compat.BOPFogIntegration;
+import com.mrfuzzihead.dynamicsurroundings.data.compat.IBOPFog;
 import com.mrfuzzihead.dynamicsurroundings.data.config.BiomeConfig;
 import com.mrfuzzihead.dynamicsurroundings.data.config.SoundConfig;
 import com.mrfuzzihead.dynamicsurroundings.event.RegistryReloadEvent;
@@ -30,6 +31,7 @@ public final class BiomeRegistry {
 
     private static final TIntObjectHashMap<BiomeRegistry.Entry> registry = new TIntObjectHashMap();
     private static final Map<String, String> biomeAliases = new HashMap<>();
+    private static final boolean BOP_PRESENT = isClassPresent("biomesoplenty.BiomesOPlenty");
     public static final BiomeGenBase UNDERGROUND = new FakeBiome(-1, "Underground");
     public static final BiomeGenBase PLAYER = new FakeBiome(-2, "Player");
     public static final BiomeGenBase UNDERWATER = new FakeBiome(-3, "Underwater");
@@ -40,6 +42,19 @@ public final class BiomeRegistry {
     public static final BiomeGenBase CLOUDS = new FakeBiome(-8, "Clouds");
     public static final SoundEffect WATER_DRIP = new SoundEffect("dynamicsurroundings:waterdrops");
     private static final BiomeGenBase WTF = new FakeBiome(-256, "(FooBar)");
+
+    /**
+     * Optional-mod probe that also works in a headless unit test (FML's own {@code Loader} is not initialised
+     * there). The class is resolved without running BOP's static initialisers, and no BOP type is referenced.
+     */
+    private static boolean isClassPresent(String className) {
+        try {
+            Class.forName(className, false, BiomeRegistry.class.getClassLoader());
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
 
     public static String resolveName(BiomeGenBase biome) {
         if (biome == null) {
@@ -299,15 +314,17 @@ public final class BiomeRegistry {
             this.sounds = new ArrayList<>();
             this.spotSounds = new ArrayList<>();
             this.spotSoundChance = 1200;
-            if (biome instanceof IBOPBiome) {
-                // The accessor is only merged when Biomes O' Plenty is present (late mixin). The instanceof guard
-                // keeps this a no-op if BOP is absent or its mixin could not be applied.
-                IBOPBiome bopBiome = (IBOPBiome) biome;
-                int color = bopBiome.dynamicsurroundings$getFogColor();
-                if (color > 0) {
-                    this.hasFog = true;
-                    this.fogColor = new Color(color);
-                    this.fogDensity = bopBiome.dynamicsurroundings$getFogDensity();
+            if (BOP_PRESENT) {
+                // Optional integration: BOP biomes expose their fog through IBiomeFog. BOPFogIntegration loads the
+                // bridge only when BOP is present, so no BOP class is touched when the mod is absent.
+                IBOPFog bopFog = BOPFogIntegration.get();
+                if (bopFog.isFogBiome(biome)) {
+                    int color = bopFog.getFogColor(biome);
+                    if (color > 0) {
+                        this.hasFog = true;
+                        this.fogColor = new Color(color);
+                        this.fogDensity = bopFog.getFogDensity(biome);
+                    }
                 }
             }
         }
