@@ -3,68 +3,69 @@ package org.blockartistry.mod.DynSurround.client.footsteps.mcpackage.implem;
 import net.minecraft.block.Block;
 
 public class BlockInfo {
-   protected Block block;
-   protected int meta;
 
-   protected BlockInfo() {
-      this.block = null;
-      this.meta = -1;
-   }
+    protected Block block;
+    protected int meta;
 
-   public BlockInfo(Block block, int meta) {
-      this.block = block;
-      this.meta = meta;
-   }
+    protected BlockInfo() {
+        this.block = null;
+        this.meta = -1;
+    }
 
-   public Block getBlock() {
-      return this.block;
-   }
+    public BlockInfo(Block block, int meta) {
+        this.block = block;
+        this.meta = meta;
+    }
 
-   public int getMeta() {
-      return this.meta;
-   }
+    public Block getBlock() {
+        return this.block;
+    }
 
-   @Override
-   public int hashCode() {
-      return this.block.hashCode() ^ this.meta * 31;
-   }
+    public int getMeta() {
+        return this.meta;
+    }
 
-   @Override
-   public boolean equals(Object o) {
-      if (this == o) {
-         return true;
-      } else {
-         BlockInfo bi = (BlockInfo)o;
-         return this.block == bi.block && this.meta == bi.meta;
-      }
-   }
+    @Override
+    public int hashCode() {
+        return this.block.hashCode() ^ this.meta * 31;
+    }
 
-   public static class BlockInfoMutable extends BlockInfo {
-      public BlockInfoMutable() {
-      }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        } else {
+            BlockInfo bi = (BlockInfo) o;
+            return this.block == bi.block && this.meta == bi.meta;
+        }
+    }
 
-      public BlockInfoMutable(BlockInfo bi) {
-         super(bi.block, bi.meta);
-      }
+    public static class BlockInfoMutable extends BlockInfo {
 
-      public BlockInfo.BlockInfoMutable setBlock(Block block) {
-         this.block = block;
-         this.meta = -1;
-         return this;
-      }
+        public BlockInfoMutable() {}
 
-      public BlockInfo.BlockInfoMutable setMeta(int meta) {
-         this.meta = meta;
-         return this;
-      }
+        public BlockInfoMutable(BlockInfo bi) {
+            super(bi.block, bi.meta);
+        }
 
-      public BlockInfo.BlockInfoMutable asGeneric() {
-         this.meta = -1;
-         return this;
-      }
+        public BlockInfo.BlockInfoMutable setBlock(Block block) {
+            this.block = block;
+            this.meta = -1;
+            return this;
+        }
 
-      public BlockInfo asImmutable() {
-         return new BlockInfo(this.block, this.meta);
-      }
-   }
+        public BlockInfo.BlockInfoMutable setMeta(int meta) {
+            this.meta = meta;
+            return this;
+        }
+
+        public BlockInfo.BlockInfoMutable asGeneric() {
+            this.meta = -1;
+            return this;
+        }
+
+        public BlockInfo asImmutable() {
+            return new BlockInfo(this.block, this.meta);
+        }
+    }
 }

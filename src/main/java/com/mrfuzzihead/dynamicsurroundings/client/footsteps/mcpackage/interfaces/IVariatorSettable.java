@@ -5,5 +5,6 @@ import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
 public interface IVariatorSettable {
-   void setVariator(IVariator var1);
+
+    void setVariator(IVariator var1);
 }

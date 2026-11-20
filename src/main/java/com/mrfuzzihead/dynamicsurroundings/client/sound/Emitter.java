@@ -1,52 +1,55 @@
 package org.blockartistry.mod.DynSurround.client.sound;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 import java.util.Random;
+
 import org.blockartistry.mod.DynSurround.ModLog;
 import org.blockartistry.mod.DynSurround.util.random.XorShiftRandom;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import paulscode.sound.SoundSystemConfig;
 
 @SideOnly(Side.CLIENT)
 class Emitter {
-   protected static final Random RANDOM = new XorShiftRandom();
-   protected final SoundEffect effect;
-   protected PlayerSound activeSound;
-   protected int repeatDelay = 0;
 
-   public Emitter(SoundEffect sound) {
-      this.effect = sound;
-   }
+    protected static final Random RANDOM = new XorShiftRandom();
+    protected final SoundEffect effect;
+    protected PlayerSound activeSound;
+    protected int repeatDelay = 0;
 
-   public void update() {
-      if (!(SoundSystemConfig.getMasterGain() <= 0.0F)) {
-         if (this.activeSound == null) {
-            this.activeSound = new PlayerSound(this.effect);
-         } else if (SoundManager.isSoundPlaying(this.activeSound)) {
-            return;
-         }
+    public Emitter(SoundEffect sound) {
+        this.effect = sound;
+    }
 
-         try {
-            SoundManager.playSound(this.activeSound);
-         } catch (Throwable var2) {
-            ModLog.error("Unable to play sound", var2);
-         }
-      }
-   }
+    public void update() {
+        if (!(SoundSystemConfig.getMasterGain() <= 0.0F)) {
+            if (this.activeSound == null) {
+                this.activeSound = new PlayerSound(this.effect);
+            } else if (SoundManager.isSoundPlaying(this.activeSound)) {
+                return;
+            }
 
-   public void setVolume(float volume) {
-      if (this.activeSound != null) {
-         this.activeSound.setVolume(volume);
-      }
-   }
+            try {
+                SoundManager.playSound(this.activeSound);
+            } catch (Throwable var2) {
+                ModLog.error("Unable to play sound", var2);
+            }
+        }
+    }
 
-   public float getVolume() {
-      return this.activeSound != null ? this.activeSound.getVolume() : 0.0F;
-   }
+    public void setVolume(float volume) {
+        if (this.activeSound != null) {
+            this.activeSound.setVolume(volume);
+        }
+    }
 
-   public void fade() {
-      if (this.activeSound != null) {
-         this.activeSound.fadeAway();
-      }
-   }
+    public float getVolume() {
+        return this.activeSound != null ? this.activeSound.getVolume() : 0.0F;
+    }
+
+    public void fade() {
+        if (this.activeSound != null) {
+            this.activeSound.fadeAway();
+        }
+    }
 }

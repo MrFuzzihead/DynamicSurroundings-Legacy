@@ -5,5 +5,6 @@ import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
 public interface INamedAcoustic extends IAcoustic {
-   String getName();
+
+    String getName();
 }

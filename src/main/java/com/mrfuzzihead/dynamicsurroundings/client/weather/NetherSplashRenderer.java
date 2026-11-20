@@ -5,37 +5,42 @@ import net.minecraft.client.particle.EntityFX;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
+
 import org.blockartistry.mod.DynSurround.client.EnvironStateHandler;
 import org.blockartistry.mod.DynSurround.client.fx.particle.ParticleFactory;
 
 public class NetherSplashRenderer extends StormSplashRenderer {
-   @Override
-   protected String getBlockSoundFX(Block block, boolean hasDust, World world) {
-      return hasDust ? Weather.getIntensity().getDustSound() : null;
-   }
 
-   @Override
-   protected EntityFX getBlockParticleFX(Block block, boolean dust, World world, double x, double y, double z) {
-      return dust ? ParticleFactory.smoke.getEntityFX(0, world, x, y, z, 0.0, 0.0, 0.0) : null;
-   }
+    @Override
+    protected String getBlockSoundFX(Block block, boolean hasDust, World world) {
+        return hasDust ? Weather.getIntensity()
+            .getDustSound() : null;
+    }
 
-   @Override
-   protected int getPrecipitationHeight(World world, int range, int x, int z) {
-      int y = MathHelper.floor_double(EnvironStateHandler.EnvironState.getPlayer().posY);
-      boolean airBlockFound = false;
+    @Override
+    protected EntityFX getBlockParticleFX(Block block, boolean dust, World world, double x, double y, double z) {
+        return dust ? ParticleFactory.smoke.getEntityFX(0, world, x, y, z, 0.0, 0.0, 0.0) : null;
+    }
 
-      for (int i = range; i >= -range; i--) {
-         int yEffective = y + i;
-         Block block = world.getBlock(x, yEffective, z);
-         if (airBlockFound && block != Blocks.air && block.getMaterial().isSolid()) {
-            return yEffective + 1;
-         }
+    @Override
+    protected int getPrecipitationHeight(World world, int range, int x, int z) {
+        int y = MathHelper.floor_double(EnvironStateHandler.EnvironState.getPlayer().posY);
+        boolean airBlockFound = false;
 
-         if (block == Blocks.air) {
-            airBlockFound = true;
-         }
-      }
+        for (int i = range; i >= -range; i--) {
+            int yEffective = y + i;
+            Block block = world.getBlock(x, yEffective, z);
+            if (airBlockFound && block != Blocks.air
+                && block.getMaterial()
+                    .isSolid()) {
+                return yEffective + 1;
+            }
 
-      return 128;
-   }
+            if (block == Blocks.air) {
+                airBlockFound = true;
+            }
+        }
+
+        return 128;
+    }
 }

@@ -5,15 +5,16 @@ import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
 public interface IOptions {
-   boolean hasOption(IOptions.Option var1);
 
-   Object getOption(IOptions.Option var1);
+    boolean hasOption(IOptions.Option var1);
 
-   public static enum Option {
-      DELAY_MIN,
-      DELAY_MAX,
-      SKIPPABLE,
-      GLIDING_VOLUME,
-      GLIDING_PITCH;
-   }
+    Object getOption(IOptions.Option var1);
+
+    public static enum Option {
+        DELAY_MIN,
+        DELAY_MAX,
+        SKIPPABLE,
+        GLIDING_VOLUME,
+        GLIDING_PITCH;
+    }
 }

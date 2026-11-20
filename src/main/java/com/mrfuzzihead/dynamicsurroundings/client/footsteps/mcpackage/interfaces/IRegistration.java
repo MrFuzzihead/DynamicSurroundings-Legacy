@@ -5,5 +5,6 @@ import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
 public interface IRegistration {
-   void register(String var1, String var2);
+
+    void register(String var1, String var2);
 }

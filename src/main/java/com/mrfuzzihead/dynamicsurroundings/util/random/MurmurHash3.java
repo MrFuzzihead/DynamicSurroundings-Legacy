@@ -1,22 +1,22 @@
 package org.blockartistry.mod.DynSurround.util.random;
 
 final class MurmurHash3 {
-   private MurmurHash3() {
-   }
 
-   public static int hash(int k) {
-      k ^= k >>> 16;
-      k *= -2048144789;
-      k ^= k >>> 13;
-      k *= -1028477387;
-      return k ^ k >>> 16;
-   }
+    private MurmurHash3() {}
 
-   public static long hash(long k) {
-      k ^= k >>> 33;
-      k *= -49064778989728563L;
-      k ^= k >>> 33;
-      k *= -4265267296055464877L;
-      return k ^ k >>> 33;
-   }
+    public static int hash(int k) {
+        k ^= k >>> 16;
+        k *= -2048144789;
+        k ^= k >>> 13;
+        k *= -1028477387;
+        return k ^ k >>> 16;
+    }
+
+    public static long hash(long k) {
+        k ^= k >>> 33;
+        k *= -49064778989728563L;
+        k ^= k >>> 33;
+        k *= -4265267296055464877L;
+        return k ^ k >>> 33;
+    }
 }
