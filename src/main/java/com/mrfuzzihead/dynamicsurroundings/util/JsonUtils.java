@@ -16,7 +16,8 @@ public class JsonUtils {
         try {
             stream = new FileInputStream(file);
             if (stream != null) {
-                return load(stream, clazz);
+                T loaded = load(stream, clazz);
+                return loaded != null ? loaded : clazz.newInstance();
             }
         } finally {
             try {
@@ -36,7 +37,8 @@ public class JsonUtils {
         try {
             stream = clazz.getResourceAsStream("/assets/dynamicsurroundings/data/" + fileName + ".json");
             if (stream != null) {
-                return load(stream, clazz);
+                T loaded = load(stream, clazz);
+                return loaded != null ? loaded : clazz.newInstance();
             }
         } finally {
             try {
@@ -50,6 +52,10 @@ public class JsonUtils {
     }
 
     public static <T> T load(InputStream stream, Class<T> clazz) {
+        if (stream == null) {
+            return null;
+        }
+
         InputStreamReader reader = null;
         JsonReader reader2 = null;
 

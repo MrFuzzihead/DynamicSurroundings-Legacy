@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 52 test suites / 233 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 52 test suites / 235 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -162,6 +162,10 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B77:** `PFSolver` now skips only a stationary *airborne* player. A player on the ground with `motionY == 0` is no longer treated as having no association, so flat-ground footsteps can resolve. Water/ladder cases remain exempt.
 - **B92 (partial):** `PlayerUtils` uses its `RANGE`, `AREA`, and `INSIDE_Y_ADJUST` constants instead of the duplicated `3`/`49`/`2` literals. Unit tests cover open sky and a low ceiling. The 2-block ceiling-height limitation remains.
 - Added `PFSolverTest` and `PlayerUtilsTest`.
+
+**Batch 21 — JSON null/stream handling (235 tests green)**
+
+- **B94 (partial):** `JsonUtils.load(InputStream)` returns `null` for a null stream; `load(File)`/`load(String)` fall back to the class default when the JSON body is `null`, so registries no longer receive a null config. Tests cover a null stream and a literal `null` file. `clazz.newInstance()` remains deprecated.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B64, B73) and the optional per-effect HUD text cache (P9).
 
@@ -564,7 +568,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B91 | **M** | `data/AuroraData.java:59-67` | No `hashCode` (see B20). `equals` ignores seed/color/preset, so `HashSet` dedupe by column would drop updates; decide the intended identity and document it. |
 | B92 | **M** | `util/PlayerUtils.java:20-24,60-84` | `INSIDE_Y_ADJUST`, `RANGE`, `AREA` were unused (literals 3/3/49); `isReallyInside` only counts ceilings within 2 blocks, so a 5-block-high room is "outside". **Partially fixed in batch 20:** constants are used and open-sky/low-ceiling behavior is tested. The 2-block limitation remains. |
 | B93 | **M** | `VersionCheck.java:157-210` | `assert` is used for input validation (`numComponents >= 3`), which is disabled in production; `compareTo` ignores alpha/beta. Add proper parse/compare tests. |
-| B94 | **L** | `util/JsonUtils.java:40-75` | `load(InputStream)` can return `null` (JSON `null`); `clazz.newInstance()` is deprecated; the stream is not closed by the method (documented by callers). Add null checks and try-with-resources. |
+| B94 | **L** | `util/JsonUtils.java:40-75` | `load(InputStream)` could return `null`; `clazz.newInstance()` is deprecated. **Partially fixed in batch 21:** null stream/JSON null fallbacks are handled and tested; reflective instantiation remains. |
 | B95 | **L** | `ModLog.java` | `error` printed a second stack trace and did not pass the throwable to Log4j; `catching` printed twice. **Fixed in batch 19:** both delegate to Log4j with the throwable. |
 
 ### 3.10 Exact line references for the top items

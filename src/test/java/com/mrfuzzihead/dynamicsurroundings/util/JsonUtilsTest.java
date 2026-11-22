@@ -86,6 +86,23 @@ public class JsonUtilsTest {
     }
 
     @Test
+    public void nullStreamLoadsAsNull() {
+        assertEquals(null, JsonUtils.load((InputStream) null, Fixture.class));
+    }
+
+    @Test
+    public void jsonNullFallsBackToTheClassDefault() throws Exception {
+        File file = folder.newFile("null.json");
+        try (OutputStream out = new FileOutputStream(file)) {
+            out.write("null".getBytes("UTF-8"));
+        }
+
+        Fixture fixture = JsonUtils.load(file, Fixture.class);
+        assertNotNull(fixture);
+        assertEquals("default", fixture.name);
+    }
+
+    @Test
     public void unknownModIdYieldsAnEmptyConfig() throws Exception {
         DimensionConfig config = JsonUtils.load("this-mod-does-not-exist-4f8a", DimensionConfig.class);
         assertNotNull(config);
