@@ -6,7 +6,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.util.Collections;
 
+import net.minecraftforge.common.config.ConfigCategory;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
 
@@ -82,6 +84,18 @@ public class ModOptionsTest {
 
         assertEquals(0.25F, ModOptions.soundLevel, 0.0F);
         assertEquals(250, ModOptions.particleCountBase);
+    }
+
+    @Test
+    public void scrubbingKeepsKnownCommentlessPropertiesAndDropsUnknownOnes() {
+        ConfigCategory category = new ConfigCategory("test");
+        category.put("Known", new Property("Known", "value", Property.Type.STRING));
+        category.put("Unknown", new Property("Unknown", "value", Property.Type.STRING));
+
+        ModOptions.scrubCategory(category, Collections.singleton("Known"));
+
+        assertTrue(category.containsKey("Known"));
+        assertFalse(category.containsKey("Unknown"));
     }
 
     @Test

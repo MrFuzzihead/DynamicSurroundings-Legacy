@@ -4,15 +4,17 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.common.config.ConfigCategory;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
-
-import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.collect.ImmutableList;
 import com.mrfuzzihead.dynamicsurroundings.util.ConfigProcessor;
@@ -411,16 +413,21 @@ public final class ModOptions {
         config.setCategoryComment("player.potion hud", "Options for the Potion HUD overlay");
         config.setCategoryPropertyOrder("player.potion hud", new ArrayList<>(potionHudSort));
 
+        Map<String, Set<String>> known = knownProperties();
         for (String cat : config.getCategoryNames()) {
-            scrubCategory(config.getCategory(cat));
+            scrubCategory(config.getCategory(cat), known.get(cat));
         }
     }
 
-    private static void scrubCategory(ConfigCategory category) {
+    static void scrubCategory(ConfigCategory category, Set<String> known) {
+        if (known == null) {
+            return;
+        }
+
         List<String> killList = new ArrayList<>();
 
         for (Entry<String, Property> entry : category.entrySet()) {
-            if (StringUtils.isEmpty(entry.getValue().comment)) {
+            if (!known.contains(entry.getKey())) {
                 killList.add(entry.getKey());
             }
         }
@@ -428,5 +435,18 @@ public final class ModOptions {
         for (String kill : killList) {
             category.remove(kill);
         }
+    }
+
+    private static Map<String, Set<String>> knownProperties() {
+        Map<String, Set<String>> known = new HashMap<>();
+        for (java.lang.reflect.Field field : ModOptions.class.getFields()) {
+            ConfigProcessor.Parameter annotation = field.getAnnotation(ConfigProcessor.Parameter.class);
+            if (annotation != null) {
+                known.computeIfAbsent(annotation.category(), key -> new HashSet<>())
+                    .add(annotation.property());
+            }
+        }
+
+        return known;
     }
 }

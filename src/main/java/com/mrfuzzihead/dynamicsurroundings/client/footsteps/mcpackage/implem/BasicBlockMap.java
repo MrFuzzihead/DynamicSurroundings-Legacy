@@ -25,7 +25,13 @@ import cpw.mods.fml.relauncher.SideOnly;
 public class BasicBlockMap implements IBlockMap {
 
     private static final Pattern pattern = Pattern.compile("^([^\\^+]+?)(?:\\^(\\d+))?(?:\\+(\\w+))?$");
-    private final BlockInfo.BlockInfoMutable mutable = new BlockInfo.BlockInfoMutable();
+    private final ThreadLocal<BlockInfo.BlockInfoMutable> mutable = new ThreadLocal<BlockInfo.BlockInfoMutable>() {
+
+        @Override
+        protected BlockInfo.BlockInfoMutable initialValue() {
+            return new BlockInfo.BlockInfoMutable();
+        }
+    };
     private final Map<BlockInfo, String> metaMap = new HashMap<>();
     private final Map<Substrate, Map<BlockInfo, String>> substrateMap = new EnumMap<>(Substrate.class);
     private static final Map<String, List<BasicBlockMap.MacroEntry>> macros = new LinkedHashMap<>();
@@ -36,11 +42,14 @@ public class BasicBlockMap implements IBlockMap {
 
     @Override
     public String getBlockMap(Block block, int meta) {
-        this.mutable.setBlock(block)
+        this.mutable.get()
+            .setBlock(block)
             .setMeta(meta);
-        String acoustic = this.metaMap.get(this.mutable);
+        String acoustic = this.metaMap.get(this.mutable.get());
         if (acoustic == null) {
-            acoustic = this.metaMap.get(this.mutable.asGeneric());
+            acoustic = this.metaMap.get(
+                this.mutable.get()
+                    .asGeneric());
         }
 
         return acoustic;
@@ -50,11 +59,14 @@ public class BasicBlockMap implements IBlockMap {
     public String getBlockMapSubstrate(Block block, int meta, Substrate substrate) {
         Map<BlockInfo, String> sub = this.substrateMap.get(substrate);
         if (sub != null) {
-            this.mutable.setBlock(block)
+            this.mutable.get()
+                .setBlock(block)
                 .setMeta(meta);
-            String result = sub.get(this.mutable);
+            String result = sub.get(this.mutable.get());
             if (result == null) {
-                result = sub.get(this.mutable.asGeneric());
+                result = sub.get(
+                    this.mutable.get()
+                        .asGeneric());
             }
 
             return result;

@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 56 test suites / 241 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 56 test suites / 242 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -191,6 +191,12 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B60:** `BlockRegistry.getEffects` returns a cached unmodifiable view instead of the live list; the weighted sound path no longer allocates a candidate list per call.
 - **B70 (partial):** the biome survey dirty check no longer includes `playerY`, so jumping does not re-scan 169 columns. The scan is still per block moved; the throttle/cache remains.
 - Added `BiomeSurveyHandlerTest` for Y-insensitivity and dimension/position/biome invalidation.
+
+**Batch 26 — explicit config scrubbing and thread-local blockmap keys (242 tests green)**
+
+- **B53:** `ModOptions` now builds the set of annotated properties and removes only unknown properties. A known property is preserved even if its comment is empty; the scrub helper is unit-tested.
+- **B82:** `BasicBlockMap` uses a `ThreadLocal` mutable lookup key instead of one shared instance, so concurrent lookups cannot corrupt each other.
+- Added a `ModOptions` scrub test.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B64, B73) and the optional per-effect HUD text cache (P9).
 
@@ -537,7 +543,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B50 | **H** | `data/config/BiomeConfig.java:43`, `data/config/BlockConfig.java:26,41` | The JSON models accept any `Integer` for `spotSoundChance`/`chance`/`stepChance`. **Fixed in batch 12 at the use site:** zero/negative values are treated as "never" rather than reaching `nextInt`; no ambiguous clamping to "always". |
 | B51 | **M** | `util/ConfigProcessor.java:58` | `Float.MIN_VALUE` as the "no minimum" sentinel clamped unannotated floats to `1.4e-45`. **Fixed in batch 13:** `-Float.MAX_VALUE`, with a negative-value config test. |
 | B52 | **M** | `util/ConfigProcessor.java:19-101` | No support for `double`/`long`/enums/lists beyond `String[]`; every parse failure is logged and ignored (a typo leaves a static at its previous value). Add a validation report and a unit test per type. |
-| B53 | **M** | `ModOptions.java:405-425` | `scrubCategory` removes any property with an empty comment. A legitimately comment-less entry is deleted on every load. Use an explicit `removedOptions` list instead of comment emptiness. |
+| B53 | **M** | `ModOptions.java:405-425` | `scrubCategory` removed any property with an empty comment. **Fixed in batch 26:** only unknown (non-annotated) properties are removed; known comment-less properties survive, with a unit test. |
 | B54 | **M** | `client/gui/DynamicSurroundingsConfigGui.java:92-96` | `super.actionPerformed` runs before the synthetic sound lists are saved; the screen may already be closing/saving. Save the synthetic categories first, then call `super`. Applying the config also does not re-run `BlockRegistry`/`BiomeRegistry`/`SoundRegistry` initialization or refresh `EnvironStateHandler` static finals, so several non-restart options appear to do nothing until a world reload. Either make them `@RestartRequired` or add a `reloadRuntime()` path. |
 | B55 | **M** | `client/waila/WailaHandler.java:119-121` | WAILA registration is gated on `enableDebugLogging`; the integration is off by default. Remove the gate. Also the class is loaded from the common `Proxy.init` on a dedicated server; the `@Optional.Method` annotations are incomplete and `gatherText` has no annotation. Split the WAILA client code into `ProxyClient`, or guard the whole class with `@SideOnly(Side.CLIENT)` + optional interface handling. |
 | B56 | **M** | `proxy/Proxy.java:31-36` | Common proxy imports/loads client classes (`DamageEffectHandler`, `WailaHandler`) and calls `DamageEffectHandler.initialize()` on the server. `DamageEffectHandler.handleEvent` is `@SideOnly(CLIENT)` but the class is not; a production dedicated server that resolves the method can `NoClassDefFoundError`. The same side leakage exists in `BlockRegistry` (client `MCHelper`/`JetEffect`/`SoundManager` references called from `CommandRain`). Move client init to `ProxyClient`, keep a server-only handler for the packet sender, and make `BlockRegistry` explicitly client-only. |
@@ -576,7 +582,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B79 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:126-135` | `newMinimum` was assigned every remaining sound instead of the minimum, and `randAB` sampled `[a, a+b]` instead of `[a, b]`. **Fixed in batch 14:** `Math.min` for the wake-up and a bounded `randomDelay`, with tests. |
 | B80 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:40-43` | `USING_LATENESS`, `USING_EARLYNESS`, `LATENESS_THRESHOLD_DIVIDER`, `EARLYNESS_THRESHOLD_POW` unused; the literals are repeated. |
 | B81 | **M** | `client/footsteps/mcpackage/implem/LegacyCapableBlockMap.java:15-35` | Only `^` and `.` were treated as legacy separators; `id:meta` keys failed. **Fixed in batch 17:** `:`, `^`, and `.` are accepted; `1:0`, `1^0`, `1.0`, and bare IDs are tested. |
-| B82 | **M** | `client/footsteps/mcpackage/implem/BasicBlockMap.java:97-120` | The regex is fragile; `BlockInfo.hashCode` NPE'd on a null block and `equals` cast without `instanceof`; `getBlockMap` reuses a mutable key. **Fixed in batches 18+22:** null-safe `BlockInfo` hash/`instanceof` equality and an anchored `parseKey` parser are tested. The reusable mutable lookup key remains. |
+| B82 | **M** | `client/footsteps/mcpackage/implem/BasicBlockMap.java:97-120` | The regex is fragile; `BlockInfo.hashCode` NPE'd on a null block and `equals` cast without `instanceof`; `getBlockMap` reuses a mutable key. **Fixed in batches 18+22+26:** null-safe `BlockInfo` hash/`instanceof` equality, an anchored `parseKey` parser, and a `ThreadLocal` lookup key. The regex/key work is covered by tests. |
 | B83 | **M** | `client/footsteps/game/system/Footsteps.java:74-166` | Empty streams threw `NoSuchElementException` and malformed JSON was swallowed. **Fixed in batch 23:** empty streams are skipped, loaders catch runtime parse failures, and `AcousticsJsonReader` logs through `ModLog`. |
 | B84 | **L** | `client/footsteps/game/system/Footsteps.java:180-195` | `nextStepDistance = Integer.MAX_VALUE` was written every tick. **Fixed in batch 23:** write only when the value changes. |
 | B85 | **L** | `client/footsteps/parsers/AcousticsJsonReader.java:45-100` | Missing fields/empty sound names/delayed bounds produced NPEs or IndexOutOfBounds. **Fixed in batch 18:** descriptive `JsonParseException`s and direct parser tests. |
