@@ -17,6 +17,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.user.GenerateBl
 import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.TextPopOffRenderer;
 import com.mrfuzzihead.dynamicsurroundings.client.hud.GuiHUDHandler;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
+import com.mrfuzzihead.dynamicsurroundings.compat.angelica.AngelicaDebugEntries;
 import com.mrfuzzihead.dynamicsurroundings.data.BlockRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.SoundHandlerAccessor;
@@ -42,6 +43,7 @@ public class ProxyClient extends Proxy {
         ClientEffectHandler.initialize();
         MinecraftForge.EVENT_BUS.register(new AuroraRenderHandler());
         MinecraftForge.EVENT_BUS.register(new TextPopOffRenderer());
+        AngelicaDebugEntries.register();
         GuiHUDHandler.initialize();
         SoundRegistry.initialize();
         SoundManager.configureSound();
