@@ -22,6 +22,7 @@ import net.minecraft.util.MathHelper;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.openal.AL;
 import org.lwjgl.openal.ALC10;
+import org.lwjgl.openal.ALCdevice;
 
 import com.mrfuzzihead.dynamicsurroundings.ModLog;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
@@ -250,33 +251,55 @@ public class SoundManager {
         }
     }
 
-    public static void configureSound() {
-        int totalChannels = -1;
+    static int[] resolveChannels(int totalChannels, boolean autoConfigure, int normal, int streaming) {
+        int resolvedNormal = normal;
+        int resolvedStreaming = streaming;
+        if (autoConfigure && totalChannels > 64) {
+            int scaledTotal = (totalChannels + 1) * 3 / 4;
+            resolvedStreaming = scaledTotal / 5;
+            resolvedNormal = scaledTotal - resolvedStreaming;
+        }
 
-        try {
-            boolean create = !AL.isCreated();
-            if (create) {
-                AL.create();
-            }
+        return new int[] { resolvedNormal, resolvedStreaming, totalChannels };
+    }
 
+    private static int queryDeviceChannels() {
+        if (AL.isCreated()) {
             IntBuffer ib = BufferUtils.createIntBuffer(1);
             ALC10.alcGetInteger(AL.getDevice(), 4112, ib);
-            totalChannels = ib.get(0);
-            if (create) {
-                AL.destroy();
-            }
+            return ib.get(0);
+        }
+
+        ALCdevice device = ALC10.alcOpenDevice(null);
+        if (device == null) {
+            return -1;
+        }
+
+        try {
+            IntBuffer ib = BufferUtils.createIntBuffer(1);
+            ALC10.alcGetInteger(device, 4112, ib);
+            return ib.get(0);
+        } finally {
+            ALC10.alcCloseDevice(device);
+        }
+    }
+
+    public static void configureSound() {
+        int totalChannels = -1;
+        try {
+            totalChannels = queryDeviceChannels();
         } catch (Throwable var3) {
             ModLog.warn("Unable to query OpenAL channel count; using configured channels");
             ModLog.catching(var3);
         }
 
-        normalChannelCount = ModOptions.normalSoundChannelCount;
-        streamChannelCount = ModOptions.streamingSoundChannelCount;
-        if (ModOptions.autoConfigureChannels && totalChannels > 64) {
-            totalChannels = (totalChannels + 1) * 3 / 4;
-            streamChannelCount = totalChannels / 5;
-            normalChannelCount = totalChannels - streamChannelCount;
-        }
+        int[] resolved = resolveChannels(
+            totalChannels,
+            ModOptions.autoConfigureChannels,
+            ModOptions.normalSoundChannelCount,
+            ModOptions.streamingSoundChannelCount);
+        normalChannelCount = resolved[0];
+        streamChannelCount = resolved[1];
 
         ModLog.info(
             "Sound channels: %d normal, %d streaming (total avail: %s)",

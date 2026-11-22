@@ -3,8 +3,9 @@ package com.mrfuzzihead.dynamicsurroundings.client.sound.cache;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Nonnull;
 
@@ -30,7 +31,15 @@ public final class SoundCache {
     };
     private static final ResourceLocation SILENCE_RESOURCE = new ResourceLocation(
         "dynamicsurroundings:sounds/ambient/silence.ogg");
-    private static final Map<ResourceLocation, URL> cache = new ConcurrentHashMap<>(256);
+    private static final int MAX_CACHE_ENTRIES = 256;
+    private static final Map<ResourceLocation, URL> cache = Collections
+        .synchronizedMap(new LinkedHashMap<ResourceLocation, URL>(MAX_CACHE_ENTRIES, 0.75F, true) {
+
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<ResourceLocation, URL> eldest) {
+                return size() > MAX_CACHE_ENTRIES;
+            }
+        });
     private static final byte[] SILENCE = getBuffer(SILENCE_RESOURCE);
     private static final URL SILENCE_URL = silenceUrl();
 
