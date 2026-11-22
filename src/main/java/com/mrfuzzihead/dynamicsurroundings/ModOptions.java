@@ -38,10 +38,10 @@ public final class ModOptions {
     @ConfigProcessor.Parameter(
         category = "logging",
         property = "Version Check URL",
-        defaultValue = "https://raw.githubusercontent.com/OreCruncher/BetterRain/master/versions.txt")
-    @ConfigProcessor.Comment("URL of the versions.txt file used for online version checking")
+        defaultValue = "https://api.github.com/repos/MrFuzzihead/DynamicSurroundings-Legacy/releases/latest")
+    @ConfigProcessor.Comment("URL of the GitHub latest-release API used for online version checking")
     @ConfigProcessor.RestartRequired
-    public static String versionCheckUrl = "https://raw.githubusercontent.com/OreCruncher/BetterRain/master/versions.txt";
+    public static String versionCheckUrl = "https://api.github.com/repos/MrFuzzihead/DynamicSurroundings-Legacy/releases/latest";
     public static final String CATEGORY_RAIN = "rain";
     public static final String CONFIG_DISABLE_WEATHER_EFFECTS = "Disable Weather Effects";
     public static final String CONFIG_RAIN_VOLUME = "Sound Level";

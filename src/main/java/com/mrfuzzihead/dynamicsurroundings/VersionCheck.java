@@ -6,16 +6,17 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.IChatComponent;
 import net.minecraft.util.IChatComponent.Serializer;
 import net.minecraft.util.StatCollector;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Loader;
-import cpw.mods.fml.common.event.FMLInterModComms;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent;
 
@@ -27,8 +28,7 @@ public final class VersionCheck implements Runnable {
     public static VersionCheck.SoftwareVersion currentVersion = new VersionCheck.SoftwareVersion();
     public static VersionCheck.UpdateStatus status = VersionCheck.UpdateStatus.UNKNOWN;
     private static final String mcVersion = resolveMinecraftVersion();
-    private static final String CURSE_PROJECT_NAME = "238891";
-    private static final String MOD_NAME_TEMPLATE = "DynamicSurroundings-1.7.10-[].jar";
+    private static final String RELEASES_URL = "https://github.com/MrFuzzihead/DynamicSurroundings-Legacy/releases/latest";
 
     private VersionCheck() {}
 
@@ -43,13 +43,6 @@ public final class VersionCheck implements Runnable {
     }
 
     public static void register() {
-        if (Loader.isModLoaded("VersionChecker")) {
-            NBTTagCompound nbt = new NBTTagCompound();
-            nbt.setString("curseProjectName", CURSE_PROJECT_NAME);
-            nbt.setString("curseFilenameParser", MOD_NAME_TEMPLATE);
-            FMLInterModComms.sendRuntimeMessage("dynamicsurroundings", "VersionChecker", "addVersionCheck", nbt);
-        }
-
         if (ModOptions.enableVersionChecking) {
             VersionCheck test = new VersionCheck();
             FMLCommonHandler.instance()
@@ -66,10 +59,39 @@ public final class VersionCheck implements Runnable {
         if (event.player instanceof EntityPlayer && status == VersionCheck.UpdateStatus.OUTDATED) {
             String msg = StatCollector.translateToLocalFormatted(
                 "msg.NewVersionAvailable.dynamicsurroundings",
-                new Object[] { "Dynamic Surroundings", currentVersion, "238891" });
+                new Object[] { "Dynamic Surroundings", currentVersion, RELEASES_URL });
             IChatComponent component = Serializer.func_150699_a(msg);
             event.player.addChatMessage(component);
         }
+    }
+
+    static SoftwareVersion parseRemoteVersion(String body, String minecraftVersion) {
+        if (body == null || body.trim()
+            .isEmpty()) {
+            return null;
+        }
+
+        String trimmed = body.trim();
+        if (trimmed.charAt(0) == '{') {
+            JsonObject json = new JsonParser().parse(trimmed)
+                .getAsJsonObject();
+            if (!json.has("tag_name")) {
+                return null;
+            }
+
+            return new SoftwareVersion(
+                json.get("tag_name")
+                    .getAsString());
+        }
+
+        for (String line : trimmed.split("\r?\n")) {
+            String[] tokens = line.split(":");
+            if (tokens.length >= 2 && minecraftVersion.matches(tokens[0])) {
+                return new SoftwareVersion(tokens[1]);
+            }
+        }
+
+        return null;
     }
 
     private static void versionCheck() {
@@ -86,6 +108,7 @@ public final class VersionCheck implements Runnable {
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setConnectTimeout(VERSION_CHECK_INTERVAL);
                 conn.setReadTimeout(VERSION_CHECK_INTERVAL);
+                conn.setRequestProperty("Accept", "application/vnd.github+json");
                 conn.setRequestProperty(
                     "User-Agent",
                     "Mozilla/5.0 (Windows; U; Windows NT 6.0; ru; rv:1.9.0.11) Gecko/2009060215 Firefox/3.0.11 (.NET CLR 3.5.30729)");
@@ -96,17 +119,21 @@ public final class VersionCheck implements Runnable {
                 throw new IllegalStateException("No version-check URL");
             }
 
+            StringBuilder body = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    String[] tokens = line.split(":");
-                    if (tokens.length >= 2 && mcVersion.matches(tokens[0])) {
-                        currentVersion = new VersionCheck.SoftwareVersion(tokens[1]);
-                        break;
-                    }
+                    body.append(line)
+                        .append('\n');
                 }
             }
 
+            SoftwareVersion remote = parseRemoteVersion(body.toString(), mcVersion);
+            if (remote == null) {
+                throw new IllegalStateException("No matching version in remote response");
+            }
+
+            currentVersion = remote;
             status = VersionCheck.UpdateStatus.CURRENT;
             if (modVersion.compareTo(currentVersion) < 0) {
                 status = VersionCheck.UpdateStatus.OUTDATED;
@@ -207,15 +234,16 @@ public final class VersionCheck implements Runnable {
                 versionString = StringUtils.remove(versionString, "BETA");
             }
 
-            String[] parts = StringUtils.split(versionString, ".");
-            if (parts == null || parts.length < 3) {
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+)(?:\\.(\\d+))?")
+                .matcher(versionString);
+            if (!matcher.find()) {
                 throw new IllegalArgumentException("Expected major.minor.revision: " + versionString);
             }
 
-            this.major = Integer.parseInt(parts[0]);
-            this.minor = Integer.parseInt(parts[1]);
-            this.revision = Integer.parseInt(parts[2]);
-            this.patch = parts.length >= 4 ? Integer.parseInt(parts[3]) : 0;
+            this.major = Integer.parseInt(matcher.group(1));
+            this.minor = Integer.parseInt(matcher.group(2));
+            this.revision = Integer.parseInt(matcher.group(3));
+            this.patch = matcher.group(4) == null ? 0 : Integer.parseInt(matcher.group(4));
         }
 
         @Override

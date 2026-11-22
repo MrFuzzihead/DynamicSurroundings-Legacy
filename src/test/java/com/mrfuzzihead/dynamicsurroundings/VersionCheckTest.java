@@ -16,6 +16,20 @@ public class VersionCheckTest {
     }
 
     @Test
+    public void parsesGitDescribeAndGitHubTags() {
+        assertEquals("5.2.0", new VersionCheck.SoftwareVersion("26.3-5.2.0-70-gc0d4f92f").toString());
+        assertEquals(
+            "5.2.0",
+            VersionCheck.parseRemoteVersion("{\"tag_name\":\"26.3-5.2.0\"}", "1.7.10")
+                .toString());
+        assertEquals(
+            "5.2.0",
+            VersionCheck.parseRemoteVersion("1.7.10:5.2.0", "1.7.10")
+                .toString());
+        assertEquals(null, VersionCheck.parseRemoteVersion("{}", "1.7.10"));
+    }
+
+    @Test
     public void prereleasesSortBeforeTheRelease() {
         VersionCheck.SoftwareVersion alpha = new VersionCheck.SoftwareVersion("1.2.3ALPHA");
         VersionCheck.SoftwareVersion beta = new VersionCheck.SoftwareVersion("1.2.3BETA");

@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 58 test suites / 252 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 58 test suites / 253 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -243,6 +243,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 - **B61:** version checking is now opt-in (`Enable Online Version Check` defaults to `false`) and the URL is a configurable `Version Check URL`; `VersionCheck` no longer contains a duplicate URL or mod-version literal. The module version is a single `Module.VERSION` constant used by the `@Mod` annotation and the checker. Timeouts, daemon thread, retry constants, and try-with-resources are already in place.
 - `ModOptionsTest` pins the disabled default, configurable URL, and restores both statics.
+
+**Batch 35 — GitHub Releases and git-describe versions (253 tests green)**
+
+- **B61:** the default version endpoint is now `https://api.github.com/repos/MrFuzzihead/DynamicSurroundings-Legacy/releases/latest`; the checker accepts GitHub’s `tag_name` JSON and still understands legacy `mcversion:version` lines.
+- `Module.VERSION` now comes from the generated `Tags.VERSION` (git describe), so the `@Mod` annotation and checker share one source. `SoftwareVersion` extracts the numeric semver segment from describe strings such as `26.3-5.2.0-70-gc0d4f92f`.
+- The update notification links to GitHub Releases instead of CurseForge; the obsolete VersionChecker/Curse IMC registration was removed.
+- Tests cover git-describe parsing, GitHub `tag_name`, legacy lines, and missing tags.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
@@ -597,7 +604,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B58 | **M** | `data/DimensionRegistry.java:277-305` | `getData` uses a static cache keyed only by dimension id; `isFlatWorld` is set only when dimension 0 loads and only from the client event. Flat-world sea level is wrong on a dedicated server. |
 | B59 | **M** | `data/BiomeRegistry.java:118-146` | A miss calls `initialize()` (full rescan, regex recompile, event post) while holding `synchronized (registry)`; on a busy server this is a global stall and can recurse through listeners. Make the registry copy-on-write and publish an immutable snapshot. `initialize` also clears `biomeAliases` at the end, so aliases cannot be queried later. |
 | B60 | **M** | `data/BlockRegistry.java:28-35` | `getEffects` returned the internal mutable list and `getRandomSound` allocated a candidate list per call. **Fixed in batch 25:** cached unmodifiable view and `WeightedRandom.pick` without the candidate list. |
-| B61 | **M** | `VersionCheck.java:24,30-34,40-46` | The check used a literal URL, no timeouts, a non-daemon thread, duplicated retry constants, and was enabled by default. **Fixed in batches 29+34:** timeouts, try-with-resources, daemon thread, named constants, configurable URL, single `Module.VERSION`, and opt-in default. |
+| B61 | **M** | `VersionCheck.java:24,30-34,40-46` | The check used a literal URL, no timeouts, a non-daemon thread, duplicated retry constants, and was enabled by default. **Fixed in batches 29+34+35:** GitHub Releases API, git-describe version source, JSON/legacy parsing, timeouts, daemon thread, named constants, configurable URL, and opt-in default. |
 | B62 | **L** | `Module.java:24-34` | `version = "1.0.6.4"`, `VERSION`, `mcmod.info` `${modVersion}`, and `VersionCheck.modVersion` are four independent version sources. Use `Tags.VERSION` once. `Module` registers itself on the FML bus but has no `@SubscribeEvent` methods. |
 | B63 | **L** | `ModOptions.java:86,89,93` | Copy-pasted comments ("Enable morning fog" for `enableWeatherFog`). Cosmetic but confusing in the GUI. |
 

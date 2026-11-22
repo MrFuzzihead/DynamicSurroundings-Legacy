@@ -57,7 +57,7 @@ public class ModOptionsTest {
         assertEquals(1.0F, ModOptions.soundLevel, 0.0F);
         assertEquals(100, ModOptions.particleCountBase);
         assertFalse(ModOptions.enableVersionChecking);
-        assertTrue(ModOptions.versionCheckUrl.contains("versions.txt"));
+        assertTrue(ModOptions.versionCheckUrl.contains("api.github.com"));
         assertFalse(ModOptions.disableWeatherEffects);
         assertTrue(ModOptions.respectExternalFog);
     }
