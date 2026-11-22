@@ -14,6 +14,7 @@ import net.minecraftforge.common.ForgeModContainer;
 import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
 import com.mrfuzzihead.dynamicsurroundings.client.weather.Weather;
 import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
+import com.mrfuzzihead.dynamicsurroundings.compat.notfine.NotFineBridge;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 import com.mrfuzzihead.dynamicsurroundings.util.Color;
 import com.mrfuzzihead.dynamicsurroundings.util.MathStuff;
@@ -117,8 +118,12 @@ public class BiomeFogColorCalculator extends VanillaFogColorCalculator {
 
     protected Color applyPlayerEffects(@Nonnull World world, @Nonnull EntityLivingBase player, @Nonnull Color fogColor,
         float renderPartialTicks) {
-        float darkScale = (float) ((player.lastTickPosY + (player.posY - player.lastTickPosY) * renderPartialTicks)
-            * world.provider.getVoidFogYFactor());
+        float darkScale = 1.0F;
+        if (NotFineBridge.isVoidFogEnabled()) {
+            darkScale = (float) ((player.lastTickPosY + (player.posY - player.lastTickPosY) * renderPartialTicks)
+                * world.provider.getVoidFogYFactor());
+        }
+
         if (player.isPotionActive(Potion.blindness)) {
             int duration = player.getActivePotionEffect(Potion.blindness)
                 .getDuration();

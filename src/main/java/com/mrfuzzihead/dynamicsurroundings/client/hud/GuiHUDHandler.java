@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.common.MinecraftForge;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
@@ -34,6 +35,13 @@ public final class GuiHUDHandler {
 
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void onRenderExperienceBar(RenderGameOverlayEvent event) {
+        // HUDCaching (Angelica) rebuilds the overlay framebuffer on its own schedule. Only the non-cancelable
+        // EXPERIENCE pass is the actual cached frame; Pre/Post/Text and the synthetic passes would redraw the
+        // potion list several times per frame.
+        if (event.type != ElementType.EXPERIENCE || event.isCancelable()) {
+            return;
+        }
+
         for (GuiHUDHandler.IGuiOverlay overlay : overlays) {
             overlay.doRender(event);
         }

@@ -1,8 +1,8 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1 (weather/aurora), 2 (relative fog) and 3 (client-thread safety) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 30 test suites / 180 unit tests, plus a non-shipped in-game test mod.
+**Scope:** analysis + the implementation log below. Batches 1 (weather/aurora), 2 (relative fog), 3 (client-thread safety) and 4 (NotFine HUD/void fog) are merged into the branch.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 30 test suites / 181 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -48,7 +48,14 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - `SoundManager.update()` moved from the conditional `PlayerSoundEffectHandler` to `ClientEffectHandler.clientTick`, so block/step sounds drain and emitters tick even with `Enable Biome Sounds` off. It runs once per tick, after all effect handlers.
 - `DamageEffectHandler.handleEvent` now guards a null client world (possible between a scheduled packet and a world unload).
 
-**Next batches:** NotFine void fog/cloud height/HUD parity (batch 4); the Angelica `WeatherColumnProvider` bridge and client compatibility matrix (batch 5).
+**Batch 4 — NotFine HUD and void-fog parity (181 tests green)**
+
+- `NotFineBridge` now reads NotFine's `VOID_FOG` tick box (reflection over `Settings` → `option.getStore()`). `BiomeFogColorCalculator` skips its own void-fog darkening when the user disabled NotFine's void fog, while blindness/night vision still compose.
+- `GuiHUDHandler` filters at the dispatcher: only the non-cancelable `EXPERIENCE` overlay pass is rendered. This is the pass HUDCaching rebuilds, and it avoids Pre/Post/Text/synthetic passes calling the potion list several times per frame.
+- `PotionHUD` now null-guards `thePlayer` and wraps its draw in `glPushAttrib`/`glPopAttrib`, so it cannot leak lighting/texture/colour state into the HUD cache or vanilla.
+- Still open from this theme: NotFine `CLOUD_HEIGHT` alignment for aurora/haze (DS dimension config currently wins) and per-effect text caching (P9).
+
+**Next batch:** the Angelica `WeatherColumnProvider` bridge and client compatibility matrix (batch 5).
 
 ### The three compatibility moves that unlock the most value
 
@@ -239,8 +246,8 @@ static boolean isDsOwner(WorldClient world) { return owner(world) == DYNAMIC_SUR
 |---|---|---|
 | `DOWNFALL_DISTANCE` (`SettingsManager.downfallDistance`, 0/5/10/15) | `StormRenderer.java:77` used `mc.gameSettings.fancyGraphics ? 10 : 5`; splashes used hard-coded `RANGE=10` | **Fixed in batch 1:** one reflected radius for quads and splashes; `0` disables downfall. |
 | `TERRAIN_FOG` / `FOG_NEAR_DISTANCE` | Overridden by absolute `glFogf` | **Fixed in batch 2:** relative fog preserves both settings. |
-| `VOID_FOG` | `BiomeFogColorCalculator.applyPlayerEffects` independently applies `getVoidFogYFactor` to the biome portion | Skip DS's void-fog term when NotFine's `VOID_FOG` is off; or delegate all player effects to vanilla and only blend the biome colour |
-| `CLOUD_HEIGHT` | `DimensionRegistry` cloud height is used for aurora height/haze | If the user changes NotFine's cloud height, detect it and use it for the aurora/haze alignment (or document that DS uses the dimension config) |
+| `VOID_FOG` | `BiomeFogColorCalculator.applyPlayerEffects` independently applies `getVoidFogYFactor` to the biome portion | **Fixed in batch 4:** `NotFineBridge.isVoidFogEnabled()` gates DS's term. |
+| `CLOUD_HEIGHT` | `DimensionRegistry` cloud height is used for aurora height/haze | Open: DS dimension config currently wins; document or bridge `Settings.CLOUD_HEIGHT` for aurora/haze alignment. |
 | `MODE_CLOUDS`, `MODE_WATER`, `MODE_LEAVES`, `MODE_SKY` | no direct conflict | Add to the compat diagnostics, no action |
 
 **Bridge design:** `compat/notfine/NotFineCompat` with a `boolean available`, cached field/method handles, and `IBridge` fallback (`NONE`), mirroring the existing `BOPFogIntegration` pattern. Load it only when `Loader.isModLoaded("notfine")`, never reference `jss.notfine.*` from a class that is loaded unconditionally. Add a unit test that the bridge is a no-op when the class is absent and that it caches the lookup.
@@ -334,7 +341,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B13 | **H** | `client/FogEffectHandler.java:42-44` | `doFog()` was `enableBiomeFog || allowDesertFog`; elevation haze, morning fog and weather fog were ignored when those two were off. **Fixed in batch 2:** all fog options are considered. |
 | B14 | **M** | `client/fog/MorningFogRangeCalculator.java:39` | `clamp(start - shift*2, 11, newEnd)` could return `11` when `newEnd < 11`, producing `start > end`. **Fixed in batch 2:** the floor is scaled and `FogResult` clamps `start <= end`. |
 | B15 | **M** | `client/fog/BiomeFogRangeCalculator.java:47-80` | 41×41 = 1,681 biome lookups whenever the player moves one block (or the rain/far-plane changes). Cache on a coarser grid (e.g., 4-block cells) or only re-scan when the biome mix changes. |
-| B16 | **M** | `client/fog/BiomeFogColorCalculator.java:60-79` | Same per-block 169-column rescan; `applyPlayerEffects` re-implements void fog/blindness/night vision and ignores NotFine's `VOID_FOG`. |
+| B16 | **M** | `client/fog/BiomeFogColorCalculator.java:60-79` | Same per-block 169-column rescan; `applyPlayerEffects` re-implements void fog/blindness/night vision. **Partially fixed in batch 4:** NotFine's `VOID_FOG` now gates the DS term; the scan/caching remains (P3). |
 | B17 | **L** | `client/fog/BiomeFogRangeCalculator.java:13-15` | `DUST_FOG_IMPACT` unused (literal `0.9F`); `weightMixed` hardcoded 1681 instead of `(2*DISTANCE+1)^2`. |
 | B18 | **L** | `client/fog/HolisticFogRangeCalculator.java:30-37` | `Math.min` of starts/ends could produce an invalid pair. **Fixed in batch 2:** `FogResult` clamps `start <= end` and the handler checks `isValid`. |
 
@@ -415,7 +422,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B69 | **M** | `client/EnvironStateHandler.java:188-470` | `EnvironState` is a static mutable god-object. `getPlayer()` can return null, `getWorld()` dereferences it, `isPlayerMoving` dereferences the static `player` without a null check, and `tick` is not re-entrant. Replace with an immutable per-tick `EnvironmentSnapshot` passed to consumers. |
 | B70 | **M** | `client/BiomeSurveyHandler.java:57-70` | The survey dirty check includes `playerY`, so jumping re-scans 169 columns; it also re-scans for every block moved. Drop Y, throttle to ~20 ticks or a biome/area change, and cache the last survey. |
 | B71 | **M** | `client/PlayerSoundEffectHandler.java:42-63` | Every tick allocates a `TObjectIntHashMap`, a `List`, and a scaled `SoundEffect` per sound, and re-runs regex matching for every sound. Cache the weighted sound list per (conditions, survey revision) and only rebuild when the biome mix changes. |
-| B72 | **M** | `client/hud/PotionHUD.java:30-100` | Null `thePlayer`; no state restore; re-formats strings/widths every frame; renders on every `RenderGameOverlayEvent` (filtering is inside the overlay instead of the dispatcher). See §2.7. |
+| B72 | **M** | `client/hud/PotionHUD.java:30-100` | Null `thePlayer`; no state restore; re-formats strings/widths every frame; rendered on every `RenderGameOverlayEvent`. **Partially fixed in batch 4:** dispatcher filter, null guard and `glPushAttrib`/`glPopAttrib`; per-effect text caching remains (P9). |
 | B73 | **M** | `client/PotionParticleScrubHandler.java:8-11` | Writes `dataWatcher.updateObject(7, 0)` (the potion liquid colour, not the particle flag) every tick to suppress particles. It also removes the colour other client code may read and is a global datawatcher hack that can fight other mods. Prefer a mixin/targeted redirect on the particle spawn path, and only update when the value actually changes. |
 | B74 | **M** | `client/fx/particle/EntityTextPopOffFX.java:59-89` | Immediate-mode font draw and depth-func state leak; see §2.5. |
 | B75 | **L** | `client/hud/GuiHUDHandler.java:36-40` | The dispatcher forwards all overlay phases to all overlays; filter by `ElementType` in the dispatcher. |

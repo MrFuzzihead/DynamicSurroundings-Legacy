@@ -35,12 +35,17 @@ public class PotionHUD extends Gui implements GuiHUDHandler.IGuiOverlay {
             float GUILEFT = ModOptions.potionHudLeftOffset;
             float SCALE = ModOptions.potionHudScale;
             Minecraft mc = Minecraft.getMinecraft();
+            EntityPlayer player = mc.thePlayer;
+            if (player == null) {
+                return;
+            }
+
             FontRenderer font = mc.fontRenderer;
-            EntityPlayer player = Minecraft.getMinecraft().thePlayer;
             int guiLeft = 2;
             int guiTop = 2;
             Collection<PotionEffect> collection = player.getActivePotionEffects();
             if (!collection.isEmpty()) {
+                GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
                 GL11.glPushMatrix();
                 GL11.glColor4f(1.0F, 1.0F, 1.0F, ModOptions.potionHudTransparency);
                 GL11.glDisable(2896);
@@ -94,6 +99,7 @@ public class PotionHUD extends Gui implements GuiHUDHandler.IGuiOverlay {
                 }
 
                 GL11.glPopMatrix();
+                GL11.glPopAttrib();
             }
         }
     }

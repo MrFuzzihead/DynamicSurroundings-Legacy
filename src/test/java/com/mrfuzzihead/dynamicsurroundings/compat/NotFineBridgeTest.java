@@ -2,6 +2,7 @@ package com.mrfuzzihead.dynamicsurroundings.compat;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -19,5 +20,10 @@ public class NotFineBridgeTest {
         assertEquals(10, NotFineBridge.downfallDistance(10));
         assertEquals(5, NotFineBridge.downfallDistance(5));
         assertEquals(0, NotFineBridge.downfallDistance(0));
+    }
+
+    @Test
+    public void absentNotFineKeepsDsVoidFogBehaviour() {
+        assertTrue(NotFineBridge.isVoidFogEnabled());
     }
 }
