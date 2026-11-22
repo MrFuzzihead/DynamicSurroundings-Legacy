@@ -1,8 +1,8 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1–9 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, and Angelica debug entries) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 35 test suites / 186 unit tests, plus a non-shipped in-game test mod.
+**Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 37 test suites / 193 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -89,6 +89,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - Added `compat/angelica/AngelicaDebugEntries` + `AngelicaDebugHook`. When Angelica is present, DS registers a `SCREEN_TEXT` group/entry with `DebugScreenApi` and exposes the active `WeatherBackend.Owner`, dimension, biome, conditions, `Weather.diagnostic()`, and the effective NotFine downfall radius.
 - The hook directly uses the compileOnly `api.debug` classes; the guard class has no Angelica types and is a no-op when Angelica is absent.
 - This avoids the old `RenderGameOverlayEvent.Text` path for F3 integration and gives compatibility reports a single, versioned debug panel.
+
+**Batch 10 — validation hardening (193 tests green)**
+
+- Extracted the Angelica provider's column builder into `WeatherColumnCollector`, so it can be driven with a fake `WeatherColumnSink` without a client launch.
+- Added `WeatherColumnCollectorTest`: rain layer period (32), snow layer period (512), column count/bounds/alpha, and null/zero-input no-ops.
+- Extracted `FogEffectHandler.computeRange(...)` and added `FogEffectHandlerTest`: relative scaling preserves NotFine's near-fog base, the `TERRAIN_FOG=false` 16 M range stays effectively off, and empty/inverted/no-op ranges are rejected.
+- Re-ran `gameTestServer` after the extraction: **65/65** dedicated-server checks still pass.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B38–B40, B48/B50, B64–B65, B73, B87) and the optional per-effect HUD text cache (P9).
 

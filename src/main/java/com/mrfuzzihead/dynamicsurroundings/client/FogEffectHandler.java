@@ -86,17 +86,30 @@ public class FogEffectHandler implements IClientEffectHandler {
                         baseEnd = event.farPlaneDistance;
                     }
 
-                    if (baseEnd > baseStart && baseEnd > 0.0F) {
-                        float start = baseStart * result.getStartScale();
-                        float end = baseEnd * result.getEndScale();
-                        if (end > start) {
-                            GL11.glFogf(GL11.GL_FOG_START, start);
-                            GL11.glFogf(GL11.GL_FOG_END, end);
-                        }
+                    float[] range = computeRange(result, baseStart, baseEnd);
+                    if (range != null) {
+                        GL11.glFogf(GL11.GL_FOG_START, range[0]);
+                        GL11.glFogf(GL11.GL_FOG_END, range[1]);
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Applies a relative {@link FogResult} to the current base range. Kept separate from GL so the NotFine/Angelica
+     * composition rule can be tested without a context.
+     */
+    static float[] computeRange(FogResult result, float baseStart, float baseEnd) {
+        if (result == null || baseEnd <= 0.0F
+            || baseEnd <= baseStart
+            || result.getStartScale() == 1.0F && result.getEndScale() == 1.0F) {
+            return null;
+        }
+
+        float start = baseStart * result.getStartScale();
+        float end = baseEnd * result.getEndScale();
+        return end > start ? new float[] { start, end } : null;
     }
 
     @SubscribeEvent
