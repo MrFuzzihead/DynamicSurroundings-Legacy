@@ -239,6 +239,11 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B71:** `PlayerSoundEffectHandler` now caches the combined biome + player ambient list by `(conditions, survey revision, biome-sound flag)`, and caches the player-only list by conditions. `SoundManager.queueAmbientSounds` copies its input instead of mutating the caller's list, so the cached unmodifiable lists are safe to reuse. The spot-sound rolls remain per tick by design.
 - Added `SoundManagerQueueTest`, which passes an unmodifiable list and verifies the queue no longer removes entries from it.
 
+**Batch 34 — version source and opt-in (252 tests green)**
+
+- **B61:** version checking is now opt-in (`Enable Online Version Check` defaults to `false`) and the URL is a configurable `Version Check URL`; `VersionCheck` no longer contains a duplicate URL or mod-version literal. The module version is a single `Module.VERSION` constant used by the `@Mod` annotation and the checker. Timeouts, daemon thread, retry constants, and try-with-resources are already in place.
+- `ModOptionsTest` pins the disabled default, configurable URL, and restores both statics.
+
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
@@ -592,7 +597,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B58 | **M** | `data/DimensionRegistry.java:277-305` | `getData` uses a static cache keyed only by dimension id; `isFlatWorld` is set only when dimension 0 loads and only from the client event. Flat-world sea level is wrong on a dedicated server. |
 | B59 | **M** | `data/BiomeRegistry.java:118-146` | A miss calls `initialize()` (full rescan, regex recompile, event post) while holding `synchronized (registry)`; on a busy server this is a global stall and can recurse through listeners. Make the registry copy-on-write and publish an immutable snapshot. `initialize` also clears `biomeAliases` at the end, so aliases cannot be queried later. |
 | B60 | **M** | `data/BlockRegistry.java:28-35` | `getEffects` returned the internal mutable list and `getRandomSound` allocated a candidate list per call. **Fixed in batch 25:** cached unmodifiable view and `WeightedRandom.pick` without the candidate list. |
-| B61 | **M** | `VersionCheck.java:24,30-34,40-46` | The check used a literal URL, no timeouts, a non-daemon thread, and duplicated retry constants. **Partially fixed in batch 29:** constant URL, connect/read timeouts, try-with-resources, daemon thread, and named retry/interval constants. The URL/version source and opt-in behavior remain. |
+| B61 | **M** | `VersionCheck.java:24,30-34,40-46` | The check used a literal URL, no timeouts, a non-daemon thread, duplicated retry constants, and was enabled by default. **Fixed in batches 29+34:** timeouts, try-with-resources, daemon thread, named constants, configurable URL, single `Module.VERSION`, and opt-in default. |
 | B62 | **L** | `Module.java:24-34` | `version = "1.0.6.4"`, `VERSION`, `mcmod.info` `${modVersion}`, and `VersionCheck.modVersion` are four independent version sources. Use `Tags.VERSION` once. `Module` registers itself on the FML bus but has no `@SubscribeEvent` methods. |
 | B63 | **L** | `ModOptions.java:86,89,93` | Copy-pasted comments ("Enable morning fog" for `enableWeatherFog`). Cosmetic but confusing in the GUI. |
 

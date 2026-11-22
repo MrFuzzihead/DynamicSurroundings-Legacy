@@ -24,16 +24,24 @@ public final class ModOptions {
     public static final String CATEGORY_LOGGING_CONTROL = "logging";
     public static final String CONFIG_ENABLE_DEBUG_LOGGING = "Enable Debug Logging";
     public static final String CONFIG_ENABLE_ONLINE_VERSION_CHECK = "Enable Online Version Check";
+    public static final String CONFIG_VERSION_CHECK_URL = "Version Check URL";
     private static final List<String> loggingSort = Arrays
-        .asList("Enable Online Version Check", "Enable Debug Logging");
+        .asList("Enable Online Version Check", "Version Check URL", "Enable Debug Logging");
     @ConfigProcessor.Parameter(category = "logging", property = "Enable Debug Logging", defaultValue = "false")
     @ConfigProcessor.Comment("Enables/disables debug logging of the mod")
     @ConfigProcessor.RestartRequired
     public static boolean enableDebugLogging = false;
-    @ConfigProcessor.Parameter(category = "logging", property = "Enable Online Version Check", defaultValue = "true")
+    @ConfigProcessor.Parameter(category = "logging", property = "Enable Online Version Check", defaultValue = "false")
     @ConfigProcessor.Comment("Enables/disables online version checking")
     @ConfigProcessor.RestartRequired
-    public static boolean enableVersionChecking = true;
+    public static boolean enableVersionChecking = false;
+    @ConfigProcessor.Parameter(
+        category = "logging",
+        property = "Version Check URL",
+        defaultValue = "https://raw.githubusercontent.com/OreCruncher/BetterRain/master/versions.txt")
+    @ConfigProcessor.Comment("URL of the versions.txt file used for online version checking")
+    @ConfigProcessor.RestartRequired
+    public static String versionCheckUrl = "https://raw.githubusercontent.com/OreCruncher/BetterRain/master/versions.txt";
     public static final String CATEGORY_RAIN = "rain";
     public static final String CONFIG_DISABLE_WEATHER_EFFECTS = "Disable Weather Effects";
     public static final String CONFIG_RAIN_VOLUME = "Sound Level";

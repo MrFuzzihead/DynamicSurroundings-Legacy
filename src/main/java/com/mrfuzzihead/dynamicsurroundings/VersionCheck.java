@@ -21,10 +21,9 @@ import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent;
 
 public final class VersionCheck implements Runnable {
 
-    private static final String REMOTE_VERSION_FILE = "https://raw.githubusercontent.com/OreCruncher/BetterRain/master/versions.txt";
     private static final int VERSION_CHECK_RETRIES = 3;
     private static final int VERSION_CHECK_INTERVAL = 10000;
-    public static final VersionCheck.SoftwareVersion modVersion = new VersionCheck.SoftwareVersion("1.0.6.4");
+    public static final VersionCheck.SoftwareVersion modVersion = new VersionCheck.SoftwareVersion(Module.VERSION);
     public static VersionCheck.SoftwareVersion currentVersion = new VersionCheck.SoftwareVersion();
     public static VersionCheck.UpdateStatus status = VersionCheck.UpdateStatus.UNKNOWN;
     private static final String mcVersion = resolveMinecraftVersion();
@@ -76,7 +75,7 @@ public final class VersionCheck implements Runnable {
     private static void versionCheck() {
         HttpURLConnection conn = null;
         try {
-            String location = REMOTE_VERSION_FILE;
+            String location = ModOptions.versionCheckUrl;
 
             for (; location != null && !location.isEmpty(); location = conn.getHeaderField("Coordinates")) {
                 URL url = new URL(location);

@@ -22,7 +22,7 @@ import cpw.mods.fml.common.event.FMLServerStartingEvent;
     modid = "dynamicsurroundings",
     useMetadata = true,
     dependencies = "required-after:Forge@[10.13.4.1614,)",
-    version = "1.0.6.4",
+    version = Module.VERSION,
     guiFactory = "com.mrfuzzihead.dynamicsurroundings.client.gui.ConfigGuiFactory")
 public class Module {
 

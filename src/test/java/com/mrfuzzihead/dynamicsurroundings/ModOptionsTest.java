@@ -30,17 +30,23 @@ public class ModOptionsTest {
 
     private float originalSoundLevel;
     private int originalParticleCount;
+    private boolean originalVersionChecking;
+    private String originalVersionUrl;
 
     @Before
     public void rememberDefaults() {
         originalSoundLevel = ModOptions.soundLevel;
         originalParticleCount = ModOptions.particleCountBase;
+        originalVersionChecking = ModOptions.enableVersionChecking;
+        originalVersionUrl = ModOptions.versionCheckUrl;
     }
 
     @After
     public void restoreDefaults() {
         ModOptions.soundLevel = originalSoundLevel;
         ModOptions.particleCountBase = originalParticleCount;
+        ModOptions.enableVersionChecking = originalVersionChecking;
+        ModOptions.versionCheckUrl = originalVersionUrl;
     }
 
     @Test
@@ -50,7 +56,8 @@ public class ModOptionsTest {
 
         assertEquals(1.0F, ModOptions.soundLevel, 0.0F);
         assertEquals(100, ModOptions.particleCountBase);
-        assertTrue(ModOptions.enableVersionChecking);
+        assertFalse(ModOptions.enableVersionChecking);
+        assertTrue(ModOptions.versionCheckUrl.contains("versions.txt"));
         assertFalse(ModOptions.disableWeatherEffects);
         assertTrue(ModOptions.respectExternalFog);
     }
