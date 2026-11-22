@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 57 test suites / 251 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 58 test suites / 252 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -233,6 +233,11 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B90:** removed the shared `DecimalFormat` from `DimensionEffectData` and `CommandRain`; formatting uses locale-stable `String.format`. The remaining unused/dead-data cleanup is already covered by batch 19.
 - **B94:** replaced deprecated `Class.newInstance()` with `getDeclaredConstructor().newInstance()`.
 - Existing formatting, command, and JSON tests pass unchanged.
+
+**Batch 33 — ambient sound list caching (252 tests green)**
+
+- **B71:** `PlayerSoundEffectHandler` now caches the combined biome + player ambient list by `(conditions, survey revision, biome-sound flag)`, and caches the player-only list by conditions. `SoundManager.queueAmbientSounds` copies its input instead of mutating the caller's list, so the cached unmodifiable lists are safe to reuse. The spot-sound rolls remain per tick by design.
+- Added `SoundManagerQueueTest`, which passes an unmodifiable list and verifies the queue no longer removes entries from it.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
@@ -602,7 +607,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B68 | **M** | `client/EnvironStateHandler.java:205-225` | 21 `CONDITION_TOKEN_*` constants and `CONDITION_SEPARATOR` were unused. **Fixed in batch 19:** removed; `getPlayerConditions` is the single literal source. |
 | B69 | **M** | `client/EnvironStateHandler.java:188-470` | `EnvironState` is a static mutable god-object. `getPlayer()` can return null, `getWorld()` dereferences it, `isPlayerMoving` dereferences the static `player` without a null check, and `tick` is not re-entrant. Replace with an immutable per-tick `EnvironmentSnapshot` passed to consumers. |
 | B70 | **M** | `client/BiomeSurveyHandler.java:57-70` | The dirty check included `playerY` and re-scanned per block moved. **Fixed in batches 25+27:** Y is ignored and position movement is throttled to one scan per 20 ticks; dimension/biome changes are immediate. |
-| B71 | **M** | `client/PlayerSoundEffectHandler.java:42-63` | Every tick allocated a map/list and re-ran regex matching per sound. **Partially fixed in batch 30:** weighted sounds are cached by conditions + survey revision; the remaining per-tick spot-sound work is unchanged. |
+| B71 | **M** | `client/PlayerSoundEffectHandler.java:42-63` | Every tick allocated a map/list and re-ran regex matching per sound. **Fixed in batches 30+33:** weighted biome, player, and combined ambient lists are cached; `queueAmbientSounds` no longer mutates the caller list. Per-tick spot rolls remain by design. |
 | B72 | **M** | `client/hud/PotionHUD.java:30-100` | Null `thePlayer`; no state restore; re-formats strings/widths every frame; rendered on every `RenderGameOverlayEvent`. **Partially fixed in batch 4:** dispatcher filter, null guard and `glPushAttrib`/`glPopAttrib`; per-effect text caching remains (P9). |
 | B73 | **M** | `client/PotionParticleScrubHandler.java:8-11` | Wrote the potion liquid colour datawatcher every tick. **Fixed in batch 31:** removed; a client-only mixin cancels the local player `mobSpell` spawn when enabled. |
 | B74 | **M** | `client/fx/particle/EntityTextPopOffFX.java:59-89` | Immediate-mode font draw and depth-func state leak; see §2.5. **Fixed in batch 7:** render-less marker + post-world renderer with pushed attributes and an Iris `PARTICLES` phase. |

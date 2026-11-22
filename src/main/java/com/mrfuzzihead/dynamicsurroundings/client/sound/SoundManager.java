@@ -54,8 +54,9 @@ public class SoundManager {
     }
 
     public static void queueAmbientSounds(List<SoundEffect> sounds) {
+        List<SoundEffect> working = new ArrayList<>(sounds);
         for (SoundEffect effect : new ArrayList<>(emitters.keySet())) {
-            if (!sounds.contains(effect)) {
+            if (!working.contains(effect)) {
                 emitters.remove(effect)
                     .fade();
             } else {
@@ -74,13 +75,13 @@ public class SoundManager {
                     }
 
                     emitter.setVolume(incoming.getVolume());
-                    sounds.remove(effect);
+                    working.remove(effect);
                     break;
                 }
             }
         }
 
-        for (SoundEffect sound : sounds) {
+        for (SoundEffect sound : working) {
             emitters.put(sound, new Emitter(sound));
         }
     }
