@@ -301,6 +301,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B56:** the common `Proxy` no longer imports client classes. Server damage/heal detection moved to `server/DamageEffectServer` with a common `network/HealthData` DTO; the client keeps only `DamageEffectHandler.handleEvent`.
 - Added `PacketReload` codec coverage.
 
+**Batch 43 — copy-on-write biome registry (267 tests green)**
+
+- **B59:** `BiomeRegistry.initialize()` now builds a fresh biome map and alias map, publishes the new registry snapshot under `INIT_LOCK`, and posts the reload event afterward. Reads use the volatile snapshot without locking.
+- After the first initialization, an unknown biome gets a default entry instead of triggering a full rescan under the lock.
+- Aliases are no longer cleared at the end of initialization.
+- Existing biome registry tests remain green.
+
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
@@ -652,7 +659,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B56 | **M** | `proxy/Proxy.java:31-36` | Common proxy imported client classes and initialized `DamageEffectHandler` on the server. **Fixed in batch 42:** common proxy has no client imports, server damage detection is `DamageEffectServer`, and the DTO is `network/HealthData`; client-only registries stay in `ProxyClient`. |
 | B57 | **M** | `data/DimensionRegistry.java:27` | `CALENDAR_API = Loader.isModLoaded("CalendarAPI")` in a static initializer forced FML bootstrap in tests. **Fixed in batch 15:** a safe class probe, no `Loader` call. |
 | B58 | **M** | `data/DimensionRegistry.java:277-305` | Flat-world sea level depended on a client-only load event. **Fixed in batch 41:** `WorldInfo.getTerrainType() == FLAT` is checked directly; tested. |
-| B59 | **M** | `data/BiomeRegistry.java:118-146` | A miss calls `initialize()` (full rescan, regex recompile, event post) while holding `synchronized (registry)`; on a busy server this is a global stall and can recurse through listeners. Make the registry copy-on-write and publish an immutable snapshot. `initialize` also clears `biomeAliases` at the end, so aliases cannot be queried later. |
+| B59 | **M** | `data/BiomeRegistry.java:118-146` | A miss rescaled the whole registry under `synchronized (registry)`, and aliases were cleared after initialization. **Fixed in batch 43:** copy-on-write snapshot, volatile reads, miss default entries after first init, and persistent aliases. |
 | B60 | **M** | `data/BlockRegistry.java:28-35` | `getEffects` returned the internal mutable list and `getRandomSound` allocated a candidate list per call. **Fixed in batch 25:** cached unmodifiable view and `WeightedRandom.pick` without the candidate list. |
 | B61 | **M** | `VersionCheck.java:24,30-34,40-46` | The check used a literal URL, no timeouts, a non-daemon thread, duplicated retry constants, and was enabled by default. **Fixed in batches 29+34+35:** GitHub Releases API, git-describe version source, JSON/legacy parsing, timeouts, daemon thread, named constants, configurable URL, and opt-in default. |
 | B62 | **L** | `Module.java:24-34` | `version = "1.0.6.4"`, `VERSION`, `mcmod.info` `${modVersion}`, and `VersionCheck.modVersion` are four independent version sources. Use `Tags.VERSION` once. `Module` registers itself on the FML bus but has no `@SubscribeEvent` methods. |
