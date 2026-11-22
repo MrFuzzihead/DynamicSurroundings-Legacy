@@ -100,8 +100,14 @@ public class ConfigProperty {
         if (stream == null) {
             return false;
         } else {
-            properties.properties = JsonUtils
+            Map<String, String> loaded = JsonUtils
                 .load(stream, (Class<Map<String, String>>) properties.properties.getClass());
+            if (loaded == null) {
+                properties.properties = new HashMap<>();
+                return false;
+            }
+
+            properties.properties = loaded;
             return true;
         }
     }

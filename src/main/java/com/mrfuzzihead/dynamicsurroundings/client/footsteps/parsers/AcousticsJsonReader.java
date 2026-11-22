@@ -44,62 +44,68 @@ public class AcousticsJsonReader {
         }
     }
 
-    private void parseJSONUnsafe(String jsonString, ILibrary lib) throws JsonParseException {
+    void parseJSONUnsafe(String jsonString, ILibrary lib) throws JsonParseException {
         JsonObject json = new JsonParser().parse(jsonString)
             .getAsJsonObject();
-        if (!json.get("type")
-            .getAsString()
-            .equals("library")) {
-            throw new JsonParseException("Invalid type: \"library\"");
-        } else if (json.get("engineversion")
-            .getAsInt() != 0) {
-                throw new JsonParseException(
-                    "Unrecognised Engine version: " + 0
-                        + " expected, got "
-                        + json.get("engineversion")
-                            .getAsInt());
-            } else if (!json.has("contents")) {
-                throw new JsonParseException("Empty contents");
-            } else {
-                if (json.has("soundroot")) {
-                    this.soundRoot = this.soundRoot + json.get("soundroot")
-                        .getAsString();
-                }
+        if (!json.has("type") || !json.get("type")
+            .isJsonPrimitive()
+            || !json.get("type")
+                .getAsString()
+                .equals("library")) {
+            throw new JsonParseException("Missing or invalid type: expected \"library\"");
+        } else if (!json.has("engineversion") || !json.get("engineversion")
+            .isJsonPrimitive()) {
+                throw new JsonParseException("Missing engineversion");
+            } else if (json.get("engineversion")
+                .getAsInt() != 0) {
+                    throw new JsonParseException(
+                        "Unrecognised Engine version: " + 0
+                            + " expected, got "
+                            + json.get("engineversion")
+                                .getAsInt());
+                } else if (!json.has("contents") || !json.get("contents")
+                    .isJsonObject()) {
+                        throw new JsonParseException("Empty contents");
+                    } else {
+                        if (json.has("soundroot")) {
+                            this.soundRoot = this.soundRoot + json.get("soundroot")
+                                .getAsString();
+                        }
 
-                this.default_volMin = 1.0F;
-                this.default_volMax = 1.0F;
-                this.default_pitchMin = 1.0F;
-                this.default_pitchMax = 1.0F;
-                if (json.has("defaults")) {
-                    JsonObject defaults = json.getAsJsonObject("defaults");
-                    if (defaults.has("vol_min")) {
-                        this.default_volMin = this.processPitchOrVolume(defaults, "vol_min");
+                        this.default_volMin = 1.0F;
+                        this.default_volMax = 1.0F;
+                        this.default_pitchMin = 1.0F;
+                        this.default_pitchMax = 1.0F;
+                        if (json.has("defaults")) {
+                            JsonObject defaults = json.getAsJsonObject("defaults");
+                            if (defaults.has("vol_min")) {
+                                this.default_volMin = this.processPitchOrVolume(defaults, "vol_min");
+                            }
+
+                            if (defaults.has("vol_max")) {
+                                this.default_volMax = this.processPitchOrVolume(defaults, "vol_max");
+                            }
+
+                            if (defaults.has("pitch_min")) {
+                                this.default_pitchMin = this.processPitchOrVolume(defaults, "pitch_min");
+                            }
+
+                            if (defaults.has("pitch_max")) {
+                                this.default_pitchMax = this.processPitchOrVolume(defaults, "pitch_max");
+                            }
+                        }
+
+                        JsonObject contents = json.getAsJsonObject("contents");
+
+                        for (Entry<String, JsonElement> preAcoustics : contents.entrySet()) {
+                            String acousticsName = preAcoustics.getKey();
+                            JsonObject acousticsDefinition = preAcoustics.getValue()
+                                .getAsJsonObject();
+                            EventSelectorAcoustics selector = new EventSelectorAcoustics(acousticsName);
+                            this.parseSelector(selector, acousticsDefinition);
+                            lib.addAcoustic(selector);
+                        }
                     }
-
-                    if (defaults.has("vol_max")) {
-                        this.default_volMax = this.processPitchOrVolume(defaults, "vol_max");
-                    }
-
-                    if (defaults.has("pitch_min")) {
-                        this.default_pitchMin = this.processPitchOrVolume(defaults, "pitch_min");
-                    }
-
-                    if (defaults.has("pitch_max")) {
-                        this.default_pitchMax = this.processPitchOrVolume(defaults, "pitch_max");
-                    }
-                }
-
-                JsonObject contents = json.getAsJsonObject("contents");
-
-                for (Entry<String, JsonElement> preAcoustics : contents.entrySet()) {
-                    String acousticsName = preAcoustics.getKey();
-                    JsonObject acousticsDefinition = preAcoustics.getValue()
-                        .getAsJsonObject();
-                    EventSelectorAcoustics selector = new EventSelectorAcoustics(acousticsName);
-                    this.parseSelector(selector, acousticsDefinition);
-                    lib.addAcoustic(selector);
-                }
-            }
     }
 
     private void parseSelector(EventSelectorAcoustics selector, JsonObject acousticsDefinition)
@@ -160,13 +166,15 @@ public class AcousticsJsonReader {
                     a.setDelayMax(
                         unsolved.get("delay")
                             .getAsInt());
-                } else {
+                } else if (unsolved.has("delay_min") && unsolved.has("delay_max")) {
                     a.setDelayMin(
                         unsolved.get("delay_min")
                             .getAsInt());
                     a.setDelayMax(
                         unsolved.get("delay_max")
                             .getAsInt());
+                } else {
+                    throw new JsonParseException("Delayed acoustic needs delay or delay_min/delay_max");
                 }
 
                 ret = a;
@@ -207,7 +215,11 @@ public class AcousticsJsonReader {
         a.setPitchMax(this.default_pitchMax);
     }
 
-    private void setupSoundName(BasicAcoustic a, String soundName) {
+    private void setupSoundName(BasicAcoustic a, String soundName) throws JsonParseException {
+        if (soundName == null || soundName.isEmpty()) {
+            throw new JsonParseException("Sound name is empty");
+        }
+
         if (soundName.charAt(0) != '@') {
             a.setSoundName("dynamicsurroundings:" + this.soundRoot + soundName);
         } else {
@@ -215,7 +227,11 @@ public class AcousticsJsonReader {
         }
     }
 
-    private void setupClassics(BasicAcoustic a, JsonObject solved) {
+    private void setupClassics(BasicAcoustic a, JsonObject solved) throws JsonParseException {
+        if (!solved.has("name")) {
+            throw new JsonParseException("Basic/delayed acoustic is missing its name");
+        }
+
         this.setupSoundName(
             a,
             solved.get("name")

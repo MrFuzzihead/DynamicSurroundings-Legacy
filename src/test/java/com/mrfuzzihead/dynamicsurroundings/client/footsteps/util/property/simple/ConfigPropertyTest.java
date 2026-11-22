@@ -130,6 +130,15 @@ public class ConfigPropertyTest {
     }
 
     @Test
+    public void jsonNullLoadsAsAnEmptyObject() throws Exception {
+        ConfigProperty props = load("null");
+        assertTrue(
+            props.getAllProperties()
+                .isEmpty());
+        assertFalse(ConfigProperty.loadStream(props, new ByteArrayInputStream("null".getBytes("UTF-8"))));
+    }
+
+    @Test
     public void emptyObjectLeavesNoProperties() {
         ConfigProperty props = load("{}");
         assertNull(

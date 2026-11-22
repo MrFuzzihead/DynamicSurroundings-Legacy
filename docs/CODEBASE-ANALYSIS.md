@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 48 test suites / 222 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 50 test suites / 229 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -143,6 +143,12 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B45:** `/rain` now resolves the world through `ICommandSender.getEntityWorld()` and replies to the sender, so the server console/RCON can run `/rain status` and the other subcommands. A unit test drives the command through a mocked console sender.
 - **B81:** `LegacyCapableBlockMap` now accepts `id:meta` keys in addition to `id^meta` and `id.meta`; the separator choice is a tested helper.
 - **B89 (partial):** `MathStuff.abs` uses a proper `< 0` test for the integer/long overloads. The double trig/log approximations and `MIN_VALUE` overflow remain in the backlog.
+
+**Batch 18 — parser and config robustness (229 tests green)**
+
+- **B82 (partial):** `BlockInfo.hashCode` is null-safe and `equals` uses `instanceof`; both the null-block and block-identity/metadata cases are tested. The `BasicBlockMap` regex/threading notes remain.
+- **B85:** `AcousticsJsonReader` now throws descriptive `JsonParseException`s for missing `type`/`engineversion`/`contents`, empty sound names, missing basic names, and delayed acoustics without delay bounds. Tests drive the package-private parser directly.
+- **B86:** `ConfigProperty.loadStream` treats JSON `null` as an empty map and returns `false` instead of installing a null map; tested.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B64, B73) and the optional per-effect HUD text cache (P9).
 
@@ -528,11 +534,11 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B79 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:126-135` | `newMinimum` was assigned every remaining sound instead of the minimum, and `randAB` sampled `[a, a+b]` instead of `[a, b]`. **Fixed in batch 14:** `Math.min` for the wake-up and a bounded `randomDelay`, with tests. |
 | B80 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:40-43` | `USING_LATENESS`, `USING_EARLYNESS`, `LATENESS_THRESHOLD_DIVIDER`, `EARLYNESS_THRESHOLD_POW` unused; the literals are repeated. |
 | B81 | **M** | `client/footsteps/mcpackage/implem/LegacyCapableBlockMap.java:15-35` | Only `^` and `.` were treated as legacy separators; `id:meta` keys failed. **Fixed in batch 17:** `:`, `^`, and `.` are accepted; `1:0`, `1^0`, `1.0`, and bare IDs are tested. |
-| B82 | **M** | `client/footsteps/mcpackage/implem/BasicBlockMap.java:97-120` | The regex `([^:]+:[^^+]+)\^?(\d+)?\+?(\w+)?` is fragile (`[^^+]` negates `^` and `+`, not what the comment intends); `BlockInfo.hashCode` NPEs on a null block and `equals` casts without `instanceof`; `getBlockMap` reuses a mutable key (not thread-safe). Add parser tests. |
+| B82 | **M** | `client/footsteps/mcpackage/implem/BasicBlockMap.java:97-120` | The regex is fragile; `BlockInfo.hashCode` NPE'd on a null block and `equals` cast without `instanceof`; `getBlockMap` reuses a mutable key. **Partially fixed in batch 18:** null-safe hash and `instanceof` equals are tested. The regex/mutable-key notes remain. |
 | B83 | **M** | `client/footsteps/game/system/Footsteps.java:74-166` | Each loader catches `IOException` but `Scanner.next()` on an empty stream throws `NoSuchElementException` (not caught) and `AcousticsJsonReader` swallows all parse errors, so a malformed pack silently disables all footsteps. Validate and log. |
 | B84 | **L** | `client/footsteps/game/system/Footsteps.java:180-195` | Setting `nextStepDistance = Integer.MAX_VALUE` every tick is a write per tick; do it once when the handler is enabled. |
-| B85 | **L** | `client/footsteps/parsers/AcousticsJsonReader.java:45-100` | `json.get("type")`/`get("engineversion")` NPE on missing fields; `setupSoundName` does `charAt(0)` on a possibly empty string; `delayed` assumes `delay_min`/`delay_max` exist. Throw a descriptive `JsonParseException` instead of relying on the outer `printStackTrace`. |
-| B86 | **L** | `client/footsteps/util/property/simple/ConfigProperty.java:100-110` | `JsonUtils.load(..., Map.class)` returns `null` for a JSON `null`; the unchecked cast hides it; values must all be strings (numbers throw). Add validation. |
+| B85 | **L** | `client/footsteps/parsers/AcousticsJsonReader.java:45-100` | Missing fields/empty sound names/delayed bounds produced NPEs or IndexOutOfBounds. **Fixed in batch 18:** descriptive `JsonParseException`s and direct parser tests. |
+| B86 | **L** | `client/footsteps/util/property/simple/ConfigProperty.java:100-110` | `JsonUtils.load(..., Map.class)` returns `null` for a JSON `null`, and the unchecked cast hid it. **Fixed in batch 18:** null becomes an empty map and `loadStream` returns false. |
 
 ### 3.9 Utilities / data
 

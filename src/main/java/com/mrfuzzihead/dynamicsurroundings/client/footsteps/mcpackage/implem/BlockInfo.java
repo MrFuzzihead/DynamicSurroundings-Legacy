@@ -27,13 +27,15 @@ public class BlockInfo {
 
     @Override
     public int hashCode() {
-        return this.block.hashCode() ^ this.meta * 31;
+        return (this.block == null ? 0 : this.block.hashCode()) ^ this.meta * 31;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
+        } else if (!(o instanceof BlockInfo)) {
+            return false;
         } else {
             BlockInfo bi = (BlockInfo) o;
             return this.block == bi.block && this.meta == bi.meta;
