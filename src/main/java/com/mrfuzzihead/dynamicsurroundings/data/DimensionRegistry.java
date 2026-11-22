@@ -15,7 +15,6 @@ import com.mrfuzzihead.dynamicsurroundings.Module;
 import com.mrfuzzihead.dynamicsurroundings.data.config.DimensionConfig;
 import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
 
-import cpw.mods.fml.common.Loader;
 import foxie.calendar.api.CalendarAPI;
 import foxie.calendar.api.ICalendarProvider;
 import foxie.calendar.api.ISeasonProvider;
@@ -24,11 +23,21 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 public final class DimensionRegistry {
 
     private static final int SPACE_HEIGHT_OFFSET = 32;
-    private static final boolean CALENDAR_API = Loader.isModLoaded("CalendarAPI");
+    private static final boolean CALENDAR_API = isClassPresent("foxie.calendar.api.CalendarAPI");
     private static final String SEASON_NOT_AVAILABLE = "noseason";
     private static final List<DimensionConfig.Entry> cache = new ArrayList<>();
     private static final TIntObjectHashMap<DimensionRegistry> dimensionData = new TIntObjectHashMap();
     private static boolean isFlatWorld = false;
+
+    private static boolean isClassPresent(String className) {
+        try {
+            Class.forName(className, false, DimensionRegistry.class.getClassLoader());
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     protected final int dimensionId;
     protected boolean initialized;
     protected String name = "<NOT SET>";

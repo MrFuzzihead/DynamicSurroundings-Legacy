@@ -84,7 +84,7 @@ public abstract class JetEffect extends BlockEffect {
 
         @Override
         public boolean trigger(Block block, World world, BlockPos pos, Random random) {
-            return super.trigger(block, world, pos, random) && world.isAirBlock(pos.getX(), pos.getY() - 1, pos.getZ());
+            return super.trigger(block, world, pos, random) && world.isAirBlock(pos.getX(), pos.getY() + 1, pos.getZ());
         }
 
         @Override

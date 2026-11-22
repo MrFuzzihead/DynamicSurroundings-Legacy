@@ -64,7 +64,7 @@ public class BlockEffectHandler implements IClientEffectHandler {
 
             if (EnvironStateHandler.EnvironState.isPlayerOnGround()
                 && EnvironStateHandler.EnvironState.isPlayerMoving()) {
-                BlockPos pos = playerPos.down(2);
+                BlockPos pos = stepBlockPos(player);
                 Block block = MCHelper.getBlock(world, pos);
                 if (block != Blocks.air && !block.getMaterial()
                     .isLiquid()) {
@@ -75,6 +75,10 @@ public class BlockEffectHandler implements IClientEffectHandler {
                 }
             }
         }
+    }
+
+    static BlockPos stepBlockPos(EntityPlayer player) {
+        return new BlockPos(player.posX, player.posY - 0.1D, player.posZ);
     }
 
     @Override

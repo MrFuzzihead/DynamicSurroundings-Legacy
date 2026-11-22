@@ -9,6 +9,7 @@ import net.minecraft.world.storage.WorldInfo;
 import com.mrfuzzihead.dynamicsurroundings.ModLog;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectData;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectDataFile;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 public class WorldHandler {
@@ -25,7 +26,7 @@ public class WorldHandler {
     }
 
     public static void updateWeatherBody(World world) {
-        if (!world.isRemote) {
+        if (!world.isRemote && (!world.provider.hasNoSky || DimensionRegistry.hasWeather(world))) {
             int dimensionId = world.provider.dimensionId;
             DimensionEffectData data = DimensionEffectDataFile.get(world);
             WorldInfo info = world.getWorldInfo();

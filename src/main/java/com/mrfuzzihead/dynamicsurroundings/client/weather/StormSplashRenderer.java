@@ -86,7 +86,7 @@ public class StormSplashRenderer {
         }
     }
 
-    protected int getPrecipitationHeight(World world, int range, int x, int z) {
+    protected int getPrecipitationHeight(World world, int range, int x, int z, EntityLivingBase view) {
         return world.getPrecipitationHeight(x, z);
     }
 
@@ -142,7 +142,7 @@ public class StormSplashRenderer {
                     for (int j1 = 0; j1 < particleCount; j1++) {
                         int locX = playerX + RANDOM.nextInt(radius) - RANDOM.nextInt(radius);
                         int locZ = playerZ + RANDOM.nextInt(radius) - RANDOM.nextInt(radius);
-                        int locY = this.getPrecipitationHeight(worldclient, radius, locX, locZ);
+                        int locY = this.getPrecipitationHeight(worldclient, radius, locX, locZ, entity);
                         BiomeGenBase biome = worldclient.getBiomeGenForCoords(locX, locZ);
                         boolean hasDust = WeatherUtils.biomeHasDust(biome);
                         if (locY <= playerY + radius && locY >= playerY - radius

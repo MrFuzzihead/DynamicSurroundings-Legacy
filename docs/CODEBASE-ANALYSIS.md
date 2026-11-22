@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 42 test suites / 213 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 46 test suites / 218 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -123,7 +123,16 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - Replaced the remaining duplicated `1.2`/`0.75` literals with the named constants and removed the always-true `USING_*` flags.
 - Added `AcousticsManagerTest` for the delay bounds and inverted windows.
 
-**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B38–B40, B64–B65, B73) and the optional per-effect HUD text cache (P9).
+**Batch 15 — server no-sky guard, splash view, step block, dust trigger (218 tests green)**
+
+- **B39:** `WorldHandler.updateWeatherBody` now skips `hasNoSky` dimensions unless the DS dimension config explicitly enables weather, matching vanilla's guard while keeping the Nether opt-in.
+- **B6 (partial):** the Nether splash height now uses the passed view entity instead of the static `EnvironState` player; the base method still delegates to `World.getPrecipitationHeight` because `range` is only meaningful for the Nether scan.
+- **B57:** `DimensionRegistry` probes the Calendar API class without `Loader.isModLoaded` in its static initializer, so unit tests and early class loading no longer depend on FML bootstrap.
+- **B65:** step sounds sample `posY - 0.1` (the block under the feet), not `down(2)`.
+- **B66:** `Dust.trigger` now requires air above the block, matching the fire/fountain behavior, so dust jets can appear on normal terrain.
+- Added `WorldHandlerTest`, `NetherSplashRendererTest`, `BlockEffectHandlerTest`, and `JetEffectDustTest`.
+
+**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B38, B40, B64, B73) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
 
@@ -396,7 +405,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B3 | **H** | `mixins/early/EntityRendererMixin.java` (whole `WEATHER` group) | `disableWeatherEffects` also disabled the aurora. **Fixed in batch 1:** `AuroraRenderHandler` now draws from `RenderWorldLastEvent`, outside the weather mixin gate. |
 | B4 | **H** | `client/weather/StormRenderer.java:77` | NotFine `DOWNFALL_DISTANCE` was ignored; weather radius was `fancyGraphics ? 10 : 5`, and splashes always used 10. **Fixed in batch 1:** one effective radius from `NotFineBridge` is used by storm quads and splashes; `0` disables downfall. |
 | B5 | **H** | `client/weather/StormSplashRenderer.java:43-51` | Dispatch used `EnvironState.getDimensionId()` (0 before the first tick) instead of `mc.theWorld.provider.dimensionId`; the wrong dimension renderer could be used on the first frame. **Fixed in batch 1.** |
-| B6 | **H** | `client/weather/StormSplashRenderer.java:90-91`, `NetherSplashRenderer.java:30` | The base `getPrecipitationHeight` ignores its `range` parameter; the nether override uses `EnvironState.getPlayer()` instead of the passed view entity. |
+| B6 | **H** | `client/weather/StormSplashRenderer.java:90-91`, `NetherSplashRenderer.java:30` | The base `getPrecipitationHeight` ignores its `range` parameter; the nether override used `EnvironState.getPlayer()` instead of the passed view entity. **Fixed in batch 15 for the nether path:** it receives the view entity; the base remains a vanilla delegate. |
 | B7 | **M** | `client/weather/Weather.java:119` | `level = (float)(level + 0.01)` is dead — the parameter is never used afterwards. Remove or use it in the threshold comparisons. |
 | B8 | **M** | `client/weather/Weather.java:25,111-131` | `intensity`/`intensityLevel`/texture statics were mutated from the packet handler (Netty) while the render thread read them. **Fixed in batch 3:** `PacketRainIntensity` schedules on the client thread. |
 | B9 | **M** | `client/weather/StormRenderer.java:90-100` | 441 columns × `getBiomeGenForCoords` + temperature + precipitation + light per frame; no cache. Share a 20-tick column cache with `StormSplashRenderer`. |
@@ -449,7 +458,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 |---|---|---|---|
 | B37 | **C** | `network/PacketHealthChange.java`, `network/PacketAurora.java`, `network/PacketRainIntensity.java` | The handlers called `EffectRenderer.addEffect`, `AuroraEffectHandler`, and `Weather.setIntensity` directly on the Netty thread. **Fixed in batch 3:** all three use `ClientPacketHandler.schedule` (`Minecraft.func_152344_a`). |
 | B38 | **H** | `server/ServerEffectHandler.java:52` | Sends a `PacketRainIntensity` every `Phase.START` for every dimension (20 packets/s/dimension, even with no players), although the value changes only when rain starts/stops. Send on change, on player join, and at a low keep-alive rate at most. |
-| B39 | **H** | `server/WorldHandler.java:28-31` | The replacement for `World.updateWeatherBody` dropped vanilla's `if (!provider.hasNoSky)` guard, so the state machine runs in the Nether and the End too. `WorldServerMulti` installs a `DerivedWorldInfo` whose setters are no-ops (`DerivedWorldInfo.setRaining/setRainTime`), so those dimensions read the overworld's rain flags but mutate their own `rainingStrength`, and the End still randomizes `DimensionEffectData`. Gate on `DimensionRegistry.hasWeather(world)` (config-driven, so the Nether can still opt in) and skip `hasNoSky` worlds that are configured weatherless. |
+| B39 | **H** | `server/WorldHandler.java:28-31` | The replacement for `World.updateWeatherBody` dropped vanilla's `!provider.hasNoSky` guard, so the state machine ran in the End and other no-sky dimensions. **Fixed in batch 15:** it skips no-sky worlds unless `DimensionRegistry.hasWeather` opts them in, so the Nether config still works. |
 | B40 | **M** | `data/DimensionEffectDataFile.java:31` | `getFile()` calls `markDirty()` on **every** access; `get()` is called from `ServerEffectHandler` every tick and `WorldHandler` every tick. The data is always dirty, so every autosave rewrites it even when nothing changed. Mark dirty in the setters (`setRainIntensity`, aurora add/remove) instead, and cache the `WorldSavedData` per world. |
 | B41 | **M** | `data/DimensionEffectDataFile.java:23-33` | `world.loadItemData` on every tick for every world is an unnecessary map lookup; cache the file in a `WeakHashMap<World, DimensionEffectDataFile>` cleared on `WorldEvent.Unload`. |
 | B42 | **M** | `server/ServerEffectHandler.java:30,60` | `MIN_AURORA_DISTANCE_SQ`, `CHECK_INTERVAL`, `RESET` are unused; the literals `160000L`, `100`, `-10` are duplicated in `Network`/`DimensionEffectData`. |
@@ -472,7 +481,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B54 | **M** | `client/gui/DynamicSurroundingsConfigGui.java:92-96` | `super.actionPerformed` runs before the synthetic sound lists are saved; the screen may already be closing/saving. Save the synthetic categories first, then call `super`. Applying the config also does not re-run `BlockRegistry`/`BiomeRegistry`/`SoundRegistry` initialization or refresh `EnvironStateHandler` static finals, so several non-restart options appear to do nothing until a world reload. Either make them `@RestartRequired` or add a `reloadRuntime()` path. |
 | B55 | **M** | `client/waila/WailaHandler.java:119-121` | WAILA registration is gated on `enableDebugLogging`; the integration is off by default. Remove the gate. Also the class is loaded from the common `Proxy.init` on a dedicated server; the `@Optional.Method` annotations are incomplete and `gatherText` has no annotation. Split the WAILA client code into `ProxyClient`, or guard the whole class with `@SideOnly(Side.CLIENT)` + optional interface handling. |
 | B56 | **M** | `proxy/Proxy.java:31-36` | Common proxy imports/loads client classes (`DamageEffectHandler`, `WailaHandler`) and calls `DamageEffectHandler.initialize()` on the server. `DamageEffectHandler.handleEvent` is `@SideOnly(CLIENT)` but the class is not; a production dedicated server that resolves the method can `NoClassDefFoundError`. The same side leakage exists in `BlockRegistry` (client `MCHelper`/`JetEffect`/`SoundManager` references called from `CommandRain`). Move client init to `ProxyClient`, keep a server-only handler for the packet sender, and make `BlockRegistry` explicitly client-only. |
-| B57 | **M** | `data/DimensionRegistry.java:27` | `CALENDAR_API = Loader.isModLoaded("CalendarAPI")` in a static initializer. Class initialization order determines the result; it is also the reason tests need FML bootstrap. Resolve lazily and cache. |
+| B57 | **M** | `data/DimensionRegistry.java:27` | `CALENDAR_API = Loader.isModLoaded("CalendarAPI")` in a static initializer forced FML bootstrap in tests. **Fixed in batch 15:** a safe class probe, no `Loader` call. |
 | B58 | **M** | `data/DimensionRegistry.java:277-305` | `getData` uses a static cache keyed only by dimension id; `isFlatWorld` is set only when dimension 0 loads and only from the client event. Flat-world sea level is wrong on a dedicated server. |
 | B59 | **M** | `data/BiomeRegistry.java:118-146` | A miss calls `initialize()` (full rescan, regex recompile, event post) while holding `synchronized (registry)`; on a busy server this is a global stall and can recurse through listeners. Make the registry copy-on-write and publish an immutable snapshot. `initialize` also clears `biomeAliases` at the end, so aliases cannot be queried later. |
 | B60 | **M** | `data/BlockRegistry.java:28-35` | `getEffects` returns the internal mutable list; `getRandomSound` allocates a new `ArrayList` on every call (called ~1,000×/tick from `BlockEffectHandler`). Return an immutable list and avoid per-call allocation. |
@@ -485,8 +494,8 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | ID | Sev | File:line | Finding |
 |---|---|---|---|
 | B64 | **H** | `client/ClientEffectHandler.java:78-86` | `world != null` is checked but `player` is not; during respawn/dimension change `thePlayer` can be null while the world is set, and every handler dereferences it. Guard `player != null`. |
-| B65 | **H** | `client/fx/BlockEffectHandler.java:64-72` | Step sound samples `playerPos.down(2)`, i.e. the block **below the support block** (dirt under grass), not the block under the feet. Use `boundingBox.minY - 0.1` (like `PFSolver`) or `down(1)` with an epsilon. |
-| B66 | **H** | `client/fx/JetEffect.java:83-89` | `Dust.trigger` requires `world.isAirBlock(x, y-1, z)`, so dust only spawns on floating dirt/sand. The intended condition is almost certainly the opposite (solid below and/or air above). This likely means the desert dust jets never appear in normal terrain. Verify in game and fix. |
+| B65 | **H** | `client/fx/BlockEffectHandler.java:64-72` | Step sound sampled `playerPos.down(2)`, i.e. dirt under grass. **Fixed in batch 15:** `posY - 0.1`, with a position test. |
+| B66 | **H** | `client/fx/JetEffect.java:83-89` | `Dust.trigger` required `world.isAirBlock(x, y-1, z)`, so dust only spawned on floating blocks. **Fixed in batch 15:** it now requires air above, like fire/fountain; tested both directions. |
 | B67 | **H** | `client/fx/BlockEffectHandler.java:40-62` | ~1,000 `BlockPos` allocations + two block lookups per sample per tick (plus `new ArrayList` in `BlockRegistry.getRandomSound`) → GC pressure and client tick cost. Reuse a mutable pos, read block+metadata once, and avoid allocation in the weighted pick. |
 | B68 | **M** | `client/EnvironStateHandler.java:205-225` | 21 `CONDITION_TOKEN_*` constants and `CONDITION_SEPARATOR` are declared but never used; `getPlayerConditions` appends literals. Remove the constants or use them. |
 | B69 | **M** | `client/EnvironStateHandler.java:188-470` | `EnvironState` is a static mutable god-object. `getPlayer()` can return null, `getWorld()` dereferences it, `isPlayerMoving` dereferences the static `player` without a null check, and `tick` is not re-entrant. Replace with an immutable per-tick `EnvironmentSnapshot` passed to consumers. |
@@ -704,7 +713,7 @@ Do not try to unit-test `GL11`/`Tessellator` draw calls directly. Extract the ma
 - Add the client smoke/game test skeleton and the empty-report guard.
 
 **Phase 1 — regressions and stability (PR 2–4)**
-- Fix B1/B2 (cancel weather + single provider owner), B3 (aurora not gated on weather), B19/B20/B21 (aurora identity/range), B37 (off-thread client packets), B27 (sound update), B38/B39/B40 (server weather/packet/dirty), B64/B65 (null player + step block).
+- Fix B1/B2 (cancel weather + single provider owner), B3 (aurora not gated on weather), B19/B20/B21 (aurora identity/range), B37 (off-thread client packets), B27 (sound update), B38/B40 (server packet/dirty).
 
 **Phase 2 — compat layer (PR 5–7)**
 - `compat/Compatibility`, `NotFineBridge`, `AngelicaBridge`, `WeatherBackend`; relative fog; NotFine downfall distance; BOP fog source; diagnostics.
