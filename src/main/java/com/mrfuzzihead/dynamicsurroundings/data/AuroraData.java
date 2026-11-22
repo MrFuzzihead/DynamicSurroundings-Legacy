@@ -90,13 +90,4 @@ public final class AuroraData implements INBTSerialization {
         return builder.toString();
     }
 
-    private static final class NBT {
-
-        public static final String DIMENSION = "d";
-        public static final String XCOORD = "x";
-        public static final String ZCOORD = "z";
-        public static final String SEED = "t";
-        public static final String COLOR_SET = "s";
-        public static final String PRESET = "p";
-    }
 }

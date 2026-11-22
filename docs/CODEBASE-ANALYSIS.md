@@ -150,6 +150,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B85:** `AcousticsJsonReader` now throws descriptive `JsonParseException`s for missing `type`/`engineversion`/`contents`, empty sound names, missing basic names, and delayed acoustics without delay bounds. Tests drive the package-private parser directly.
 - **B86:** `ConfigProperty.loadStream` treats JSON `null` as an empty map and returns `false` instead of installing a null map; tested.
 
+**Batch 19 — dead code and logging cleanup (229 tests green)**
+
+- **B68:** removed the 21 unused `CONDITION_TOKEN_*`/`CONDITION_SEPARATOR` constants; `getPlayerConditions` remains the single source of literals.
+- **B78:** removed the unused `PFReaderQP` class (the port always uses `PFReaderH`).
+- **B90 (partial):** removed the unused NBT holder classes and the unused `MIN_INTENSITY`/`MAX_INTENSITY` constants from `DimensionEffectData`, `DimensionEffectDataFile`, and `AuroraData`. The static `DecimalFormat` remains.
+- **B95:** `ModLog.error`/`catching` now pass the throwable to Log4j instead of printing a second stack trace.
+
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B64, B73) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
@@ -515,7 +522,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B65 | **H** | `client/fx/BlockEffectHandler.java:64-72` | Step sound sampled `playerPos.down(2)`, i.e. dirt under grass. **Fixed in batch 15:** `posY - 0.1`, with a position test. |
 | B66 | **H** | `client/fx/JetEffect.java:83-89` | `Dust.trigger` required `world.isAirBlock(x, y-1, z)`, so dust only spawned on floating blocks. **Fixed in batch 15:** it now requires air above, like fire/fountain; tested both directions. |
 | B67 | **H** | `client/fx/BlockEffectHandler.java:40-62` | ~1,000 `BlockPos` allocations + two block lookups per sample per tick (plus `new ArrayList` in `BlockRegistry.getRandomSound`) → GC pressure and client tick cost. Reuse a mutable pos, read block+metadata once, and avoid allocation in the weighted pick. |
-| B68 | **M** | `client/EnvironStateHandler.java:205-225` | 21 `CONDITION_TOKEN_*` constants and `CONDITION_SEPARATOR` are declared but never used; `getPlayerConditions` appends literals. Remove the constants or use them. |
+| B68 | **M** | `client/EnvironStateHandler.java:205-225` | 21 `CONDITION_TOKEN_*` constants and `CONDITION_SEPARATOR` were unused. **Fixed in batch 19:** removed; `getPlayerConditions` is the single literal source. |
 | B69 | **M** | `client/EnvironStateHandler.java:188-470` | `EnvironState` is a static mutable god-object. `getPlayer()` can return null, `getWorld()` dereferences it, `isPlayerMoving` dereferences the static `player` without a null check, and `tick` is not re-entrant. Replace with an immutable per-tick `EnvironmentSnapshot` passed to consumers. |
 | B70 | **M** | `client/BiomeSurveyHandler.java:57-70` | The survey dirty check includes `playerY`, so jumping re-scans 169 columns; it also re-scans for every block moved. Drop Y, throttle to ~20 ticks or a biome/area change, and cache the last survey. |
 | B71 | **M** | `client/PlayerSoundEffectHandler.java:42-63` | Every tick allocates a `TObjectIntHashMap`, a `List`, and a scaled `SoundEffect` per sound, and re-runs regex matching for every sound. Cache the weighted sound list per (conditions, survey revision) and only rebuild when the biome mix changes. |
@@ -530,7 +537,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | ID | Sev | File:line | Finding |
 |---|---|---|---|
 | B77 | **H** | `client/footsteps/game/system/PFSolver.java:49` | `if (Math.abs(ply.motionY) < 0.02) return null;` — verify against the original Presence Footsteps. If a player standing/walking on flat ground has `motionY == 0` at the client tick, this suppresses every footstep. Add a game test with a walking player and count `playAssociation` calls. |
-| B78 | **M** | `client/footsteps/game/system/PFReaderQP.java:50-85` | `if (2 == 2)`, `if (2 == 1)`, `if (2 == 0)` are dead branches; `USE_FUNCTION`, `overallMultiplier`, `ndm` are unused. `PFReaderQP` is also never instantiated (the port always uses `PFReaderH`), so the whole class is dead unless a config is added. |
+| B78 | **M** | `client/footsteps/game/system/PFReaderQP.java:50-85` | Dead branches and unused fields in a class never instantiated. **Fixed in batch 19:** class removed. |
 | B79 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:126-135` | `newMinimum` was assigned every remaining sound instead of the minimum, and `randAB` sampled `[a, a+b]` instead of `[a, b]`. **Fixed in batch 14:** `Math.min` for the wake-up and a bounded `randomDelay`, with tests. |
 | B80 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:40-43` | `USING_LATENESS`, `USING_EARLYNESS`, `LATENESS_THRESHOLD_DIVIDER`, `EARLYNESS_THRESHOLD_POW` unused; the literals are repeated. |
 | B81 | **M** | `client/footsteps/mcpackage/implem/LegacyCapableBlockMap.java:15-35` | Only `^` and `.` were treated as legacy separators; `id:meta` keys failed. **Fixed in batch 17:** `:`, `^`, and `.` are accepted; `1:0`, `1^0`, `1.0`, and bare IDs are tested. |
@@ -547,12 +554,12 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B87 | **H** | `compat/BlockPos.java:145-220` | No `equals`/`hashCode`; the box iterators compared with `equals` and never terminated; `MutableBlockPos.getImmutable()` copied the base class's private fields (always 0). **Fixed in batch 11:** coordinate `equals`/`hashCode`, getter-based copy construction, and tests for both box iterators and mutable immutability. |
 | B88 | **H** | `util/Color.java:222-250` | `ImmutableColor` overrode `scale`, `mix` and `adjust` but not `add`, `blend`, or `scale(r,g,b)`, so `Color.RED.add(...)` could mutate a shared static constant. `Color` had `equals` but no `hashCode`. **Fixed in batch 11:** every mutator is rejected and the hash contract is tested. |
 | B89 | **M** | `util/MathStuff.java:139-144` | `sqrt(double)` returned `(float) Math.sqrt(value)`; `sin/cos(double)` truncate to float; `log` is an approximation; `abs(MIN_VALUE)` overflows; several constants are unused. **Partially fixed in batches 13+17:** `sqrt(double)` preserves double precision; integer/long `abs` use `< 0`. The double trig/log approximations and `MIN_VALUE` overflow remain open. |
-| B90 | **M** | `data/DimensionEffectData.java:30-32,88-95` | `NBT` inner classes in `DimensionEffectData`, `DimensionEffectDataFile` and `AuroraData` are unused; `MIN_INTENSITY`/`MAX_INTENSITY` unused; `FORMATTER` (static `DecimalFormat`) is not thread-safe. |
+| B90 | **M** | `data/DimensionEffectData.java:30-32,88-95` | `NBT` inner classes and `MIN_INTENSITY`/`MAX_INTENSITY` were unused; `FORMATTER` is not thread-safe. **Partially fixed in batch 19:** dead NBT/constants removed; the static formatter remains. |
 | B91 | **M** | `data/AuroraData.java:59-67` | No `hashCode` (see B20). `equals` ignores seed/color/preset, so `HashSet` dedupe by column would drop updates; decide the intended identity and document it. |
 | B92 | **M** | `util/PlayerUtils.java:20-24,60-84` | `INSIDE_Y_ADJUST`, `RANGE`, `AREA` unused (literals 3/3/49); `isReallyInside` only counts ceilings within 2 blocks, so a 5-block-high room is "outside". Use `world.canBlockSeeTheSky`/heightmap or a configurable coverage test. Add unit tests with mocked worlds. |
 | B93 | **M** | `VersionCheck.java:157-210` | `assert` is used for input validation (`numComponents >= 3`), which is disabled in production; `compareTo` ignores alpha/beta. Add proper parse/compare tests. |
 | B94 | **L** | `util/JsonUtils.java:40-75` | `load(InputStream)` can return `null` (JSON `null`); `clazz.newInstance()` is deprecated; the stream is not closed by the method (documented by callers). Add null checks and try-with-resources. |
-| B95 | **L** | `ModLog.java` | `error` prints the stack trace and logs only the message (the throwable is not passed to Log4j); `catching` prints twice. Use parameterized logging and pass the throwable. |
+| B95 | **L** | `ModLog.java` | `error` printed a second stack trace and did not pass the throwable to Log4j; `catching` printed twice. **Fixed in batch 19:** both delegate to Log4j with the throwable. |
 
 ### 3.10 Exact line references for the top items
 

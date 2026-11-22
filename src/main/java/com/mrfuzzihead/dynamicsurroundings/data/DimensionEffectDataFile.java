@@ -72,8 +72,4 @@ public final class DimensionEffectDataFile extends WorldSavedData {
         nbt.setTag("e", list);
     }
 
-    private final class NBT {
-
-        public static final String ENTRIES = "e";
-    }
 }

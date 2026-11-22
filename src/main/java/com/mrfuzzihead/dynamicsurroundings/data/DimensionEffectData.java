@@ -17,8 +17,6 @@ public final class DimensionEffectData implements INBTSerialization {
 
     private static final XorShiftRandom random = new XorShiftRandom();
     private static final DecimalFormat FORMATTER = new DecimalFormat("0");
-    public static final float MIN_INTENSITY = 0.0F;
-    public static final float MAX_INTENSITY = 1.0F;
     private int dimensionId = 0;
     private float intensity = 0.0F;
     private float minIntensity = ModOptions.defaultMinRainStrength;
@@ -148,12 +146,4 @@ public final class DimensionEffectData implements INBTSerialization {
         return builder.toString();
     }
 
-    private final class NBT {
-
-        public static final String DIMENSION = "d";
-        public static final String INTENSITY = "s";
-        public static final String MIN_INTENSITY = "min";
-        public static final String MAX_INTENSITY = "max";
-        public static final String AURORA_LIST = "al";
-    }
 }

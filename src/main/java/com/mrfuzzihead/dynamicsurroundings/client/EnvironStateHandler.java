@@ -204,27 +204,6 @@ public class EnvironStateHandler implements IClientEffectHandler {
         private static String temperatureCategory = "";
         private static boolean inside;
         private static int tickCounter;
-        private static final String CONDITION_TOKEN_HURT = "hurt";
-        private static final String CONDITION_TOKEN_HUNGRY = "hungry";
-        private static final String CONDITION_TOKEN_BURNING = "burning";
-        private static final String CONDITION_TOKEN_NOAIR = "noair";
-        private static final String CONDITION_TOKEN_FLYING = "flying";
-        private static final String CONDITION_TOKEN_SPRINTING = "sprinting";
-        private static final String CONDITION_TOKEN_INLAVA = "inlava";
-        private static final String CONDITION_TOKEN_INWATER = "inwater";
-        private static final String CONDITION_TOKEN_INVISIBLE = "invisible";
-        private static final String CONDITION_TOKEN_BLIND = "blind";
-        private static final String CONDITION_TOKEN_MINECART = "ridingminecart";
-        private static final String CONDITION_TOKEN_HORSE = "ridinghorse";
-        private static final String CONDITION_TOKEN_BOAT = "ridingboat";
-        private static final String CONDITION_TOKEN_PIG = "ridingpig";
-        private static final String CONDITION_TOKEN_RIDING = "riding";
-        private static final String CONDITION_TOKEN_FREEZING = "freezing";
-        private static final String CONDITION_TOKEN_FOG = "fog";
-        private static final String CONDITION_TOKEN_HUMID = "humid";
-        private static final String CONDITION_TOKEN_DRY = "dry";
-        private static final String CONDITION_TOKEN_INSIDE = "inside";
-        private static final char CONDITION_SEPARATOR = '#';
 
         private static String getPlayerConditions(EntityPlayer player) {
             StringBuilder builder = new StringBuilder();
