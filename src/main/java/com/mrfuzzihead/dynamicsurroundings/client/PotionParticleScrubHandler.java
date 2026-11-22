@@ -5,10 +5,16 @@ import net.minecraft.world.World;
 
 public class PotionParticleScrubHandler implements IClientEffectHandler {
 
+    static boolean needsScrub(net.minecraft.entity.DataWatcher watcher) {
+        return watcher.getWatchableObjectInt(7) != 0;
+    }
+
     @Override
     public void process(World world, EntityPlayer player) {
-        player.getDataWatcher()
-            .updateObject(7, 0);
+        net.minecraft.entity.DataWatcher watcher = player.getDataWatcher();
+        if (needsScrub(watcher)) {
+            watcher.updateObject(7, 0);
+        }
     }
 
     @Override

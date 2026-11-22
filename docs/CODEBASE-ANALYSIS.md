@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 56 test suites / 244 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 57 test suites / 248 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -203,6 +203,12 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B52 (partial):** `ConfigProcessor` now handles `double` and `long` fields in addition to boolean/int/float/String/String[]. A test drives both through `Property`; enum support remains open.
 - **B70:** biome surveys are throttled to one per 20 ticks for position movement, while dimension/biome changes remain immediate; Y-only movement still ignored. Tests cover the throttle and invalidation.
 - Added config-type and survey-throttle assertions.
+
+**Batch 28 — enum config values and conditional potion scrubbing (248 tests green)**
+
+- **B52 (partial):** `ConfigProcessor` supports enum fields; invalid values log a warning and keep the default. `double`/`long`/enum tests now cover the new branches. A structured validation report remains open.
+- **B73 (partial):** `PotionParticleScrubHandler` only writes the potion datawatcher when the colour is non-zero, avoiding a write every tick. The datawatcher hack itself remains until a targeted particle mixin replaces it.
+- Added `PotionParticleScrubHandlerTest`.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B64, B73) and the optional per-effect HUD text cache (P9).
 
@@ -548,7 +554,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B49 | **M** | `data/BiomeRegistry.java:187`, `data/BlockRegistry.java:69`, `client/footsteps/engine/implem/ProbabilityWeightsAcoustic.java:42` | The reverse-cumulative pick was duplicated and unguarded: negative weights could walk past index 0 and an empty table called `nextInt(0)`. **Fixed in batch 12:** one `WeightedRandom` helper, negative weights ignored, empty tables return no pick, distribution and guard tested. |
 | B50 | **H** | `data/config/BiomeConfig.java:43`, `data/config/BlockConfig.java:26,41` | The JSON models accept any `Integer` for `spotSoundChance`/`chance`/`stepChance`. **Fixed in batch 12 at the use site:** zero/negative values are treated as "never" rather than reaching `nextInt`; no ambiguous clamping to "always". |
 | B51 | **M** | `util/ConfigProcessor.java:58` | `Float.MIN_VALUE` as the "no minimum" sentinel clamped unannotated floats to `1.4e-45`. **Fixed in batch 13:** `-Float.MAX_VALUE`, with a negative-value config test. |
-| B52 | **M** | `util/ConfigProcessor.java:19-101` | No support for `double`/`long`/enums beyond `String[]`; parse failures were logged and ignored. **Partially fixed in batch 27:** `double`/`long` are supported and tested; enum/validation-report support remains. |
+| B52 | **M** | `util/ConfigProcessor.java:19-101` | No support for `double`/`long`/enums beyond `String[]`; parse failures were logged and ignored. **Partially fixed in batches 27+28:** `double`/`long`/enum support is tested; the structured validation report remains. |
 | B53 | **M** | `ModOptions.java:405-425` | `scrubCategory` removed any property with an empty comment. **Fixed in batch 26:** only unknown (non-annotated) properties are removed; known comment-less properties survive, with a unit test. |
 | B54 | **M** | `client/gui/DynamicSurroundingsConfigGui.java:92-96` | `super.actionPerformed` runs before the synthetic sound lists are saved; the screen may already be closing/saving. Save the synthetic categories first, then call `super`. Applying the config also does not re-run `BlockRegistry`/`BiomeRegistry`/`SoundRegistry` initialization or refresh `EnvironStateHandler` static finals, so several non-restart options appear to do nothing until a world reload. Either make them `@RestartRequired` or add a `reloadRuntime()` path. |
 | B55 | **M** | `client/waila/WailaHandler.java:119-121` | WAILA registration is gated on `enableDebugLogging`; the integration is off by default. Remove the gate. Also the class is loaded from the common `Proxy.init` on a dedicated server; the `@Optional.Method` annotations are incomplete and `gatherText` has no annotation. Split the WAILA client code into `ProxyClient`, or guard the whole class with `@SideOnly(Side.CLIENT)` + optional interface handling. |
@@ -574,7 +580,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B70 | **M** | `client/BiomeSurveyHandler.java:57-70` | The dirty check included `playerY` and re-scanned per block moved. **Fixed in batches 25+27:** Y is ignored and position movement is throttled to one scan per 20 ticks; dimension/biome changes are immediate. |
 | B71 | **M** | `client/PlayerSoundEffectHandler.java:42-63` | Every tick allocates a `TObjectIntHashMap`, a `List`, and a scaled `SoundEffect` per sound, and re-runs regex matching for every sound. Cache the weighted sound list per (conditions, survey revision) and only rebuild when the biome mix changes. |
 | B72 | **M** | `client/hud/PotionHUD.java:30-100` | Null `thePlayer`; no state restore; re-formats strings/widths every frame; rendered on every `RenderGameOverlayEvent`. **Partially fixed in batch 4:** dispatcher filter, null guard and `glPushAttrib`/`glPopAttrib`; per-effect text caching remains (P9). |
-| B73 | **M** | `client/PotionParticleScrubHandler.java:8-11` | Writes `dataWatcher.updateObject(7, 0)` (the potion liquid colour, not the particle flag) every tick to suppress particles. It also removes the colour other client code may read and is a global datawatcher hack that can fight other mods. Prefer a mixin/targeted redirect on the particle spawn path, and only update when the value actually changes. |
+| B73 | **M** | `client/PotionParticleScrubHandler.java:8-11` | Writes `dataWatcher.updateObject(7, 0)` (the potion liquid colour, not the particle flag) every tick to suppress particles. It also removes the colour other client code may read and is a global datawatcher hack that can fight other mods. **Partially fixed in batch 28:** the write is skipped when the value is already zero; a targeted particle-spawn mixin remains the proper fix. |
 | B74 | **M** | `client/fx/particle/EntityTextPopOffFX.java:59-89` | Immediate-mode font draw and depth-func state leak; see §2.5. **Fixed in batch 7:** render-less marker + post-world renderer with pushed attributes and an Iris `PARTICLES` phase. |
 | B75 | **L** | `client/hud/GuiHUDHandler.java:36-40` | The dispatcher forwards all overlay phases to all overlays; filter by `ElementType` in the dispatcher. |
 | B76 | **L** | `client/EnvironStateHandler.java:104-109` | `craftSoundThrottle` initial value makes the first craft test depend on the tick counter; use `Integer.MIN_VALUE` or a boolean. |

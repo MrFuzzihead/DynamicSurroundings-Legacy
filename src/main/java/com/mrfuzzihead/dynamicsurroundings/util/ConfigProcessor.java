@@ -83,6 +83,19 @@ public final class ConfigProcessor {
                             Long.parseLong(
                                 config.get(category, property, annotation.defaultValue(), comment)
                                     .getString()));
+                    } else if (defaultValue instanceof Enum) {
+                        String value = config.getString(property, category, ((Enum<?>) defaultValue).name(), comment);
+                        try {
+                            @SuppressWarnings({ "unchecked", "rawtypes" })
+                            Object parsed = Enum.valueOf((Class<? extends Enum>) defaultValue.getClass(), value);
+                            field.set(parameters, parsed);
+                        } catch (IllegalArgumentException e) {
+                            ModLog.warn(
+                                "Invalid enum value '%s' for %s; keeping %s",
+                                value,
+                                property,
+                                ((Enum<?>) defaultValue).name());
+                        }
                     } else if (defaultValue instanceof String) {
                         field.set(parameters, config.getString(property, category, annotation.defaultValue(), comment));
                     } else if (defaultValue instanceof String[]) {

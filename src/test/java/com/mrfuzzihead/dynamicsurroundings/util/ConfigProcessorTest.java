@@ -9,6 +9,17 @@ import org.junit.Test;
 public class ConfigProcessorTest {
 
     @Test
+    public void enumOptionsAreSupported() {
+        Configuration config = new Configuration();
+        config.get("types", "mode", "ALPHA")
+            .set("BETA");
+
+        ConfigProcessor.process(config, EnumOptions.class);
+
+        assertEquals(EnumOptions.Mode.BETA, EnumOptions.mode);
+    }
+
+    @Test
     public void doubleAndLongOptionsAreSupported() {
         Configuration config = new Configuration();
         config.get("types", "double", "1.5")
@@ -31,6 +42,17 @@ public class ConfigProcessorTest {
         ConfigProcessor.process(config, TestOptions.class);
 
         assertEquals(-1.5F, TestOptions.value, 0.0F);
+    }
+
+    public static final class EnumOptions {
+
+        public enum Mode {
+            ALPHA,
+            BETA
+        }
+
+        @ConfigProcessor.Parameter(category = "types", property = "mode", defaultValue = "ALPHA")
+        public static Mode mode = Mode.ALPHA;
     }
 
     public static final class TypeOptions {
