@@ -31,6 +31,13 @@ public class ServerEffectHandlerTest {
     }
 
     @Test
+    public void auroraSetIsCapped() {
+        assertTrue(ServerEffectHandler.canAddAurora(0));
+        assertTrue(ServerEffectHandler.canAddAurora(31));
+        assertFalse(ServerEffectHandler.canAddAurora(32));
+    }
+
+    @Test
     public void rainIntensityIsSentOnChangeAndOnTheKeepalive() {
         assertTrue(ServerEffectHandler.shouldSendRainIntensity(0.5F, Float.NaN, 1));
         assertFalse(ServerEffectHandler.shouldSendRainIntensity(0.5F, 0.5F, 1));

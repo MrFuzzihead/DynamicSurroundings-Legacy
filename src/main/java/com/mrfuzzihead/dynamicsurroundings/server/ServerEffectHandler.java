@@ -5,6 +5,7 @@ import java.util.Set;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.World;
+import net.minecraftforge.event.world.WorldEvent.Unload;
 
 import com.mrfuzzihead.dynamicsurroundings.ModLog;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
@@ -13,6 +14,7 @@ import com.mrfuzzihead.dynamicsurroundings.data.AuroraPreset;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.ColorPair;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectData;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectDataFile;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 import com.mrfuzzihead.dynamicsurroundings.network.Network;
 import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
@@ -30,6 +32,7 @@ public final class ServerEffectHandler {
     private static final float RESET = -10.0F;
     private static final long MIN_AURORA_DISTANCE_SQ = 160000L;
     private static final int CHECK_INTERVAL = 100;
+    private static final int MAX_AURORAS = 32;
     private static final int RAIN_KEEPALIVE_TICKS = 40;
     private static TIntIntHashMap tickCounters = new TIntIntHashMap();
     private static TIntIntHashMap rainTickCounters = new TIntIntHashMap();
@@ -39,6 +42,11 @@ public final class ServerEffectHandler {
         FMLCommonHandler.instance()
             .bus()
             .register(new ServerEffectHandler());
+    }
+
+    @SubscribeEvent
+    public void onWorldUnload(Unload event) {
+        DimensionEffectDataFile.unload(event.world);
     }
 
     @SubscribeEvent
@@ -64,6 +72,10 @@ public final class ServerEffectHandler {
                 }
             }
         }
+    }
+
+    static boolean canAddAurora(int size) {
+        return size < MAX_AURORAS;
     }
 
     static boolean shouldSendRainIntensity(float current, float previous, int tick) {
@@ -109,7 +121,8 @@ public final class ServerEffectHandler {
                         for (EntityPlayerMP player : MinecraftServer.getServer()
                             .getConfigurationManager().playerEntityList) {
                             if (BiomeRegistry.hasAurora(PlayerUtils.getPlayerBiome(player, false))
-                                && !isAuroraInRange(player, data)) {
+                                && !isAuroraInRange(player, data)
+                                && canAddAurora(data.size())) {
                                 int colorSet = ColorPair.randomId();
                                 int preset = AuroraPreset.randomId();
                                 AuroraData aurora = new AuroraData(

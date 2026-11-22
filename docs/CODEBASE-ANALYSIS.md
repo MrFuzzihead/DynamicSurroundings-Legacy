@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 61 test suites / 264 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 62 test suites / 266 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -286,6 +286,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 - **B67/P4:** `BlockEffectHandler` reuses a single `MutableBlockPos`, early-outs when the block registry has no effects/sounds, and caches the sample count per configured range. The weighted sound path was already allocation-free.
 - Added `checkCountForRange` coverage to `BlockEffectHandlerTest`.
+
+**Batch 41 — server data cache, aurora cap, flat-world sea level (266 tests green)**
+
+- **B41:** `DimensionEffectDataFile` caches the saved-data instance per world in a synchronized `WeakHashMap`, and `ServerEffectHandler` drops it on world unload. Repeated tick reads no longer call `loadItemData`.
+- **B44:** aurora spawning is capped at 32 per dimension; `canAddAurora` is tested.
+- **B58:** overworld sea level detects `WorldType.FLAT` directly from `WorldInfo`, so it is correct on a dedicated server without the client load event. `DimensionRegistryTest` covers it.
+- Updated `DimensionEffectDataFileTest` to assert cache reuse and reload-after-unload.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
@@ -615,10 +622,10 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B38 | **H** | `server/ServerEffectHandler.java:52` | Sent `PacketRainIntensity` every `Phase.START` for every dimension. **Fixed in batch 16:** sent on change or a 40-tick keepalive, with a tested pure decision function. |
 | B39 | **H** | `server/WorldHandler.java:28-31` | The replacement for `World.updateWeatherBody` dropped vanilla's `!provider.hasNoSky` guard, so the state machine ran in the End and other no-sky dimensions. **Fixed in batch 15:** it skips no-sky worlds unless `DimensionRegistry.hasWeather` opts them in, so the Nether config still works. |
 | B40 | **M** | `data/DimensionEffectDataFile.java:31` | `getFile()` marked the saved data dirty on every access, so every autosave rewrote it. **Fixed in batch 16:** dirty callbacks on the real setters and aurora add/clear; repeated reads stay clean. |
-| B41 | **M** | `data/DimensionEffectDataFile.java:23-33` | `world.loadItemData` on every tick for every world is an unnecessary map lookup; cache the file in a `WeakHashMap<World, DimensionEffectDataFile>` cleared on `WorldEvent.Unload`. |
+| B41 | **M** | `data/DimensionEffectDataFile.java:23-33` | `world.loadItemData` ran on every tick. **Fixed in batch 41:** synchronized `WeakHashMap` cache cleared on world unload; tested. |
 | B42 | **M** | `server/ServerEffectHandler.java:30,60` | `MIN_AURORA_DISTANCE_SQ`, `CHECK_INTERVAL`, `RESET` are unused; the literals `160000L`, `100`, `-10` are duplicated in `Network`/`DimensionEffectData`. |
 | B43 | **M** | `network/PacketAurora.java:41-47` | `colorSet`/`preset` were serialized as bytes but held as ints. **Fixed in batch 13:** both are written/read as `int`; the codec test pins the width. |
-| B44 | **M** | `server/ServerEffectHandler.java:90-95` | A new aurora is created for a player whenever `!isAuroraInRange`; with the broken range check (B21) and no `hashCode` (B20) this can grow without bound. Cap per dimension/player and dedupe. |
+| B44 | **M** | `server/ServerEffectHandler.java:90-95` | Aurora creation could grow without bound. **Fixed in batch 41:** 32-per-dimension cap with a tested `canAddAurora` guard; hash/range fixes from batches 1/41 handle dedupe. |
 | B45 | **L** | `commands/CommandRain.java:60` | `getCommandSenderAsPlayer` meant the server console could not run `/rain status`. **Fixed in batch 17:** `ICommandSender.getEntityWorld()` and sender replies; tested with a mocked console. |
 | B46 | **L** | `commands/CommandRain.java:81-86` | `/rain reload` calls `BiomeRegistry.initialize()` and `BlockRegistry.initialize()` from the server command. `BlockRegistry` (and its `MCHelper`/`JetEffect`/`SoundManager` dependencies) is effectively client-only, so this is both useless and a potential dedicated-server `NoClassDefFoundError`/`NoSuchMethodError`; the client also keeps its old biome/block/fog/sound data. Add a client reload packet and keep server/client reload paths separate. |
 | B47 | **H** | `data/DimensionEffectData.java:66-77` | `randomizeRain` ignored `minIntensity`: with `delta = max-min` and `mid = delta/2`, `rand*mid + rand*mid` produced `[0, delta]`, then clamped to `0.01`. **Fixed in batch 11:** `min + rand*(max-min)`, with tests for a non-zero minimum and the 1% floor. |
@@ -637,7 +644,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B55 | **M** | `client/waila/WailaHandler.java:119-121` | WAILA registration is gated on `enableDebugLogging`; the integration is off by default. Remove the gate. Also the class is loaded from the common `Proxy.init` on a dedicated server; the `@Optional.Method` annotations are incomplete and `gatherText` has no annotation. Split the WAILA client code into `ProxyClient`, or guard the whole class with `@SideOnly(Side.CLIENT)` + optional interface handling. |
 | B56 | **M** | `proxy/Proxy.java:31-36` | Common proxy imports/loads client classes (`DamageEffectHandler`, `WailaHandler`) and calls `DamageEffectHandler.initialize()` on the server. `DamageEffectHandler.handleEvent` is `@SideOnly(CLIENT)` but the class is not; a production dedicated server that resolves the method can `NoClassDefFoundError`. The same side leakage exists in `BlockRegistry` (client `MCHelper`/`JetEffect`/`SoundManager` references called from `CommandRain`). Move client init to `ProxyClient`, keep a server-only handler for the packet sender, and make `BlockRegistry` explicitly client-only. |
 | B57 | **M** | `data/DimensionRegistry.java:27` | `CALENDAR_API = Loader.isModLoaded("CalendarAPI")` in a static initializer forced FML bootstrap in tests. **Fixed in batch 15:** a safe class probe, no `Loader` call. |
-| B58 | **M** | `data/DimensionRegistry.java:277-305` | `getData` uses a static cache keyed only by dimension id; `isFlatWorld` is set only when dimension 0 loads and only from the client event. Flat-world sea level is wrong on a dedicated server. |
+| B58 | **M** | `data/DimensionRegistry.java:277-305` | Flat-world sea level depended on a client-only load event. **Fixed in batch 41:** `WorldInfo.getTerrainType() == FLAT` is checked directly; tested. |
 | B59 | **M** | `data/BiomeRegistry.java:118-146` | A miss calls `initialize()` (full rescan, regex recompile, event post) while holding `synchronized (registry)`; on a busy server this is a global stall and can recurse through listeners. Make the registry copy-on-write and publish an immutable snapshot. `initialize` also clears `biomeAliases` at the end, so aliases cannot be queried later. |
 | B60 | **M** | `data/BlockRegistry.java:28-35` | `getEffects` returned the internal mutable list and `getRandomSound` allocated a candidate list per call. **Fixed in batch 25:** cached unmodifiable view and `WeightedRandom.pick` without the candidate list. |
 | B61 | **M** | `VersionCheck.java:24,30-34,40-46` | The check used a literal URL, no timeouts, a non-daemon thread, duplicated retry constants, and was enabled by default. **Fixed in batches 29+34+35:** GitHub Releases API, git-describe version source, JSON/legacy parsing, timeouts, daemon thread, named constants, configurable URL, and opt-in default. |

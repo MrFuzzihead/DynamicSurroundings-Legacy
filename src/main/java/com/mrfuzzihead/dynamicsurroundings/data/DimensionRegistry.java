@@ -27,7 +27,6 @@ public final class DimensionRegistry {
     private static final String SEASON_NOT_AVAILABLE = "noseason";
     private static final List<DimensionConfig.Entry> cache = new ArrayList<>();
     private static final TIntObjectHashMap<DimensionRegistry> dimensionData = new TIntObjectHashMap();
-    private static boolean isFlatWorld = false;
 
     private static boolean isClassPresent(String className) {
         try {
@@ -88,10 +87,6 @@ public final class DimensionRegistry {
 
     public static void loading(World world) {
         getData(world).initialize(world.provider);
-        if (world.provider.dimensionId == 0) {
-            isFlatWorld = world.getWorldInfo()
-                .getTerrainType() == WorldType.FLAT;
-        }
     }
 
     private static DimensionConfig.Entry getData(DimensionConfig.Entry entry) {
@@ -295,7 +290,12 @@ public final class DimensionRegistry {
     }
 
     public static int getSeaLevel(World world) {
-        return world.provider.dimensionId == 0 && isFlatWorld ? 0 : getData(world).getSeaLevel();
+        if (world.provider.dimensionId == 0 && world.getWorldInfo()
+            .getTerrainType() == WorldType.FLAT) {
+            return 0;
+        }
+
+        return getData(world).getSeaLevel();
     }
 
     public static int getSkyHeight(World world) {
