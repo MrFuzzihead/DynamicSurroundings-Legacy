@@ -164,7 +164,9 @@ public final class VersionCheck implements Runnable {
                 versionCheck();
             } while (++count < VERSION_CHECK_RETRIES && status == VersionCheck.UpdateStatus.COMM_ERROR);
         } catch (InterruptedException var3) {
-            var3.printStackTrace();
+            Thread.currentThread()
+                .interrupt();
+            ModLog.warn("Version check interrupted");
         }
 
         switch (status) {

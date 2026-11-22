@@ -177,7 +177,7 @@ public final class BiomeRegistry {
         try {
             process(BiomeConfig.load("dynamicsurroundings"));
         } catch (Exception var8) {
-            var8.printStackTrace();
+            ModLog.error("Unable to load default biome config", var8);
         }
 
         String[] configFiles = ModOptions.biomeConfigFiles;

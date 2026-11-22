@@ -58,7 +58,7 @@ public final class DimensionRegistry {
         try {
             process(DimensionConfig.load("dimensions"));
         } catch (Exception var7) {
-            var7.printStackTrace();
+            ModLog.error("Unable to load default dimension config", var7);
         }
 
         for (String file : ModOptions.dimensionConfigFiles) {

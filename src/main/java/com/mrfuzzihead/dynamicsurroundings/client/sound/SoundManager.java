@@ -267,7 +267,8 @@ public class SoundManager {
                 AL.destroy();
             }
         } catch (Throwable var3) {
-            var3.printStackTrace();
+            ModLog.warn("Unable to query OpenAL channel count; using configured channels");
+            ModLog.catching(var3);
         }
 
         normalChannelCount = ModOptions.normalSoundChannelCount;

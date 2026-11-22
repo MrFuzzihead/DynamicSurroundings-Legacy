@@ -70,7 +70,7 @@ public final class BlockRegistry {
         try {
             process(BlockConfig.load("blocks"));
         } catch (Exception var9) {
-            var9.printStackTrace();
+            ModLog.error("Unable to load default block config", var9);
         }
 
         for (ModContainer mod : Loader.instance()
@@ -78,7 +78,7 @@ public final class BlockRegistry {
             try {
                 process(BlockConfig.load(mod.getModId() + "_blocks"));
             } catch (Exception var8) {
-                var8.printStackTrace();
+                ModLog.error("Unable to load block config for " + mod.getModId(), var8);
             }
         }
 

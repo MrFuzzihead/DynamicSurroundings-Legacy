@@ -251,6 +251,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - The update notification links to GitHub Releases instead of CurseForge; the obsolete VersionChecker/Curse IMC registration was removed.
 - Tests cover git-describe parsing, GitHub `tag_name`, legacy lines, and missing tags.
 
+**Batch 36 — production logging cleanup (253 tests green)**
+
+- Replaced all 7 production `printStackTrace()` calls with `ModLog` calls:
+  - unknown sound type, OpenAL channel query, default biome/block/dimension config loads, per-mod block config load, and version-check interruption.
+- `VersionCheck` restores the interrupt flag before logging.
+- Production `src/main/java` now has **zero** `System.out`/`System.err` and **zero** `printStackTrace()` calls. The game-test module keeps its stdout markers intentionally.
+
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
