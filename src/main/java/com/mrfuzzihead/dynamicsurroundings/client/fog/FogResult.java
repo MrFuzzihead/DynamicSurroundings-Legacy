@@ -72,7 +72,7 @@ public final class FogResult {
     }
 
     public boolean isValid(@Nonnull RenderFogEvent event) {
-        return this.endScale > this.startScale && event.fogMode == this.fogMode;
+        return this.endScale >= this.startScale && event.fogMode == this.fogMode;
     }
 
     @Override

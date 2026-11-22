@@ -2,6 +2,7 @@ package com.mrfuzzihead.dynamicsurroundings.client.fog;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import net.minecraftforge.client.event.EntityViewRenderEvent.RenderFogEvent;
 
@@ -16,13 +17,13 @@ public class FogResultTest {
 
     @Test
     public void vanillaGeometryIsExpressedAsScales() {
-        FogResult result = new FogResult(event(GL11.GL_LINEAR, 128.0F));
+        FogResult result = new FogResult(event(0, 128.0F));
 
         assertEquals(1.0F, result.getStartScale(), 0.0F);
         assertEquals(1.0F, result.getEndScale(), 0.0F);
-        assertFalse(
-            "a 1:1 scale means 'leave the external fog untouched'",
-            result.isValid(event(GL11.GL_LINEAR, 128.0F)));
+        assertTrue(
+            "a 1:1 scale is cacheable and means 'leave the external fog untouched'",
+            result.isValid(event(0, 128.0F)));
     }
 
     @Test
@@ -31,7 +32,7 @@ public class FogResultTest {
 
         assertEquals(0.5F, result.getStartScale(), 0.0F);
         assertEquals(0.5F, result.getEndScale(), 0.0F);
-        assertFalse("an empty range is not valid", result.isValid(event(GL11.GL_LINEAR, 128.0F)));
+        assertTrue("an empty range is cacheable but the handler will not write it", result.isValid(event(0, 128.0F)));
     }
 
     @Test
