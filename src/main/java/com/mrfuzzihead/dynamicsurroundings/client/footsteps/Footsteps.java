@@ -99,7 +99,7 @@ public class Footsteps implements IResourceManagerReloadListener, IClientEffectH
                 if (stream != null) {
                     Register.setup(ConfigProperty.fromStream(stream), blockMap);
                 }
-            } catch (IOException var15) {
+            } catch (Exception var15) {
                 ModLog.debug("Unable to load block map data from pack %s", pack.getPackName());
             } finally {
                 if (stream != null) {
@@ -124,7 +124,7 @@ public class Footsteps implements IResourceManagerReloadListener, IClientEffectH
                 if (stream != null) {
                     Register.setup(ConfigProperty.fromStream(stream), primitiveMap);
                 }
-            } catch (IOException var15) {
+            } catch (Exception var15) {
                 ModLog.debug("Unable to load primitive map data from pack %s", pack.getPackName());
             } finally {
                 if (stream != null) {
@@ -187,7 +187,9 @@ public class Footsteps implements IResourceManagerReloadListener, IClientEffectH
         this.isolator.onFrame();
         EntityAccessor accessor = (EntityAccessor) player;
         if (ModOptions.footstepsSoundFactor > 0.0F) {
-            accessor.dynamicsurroundings$setNextStepDistance(Integer.MAX_VALUE);
+            if (accessor.dynamicsurroundings$getNextStepDistance() != Integer.MAX_VALUE) {
+                accessor.dynamicsurroundings$setNextStepDistance(Integer.MAX_VALUE);
+            }
         } else if (accessor.dynamicsurroundings$getNextStepDistance() == Integer.MAX_VALUE) {
             accessor.dynamicsurroundings$setNextStepDistance(0);
         }

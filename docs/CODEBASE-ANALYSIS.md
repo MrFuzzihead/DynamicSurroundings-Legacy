@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 53 test suites / 237 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 54 test suites / 238 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -171,6 +171,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 - **B82 (partial):** replaced the fragile basic-blockmap regex with an anchored `block^meta+substrate` parser and a dedicated `parseKey` helper. Tests cover name-only, meta-only, substrate-only, both, and malformed keys. The mutable lookup key remains.
 - Added `BasicBlockMapTest`.
+
+**Batch 23 — null player, malformed footstep packs, and per-tick writes (238 tests green)**
+
+- **B64:** `ClientEffectHandler` requires both a world and a player before dispatching handlers; a null player during respawn/dimension change is covered by `canProcess` and a unit test.
+- **B83:** footstep loaders catch runtime parse failures, skip empty acoustic streams, and log malformed JSON through `ModLog` instead of a bare `printStackTrace`.
+- **B84:** the `nextStepDistance` force is written only when it actually changes.
+- Added `ClientEffectHandlerTest`.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B64, B73) and the optional per-effect HUD text cache (P9).
 
@@ -533,7 +540,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 
 | ID | Sev | File:line | Finding |
 |---|---|---|---|
-| B64 | **H** | `client/ClientEffectHandler.java:78-86` | `world != null` is checked but `player` is not; during respawn/dimension change `thePlayer` can be null while the world is set, and every handler dereferences it. Guard `player != null`. |
+| B64 | **H** | `client/ClientEffectHandler.java:78-86` | `world` was checked but `player` was not; a null player during respawn/dimension change reached every handler. **Fixed in batch 23:** `canProcess(world, player)` and a unit test. |
 | B65 | **H** | `client/fx/BlockEffectHandler.java:64-72` | Step sound sampled `playerPos.down(2)`, i.e. dirt under grass. **Fixed in batch 15:** `posY - 0.1`, with a position test. |
 | B66 | **H** | `client/fx/JetEffect.java:83-89` | `Dust.trigger` required `world.isAirBlock(x, y-1, z)`, so dust only spawned on floating blocks. **Fixed in batch 15:** it now requires air above, like fire/fountain; tested both directions. |
 | B67 | **H** | `client/fx/BlockEffectHandler.java:40-62` | ~1,000 `BlockPos` allocations + two block lookups per sample per tick (plus `new ArrayList` in `BlockRegistry.getRandomSound`) → GC pressure and client tick cost. Reuse a mutable pos, read block+metadata once, and avoid allocation in the weighted pick. |
@@ -557,8 +564,8 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B80 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:40-43` | `USING_LATENESS`, `USING_EARLYNESS`, `LATENESS_THRESHOLD_DIVIDER`, `EARLYNESS_THRESHOLD_POW` unused; the literals are repeated. |
 | B81 | **M** | `client/footsteps/mcpackage/implem/LegacyCapableBlockMap.java:15-35` | Only `^` and `.` were treated as legacy separators; `id:meta` keys failed. **Fixed in batch 17:** `:`, `^`, and `.` are accepted; `1:0`, `1^0`, `1.0`, and bare IDs are tested. |
 | B82 | **M** | `client/footsteps/mcpackage/implem/BasicBlockMap.java:97-120` | The regex is fragile; `BlockInfo.hashCode` NPE'd on a null block and `equals` cast without `instanceof`; `getBlockMap` reuses a mutable key. **Fixed in batches 18+22:** null-safe `BlockInfo` hash/`instanceof` equality and an anchored `parseKey` parser are tested. The reusable mutable lookup key remains. |
-| B83 | **M** | `client/footsteps/game/system/Footsteps.java:74-166` | Each loader catches `IOException` but `Scanner.next()` on an empty stream throws `NoSuchElementException` (not caught) and `AcousticsJsonReader` swallows all parse errors, so a malformed pack silently disables all footsteps. Validate and log. |
-| B84 | **L** | `client/footsteps/game/system/Footsteps.java:180-195` | Setting `nextStepDistance = Integer.MAX_VALUE` every tick is a write per tick; do it once when the handler is enabled. |
+| B83 | **M** | `client/footsteps/game/system/Footsteps.java:74-166` | Empty streams threw `NoSuchElementException` and malformed JSON was swallowed. **Fixed in batch 23:** empty streams are skipped, loaders catch runtime parse failures, and `AcousticsJsonReader` logs through `ModLog`. |
+| B84 | **L** | `client/footsteps/game/system/Footsteps.java:180-195` | `nextStepDistance = Integer.MAX_VALUE` was written every tick. **Fixed in batch 23:** write only when the value changes. |
 | B85 | **L** | `client/footsteps/parsers/AcousticsJsonReader.java:45-100` | Missing fields/empty sound names/delayed bounds produced NPEs or IndexOutOfBounds. **Fixed in batch 18:** descriptive `JsonParseException`s and direct parser tests. |
 | B86 | **L** | `client/footsteps/util/property/simple/ConfigProperty.java:100-110` | `JsonUtils.load(..., Map.class)` returns `null` for a JSON `null`, and the unchecked cast hid it. **Fixed in batch 18:** null becomes an empty map and `loadStream` returns false. |
 

@@ -74,17 +74,20 @@ public class ClientEffectHandler {
         }
     }
 
+    static boolean canProcess(World world, EntityPlayer player) {
+        return world != null && player != null;
+    }
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void clientTick(ClientTickEvent event) {
         if (!Minecraft.getMinecraft()
             .isGamePaused()) {
             World world = FMLClientHandler.instance()
                 .getClient().theWorld;
-            if (world != null) {
+            EntityPlayer player = FMLClientHandler.instance()
+                .getClient().thePlayer;
+            if (canProcess(world, player)) {
                 if (event.phase == Phase.START) {
-                    EntityPlayer player = FMLClientHandler.instance()
-                        .getClient().thePlayer;
-
                     for (IClientEffectHandler handler : effectHandlers) {
                         handler.process(world, player);
                     }

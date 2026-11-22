@@ -9,6 +9,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.implem.BasicAcoustic;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.implem.DelayedAcoustic;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.implem.EventSelectorAcoustics;
@@ -40,7 +41,8 @@ public class AcousticsJsonReader {
         try {
             this.parseJSONUnsafe(jasonString, lib);
         } catch (Exception var4) {
-            var4.printStackTrace();
+            ModLog.warn("Unable to parse acoustics JSON");
+            ModLog.catching(var4);
         }
     }
 
