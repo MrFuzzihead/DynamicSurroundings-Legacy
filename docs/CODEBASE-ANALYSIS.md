@@ -1,8 +1,8 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1–6 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, and BOP/cloud/phase compatibility) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 33 test suites / 184 unit tests, plus a non-shipped in-game test mod.
+**Scope:** analysis + the implementation log below. Batches 1–7 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, and text-pop-off instancing) are merged into the branch.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 34 test suites / 185 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -69,7 +69,14 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - Added `compat/angelica/IrisPhaseBridge`, a reflection-only `WorldRenderingPhase` scope. `AuroraRenderHandler` now draws inside `WorldRenderingPhase.CLOUDS` when Iris is active and restores the previous phase in a `finally` block; without Iris it is a no-op.
 - Added three tests: absent Angelica/BOP detection, absent Iris phase bridge, and the NotFine cloud-height fallback.
 
-**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the text-pop-off particle pass (§2.5) and the remaining non-compat findings (B9–B11, B15–B17, B38–B40, B48/B50, B64–B65, B87).
+**Batch 7 — text pop-offs as a post-world overlay (185 tests green)**
+
+- `EntityTextPopOffFX` is now a render-less marker: `renderParticle` does nothing, and the grow/shrink animation moved to `onUpdate`.
+- Added `TextPopOffRenderer`, which draws active pop-offs from `RenderWorldLastEvent` with `glPushAttrib`/`glPopAttrib`, no depth-function mutation, and an Iris `PARTICLES` phase scope. It prunes dead/stale-world entries.
+- This keeps the font out of Angelica's `ParticleInstancer` capture and out of Iris gbuffer programs.
+- Added a unit test that pins the no-op `renderParticle` and the active-list lifecycle.
+
+**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B38–B40, B48/B50, B64–B65, B73, B87) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
 
@@ -246,7 +253,7 @@ static boolean isDsOwner(WorldClient world) { return owner(world) == DYNAMIC_SUR
 
 **Recommended fix**
 
-- Make `EntityTextPopOffFX` a **render-less marker** and draw all active text pop-offs in a dedicated world-overlay pass (`RenderWorldLastEvent` or a DS hook after particles) with:
+- **Implemented in batch 7:** `EntityTextPopOffFX` is a render-less marker and `TextPopOffRenderer` draws all active pop-offs in a dedicated `RenderWorldLastEvent` pass with:
   - `glPushAttrib/glPopAttrib` (or `PushMatrix` + explicit state save),
   - `glDisable(GL_DEPTH_TEST)` for `shouldOnTop` instead of changing the depth *function*,
   - a depth-sorted or distance-scaled draw,
@@ -438,7 +445,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B71 | **M** | `client/PlayerSoundEffectHandler.java:42-63` | Every tick allocates a `TObjectIntHashMap`, a `List`, and a scaled `SoundEffect` per sound, and re-runs regex matching for every sound. Cache the weighted sound list per (conditions, survey revision) and only rebuild when the biome mix changes. |
 | B72 | **M** | `client/hud/PotionHUD.java:30-100` | Null `thePlayer`; no state restore; re-formats strings/widths every frame; rendered on every `RenderGameOverlayEvent`. **Partially fixed in batch 4:** dispatcher filter, null guard and `glPushAttrib`/`glPopAttrib`; per-effect text caching remains (P9). |
 | B73 | **M** | `client/PotionParticleScrubHandler.java:8-11` | Writes `dataWatcher.updateObject(7, 0)` (the potion liquid colour, not the particle flag) every tick to suppress particles. It also removes the colour other client code may read and is a global datawatcher hack that can fight other mods. Prefer a mixin/targeted redirect on the particle spawn path, and only update when the value actually changes. |
-| B74 | **M** | `client/fx/particle/EntityTextPopOffFX.java:59-89` | Immediate-mode font draw and depth-func state leak; see §2.5. |
+| B74 | **M** | `client/fx/particle/EntityTextPopOffFX.java:59-89` | Immediate-mode font draw and depth-func state leak; see §2.5. **Fixed in batch 7:** render-less marker + post-world renderer with pushed attributes and an Iris `PARTICLES` phase. |
 | B75 | **L** | `client/hud/GuiHUDHandler.java:36-40` | The dispatcher forwards all overlay phases to all overlays; filter by `ElementType` in the dispatcher. |
 | B76 | **L** | `client/EnvironStateHandler.java:104-109` | `craftSoundThrottle` initial value makes the first craft test depend on the tick counter; use `Integer.MIN_VALUE` or a boolean. |
 
