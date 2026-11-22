@@ -47,9 +47,7 @@ public class HazeFogRangeCalculator extends VanillaFogRangeCalculator {
                         scaleNear *= factor;
                     }
 
-                    float end = event.farPlaneDistance * (1.0F - scaleFar);
-                    float start = event.farPlaneDistance * (1.0F - scaleNear);
-                    this.cached.set(start, end);
+                    this.cached.set(event.fogMode, (1.0F - scaleNear) / FogResult.DEFAULT_PLANE_SCALE, 1.0F - scaleFar);
                     return this.cached;
                 }
             }

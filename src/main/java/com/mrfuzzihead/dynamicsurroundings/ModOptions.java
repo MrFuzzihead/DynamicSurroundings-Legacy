@@ -71,8 +71,15 @@ public final class ModOptions {
     public static final String CONFIG_ENABLE_MORNING_FOG = "Morning Fog";
     public static final String CONFIG_MORNING_FOG_CHANCE = "Morning Fog Chance";
     public static final String CONFIG_ENABLE_WEATHER_FOG = "Weather Fog";
-    private static final List<String> fogSort = Arrays
-        .asList("Desert Fog", "Elevation Haze", "Biome Fog", "Morning Fog", "Morning Fog Chance", "Weather Fog");
+    public static final String CONFIG_RESPECT_EXTERNAL_FOG = "Respect External Fog";
+    private static final List<String> fogSort = Arrays.asList(
+        "Desert Fog",
+        "Elevation Haze",
+        "Biome Fog",
+        "Morning Fog",
+        "Morning Fog Chance",
+        "Weather Fog",
+        "Respect External Fog");
     @ConfigProcessor.Parameter(category = "fog", property = "Desert Fog", defaultValue = "true")
     @ConfigProcessor.Comment("Allow desert fog when raining")
     public static boolean allowDesertFog = true;
@@ -92,6 +99,9 @@ public final class ModOptions {
     @ConfigProcessor.Parameter(category = "fog", property = "Weather Fog", defaultValue = "true")
     @ConfigProcessor.Comment("Enable morning fog")
     public static boolean enableWeatherFog = true;
+    @ConfigProcessor.Parameter(category = "fog", property = "Respect External Fog", defaultValue = "true")
+    @ConfigProcessor.Comment("Apply DS fog relative to the fog produced by NotFine/other mods instead of overwriting it")
+    public static boolean respectExternalFog = true;
     public static final String CATEGORY_GENERAL = "general";
     public static final String CONFIG_MIN_RAIN_STRENGTH = "Default Minimum Rain Strength";
     public static final String CONFIG_MAX_RAIN_STRENGTH = "Default Maximum Rain Strength";

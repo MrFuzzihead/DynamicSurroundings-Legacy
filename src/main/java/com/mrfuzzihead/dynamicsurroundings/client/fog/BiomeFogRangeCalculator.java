@@ -77,7 +77,11 @@ public class BiomeFogRangeCalculator extends VanillaFogRangeCalculator {
             ctx.posZ = playerZ;
             ctx.lastFarPlane = event.farPlaneDistance;
             farPlaneDistance = Math.min(farPlaneDistance, event.farPlaneDistance);
-            ctx.cached.set(event.fogMode, farPlaneDistance, farPlaneDistanceScale);
+            float reference = event.farPlaneDistance > 0.0F ? event.farPlaneDistance : 1.0F;
+            ctx.cached.set(
+                event.fogMode,
+                (farPlaneDistance * farPlaneDistanceScale) / (reference * FogResult.DEFAULT_PLANE_SCALE),
+                farPlaneDistance / reference);
             return ctx.cached;
         }
     }

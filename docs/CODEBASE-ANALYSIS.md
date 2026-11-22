@@ -1,8 +1,8 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batch 1 (weather ownership and aurora lifecycle) is merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 28 test suites / 172 unit tests, plus a non-shipped in-game test mod.
+**Scope:** analysis + the implementation log below. Batches 1 (weather/aurora) and 2 (relative fog) are merged into the branch.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 30 test suites / 180 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -16,13 +16,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 |---|-------|--------|----------------|
 | 1 | `EntityRendererMixin.renderRainSnow` no longer cancelled vanilla | **Fixed (batch 1)** | The pre-mixin transformer inserted a `RETURN` after the DS renderer; the mixin converted that into a plain `HEAD` injection. Vanilla rain/snow rendered **on top of** DS rain, and a custom `IRenderHandler` was invoked **twice**. Both injectors now cancel only when DS owns the frame. |
 | 2 | DS and Angelica both cancel `renderRainSnow` / `addRainParticles` at `HEAD` | **Fixed (batch 1)** | Which mod wins used to depend on mixin application order. `WeatherBackend` now has one owner per frame (external provider, Angelica instanced, DS, or vanilla); the DS injectors use `order = 900` and decline when they are not the owner. |
-| 3 | Fog ranges are written as absolute values at `EventPriority.LOWEST` (`client/FogEffectHandler.java:76`) | **Next batch** | Overrides NotFine's `TERRAIN_FOG` / `FOG_NEAR_DISTANCE` settings (the exact cause of Angelica issue #2304) and any other mod's fog. Must be applied relative to the fog that vanilla/NotFine already produced. |
+| 3 | Fog ranges are written as absolute values at `EventPriority.LOWEST` (`client/FogEffectHandler.java:76`) | **Fixed (batch 2)** | Overrides NotFine's `TERRAIN_FOG` / `FOG_NEAR_DISTANCE` settings (the exact cause of Angelica issue #2304) and any other mod's fog. Must be applied relative to the fog that vanilla/NotFine already produced. |
 | 4 | `SoundManager.update()` is only driven by the biome-sound handler (`client/sound/SoundManager.java:88`) | **Pending** | When biome sounds are disabled, pending block/step sounds never drain and emitters are never ticked. The handler that drives the queue must be registered unconditionally. |
 | 5 | Client packets mutate render/particle state on the Netty thread (`PacketHealthChange`, `PacketAurora`, `PacketRainIntensity`) | **Pending** | Off-thread `EffectRenderer.addEffect()` and render-state writes are a classic 1.7.10 crash/corruption source. |
 
 ### Implementation log
 
-**Batch 1 — weather ownership and aurora lifecycle (this branch, 172 tests green)**
+**Batch 1 — weather ownership and aurora lifecycle (172 tests green)**
 
 - Added `compat/Compat`, `compat/angelica/AngelicaBridge` (reads `AngelicaConfig.enableInstancedWeather`) and `compat/notfine/NotFineBridge` (reads `SettingsManager.downfallDistance`). Both bridges are reflection-only, cache their handles, and degrade to the vanilla fallback when the optional mod or field is absent.
 - Added `client/weather/WeatherBackend` with a pure, unit-tested `resolve(...)` matrix. DS cancels `renderRainSnow`/`addRainParticles` only when it is the owner; otherwise vanilla, an external `IRenderHandler`, or Angelica runs normally.
@@ -33,13 +33,22 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - Fixed aurora identity/range: `AuroraData.hashCode`, `||` in the current-aurora comparison, `volatile currentAurora`, and the server range check now measures against the actual spawn target (`playerZ - offset`) instead of subtracting the offset twice.
 - Added optional `after:` relations for Angelica/NotFine/Iris/BOP to `mcmod.info`; the F3 diagnostics now print the active `WeatherBackend.Owner`.
 
-**Next batches:** relative fog + NotFine fog settings (batch 2); NotFine void fog/cloud height/HUD parity (batch 3); off-thread client packet queue (batch 4); the Angelica `WeatherColumnProvider` bridge and client compatibility matrix (batch 5).
+**Batch 2 — relative fog composition (180 tests green)**
+
+- `FogResult` now stores **scale factors** (1.0 = leave the external fog untouched), not absolute distances. The handler reads the current `GL_FOG_START`/`GL_FOG_END` produced by vanilla/NotFine/Angelica and multiplies them, so NotFine's `FOG_NEAR_DISTANCE = 1 %` and `TERRAIN_FOG = false` survive DS fog.
+- Added `fog.Respect External Fog` (default `true`) for users who want the old absolute behaviour. When false, the handler uses the vanilla `0.75 / 1.0` geometry as the base.
+- Only the linear-fog event (`fogMode >= 0`) is modified; sky fog (`-1`) and the cloud/water/lava paths are left alone.
+- `doFog()` now considers every fog option (biome, desert, elevation haze, morning, weather), not just the two biome flags.
+- Fixed the morning-fog clamp so `start` can no longer exceed `end`; the `11`-block floor is now expressed in scale space.
+- Added 8 fog unit tests: relative-scale semantics, clamping, mode mismatch, vanilla/weather/holistic calculators, and the new config default.
+
+**Next batches:** NotFine void fog/cloud height/HUD parity (batch 3); off-thread client packet queue (batch 4); the Angelica `WeatherColumnProvider` bridge and client compatibility matrix (batch 5).
 
 ### The three compatibility moves that unlock the most value
 
 1. **A weather backend abstraction** with three owners: vanilla/external `IRenderHandler`, DS legacy renderer, and Angelica's instanced weather. DS mixins ask the backend before cancelling. **Done in batch 1.**
 2. **An Angelica `WeatherColumnProvider` bridge** so DS's per-biome rain/dust/snow is fed into Angelica's instanced pipeline instead of competing with it. Angelica's API already exists (`com.gtnewhorizons.angelica.api.weather`, `apiVersion = 1`). **Still to do.**
-3. **Relative fog + a NotFine setting bridge** (`jss.notfine.core.SettingsManager.downfallDistance`, `Settings.TERRAIN_FOG`, `Settings.FOG_NEAR_DISTANCE`) — reflective, optional, no compile dependency. **Downfall bridge done; relative fog is batch 2.**
+3. **Relative fog + a NotFine setting bridge** (`jss.notfine.core.SettingsManager.downfallDistance`, `Settings.TERRAIN_FOG`, `Settings.FOG_NEAR_DISTANCE`) — reflective, optional, no compile dependency. **Done in batches 1–2 for downfall and fog range.**
 
 ### Coverage reality
 
@@ -155,6 +164,8 @@ static boolean isDsOwner(WorldClient world) { return owner(world) == DYNAMIC_SUR
   - `FOG_NEAR_DISTANCE` (1–100 %, default 75; near = `farPlaneDistance * pct * 0.01 - 1`)
 - `RenderFogEvent` only exposes `fogMode` and `farPlaneDistance` (Forge 1.7.10), so DS cannot see the current start/end from the event and re-computes them from `farPlaneDistance`. Result: DS re-enables fog when the user disabled it, and ignores the near-distance percentage. This is Angelica issue **#2304** ("Dynamic Surroundings disables fog settings"), with screenshots at 1 % near distance.
 
+**Implemented in batch 2** (the points below are the design that shipped):
+
 **Recommended fix (composes with every fog mod)**
 
 1. In `fogRenderEvent`, read the current state that vanilla/NotFine already produced:
@@ -220,8 +231,8 @@ static boolean isDsOwner(WorldClient world) { return owner(world) == DYNAMIC_SUR
 
 | NotFine setting | DS behaviour | Fix |
 |---|---|---|
-| `DOWNFALL_DISTANCE` (`SettingsManager.downfallDistance`, 0/5/10/15) | `StormRenderer.java:77` uses `mc.gameSettings.fancyGraphics ? 10 : 5`; `StormSplashRenderer` uses hard-coded `RANGE=10` | Read `downfallDistance` reflectively; treat `0` as "no weather rendering"; use the same radius for splashes and quads |
-| `TERRAIN_FOG` / `FOG_NEAR_DISTANCE` | Overridden by absolute `glFogf` | Relative fog (§2.3) |
+| `DOWNFALL_DISTANCE` (`SettingsManager.downfallDistance`, 0/5/10/15) | `StormRenderer.java:77` used `mc.gameSettings.fancyGraphics ? 10 : 5`; splashes used hard-coded `RANGE=10` | **Fixed in batch 1:** one reflected radius for quads and splashes; `0` disables downfall. |
+| `TERRAIN_FOG` / `FOG_NEAR_DISTANCE` | Overridden by absolute `glFogf` | **Fixed in batch 2:** relative fog preserves both settings. |
 | `VOID_FOG` | `BiomeFogColorCalculator.applyPlayerEffects` independently applies `getVoidFogYFactor` to the biome portion | Skip DS's void-fog term when NotFine's `VOID_FOG` is off; or delegate all player effects to vanilla and only blend the biome colour |
 | `CLOUD_HEIGHT` | `DimensionRegistry` cloud height is used for aurora height/haze | If the user changes NotFine's cloud height, detect it and use it for the aurora/haze alignment (or document that DS uses the dimension config) |
 | `MODE_CLOUDS`, `MODE_WATER`, `MODE_LEAVES`, `MODE_SKY` | no direct conflict | Add to the compat diagnostics, no action |
@@ -313,13 +324,13 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 
 | ID | Sev | File:line | Finding |
 |---|---|---|---|
-| B12 | **C** | `client/FogEffectHandler.java:76-77` | Absolute fog override breaks NotFine `TERRAIN_FOG`/`FOG_NEAR_DISTANCE` (Angelica #2304). Convert to relative scales (§2.3). |
-| B13 | **H** | `client/FogEffectHandler.java:42-44` | `doFog()` is `enableBiomeFog || allowDesertFog`; elevation haze, morning fog and weather fog are ignored when those two are off. Should be `anyFogOptionEnabled()`. |
-| B14 | **M** | `client/fog/MorningFogRangeCalculator.java:39` | `clamp(start - shift*2, 11, newEnd)` can return `11` when `newEnd < 11`, producing `start > end`. Guard `newEnd > 11` and clamp `start <= end`. |
+| B12 | **C** | `client/FogEffectHandler.java:76-77` | Absolute fog override broke NotFine `TERRAIN_FOG`/`FOG_NEAR_DISTANCE` (Angelica #2304). **Fixed in batch 2:** relative scales applied to the current GL fog; `Respect External Fog` opt-out. |
+| B13 | **H** | `client/FogEffectHandler.java:42-44` | `doFog()` was `enableBiomeFog || allowDesertFog`; elevation haze, morning fog and weather fog were ignored when those two were off. **Fixed in batch 2:** all fog options are considered. |
+| B14 | **M** | `client/fog/MorningFogRangeCalculator.java:39` | `clamp(start - shift*2, 11, newEnd)` could return `11` when `newEnd < 11`, producing `start > end`. **Fixed in batch 2:** the floor is scaled and `FogResult` clamps `start <= end`. |
 | B15 | **M** | `client/fog/BiomeFogRangeCalculator.java:47-80` | 41×41 = 1,681 biome lookups whenever the player moves one block (or the rain/far-plane changes). Cache on a coarser grid (e.g., 4-block cells) or only re-scan when the biome mix changes. |
 | B16 | **M** | `client/fog/BiomeFogColorCalculator.java:60-79` | Same per-block 169-column rescan; `applyPlayerEffects` re-implements void fog/blindness/night vision and ignores NotFine's `VOID_FOG`. |
 | B17 | **L** | `client/fog/BiomeFogRangeCalculator.java:13-15` | `DUST_FOG_IMPACT` unused (literal `0.9F`); `weightMixed` hardcoded 1681 instead of `(2*DISTANCE+1)^2`. |
-| B18 | **L** | `client/fog/HolisticFogRangeCalculator.java:30-37` | `Math.min` of starts/ends can produce an invalid pair; use `FogResult.isValid` or clamp start ≤ end. |
+| B18 | **L** | `client/fog/HolisticFogRangeCalculator.java:30-37` | `Math.min` of starts/ends could produce an invalid pair. **Fixed in batch 2:** `FogResult` clamps `start <= end` and the handler checks `isValid`. |
 
 ### 3.3 Aurora
 

@@ -50,6 +50,7 @@ public class ModOptionsTest {
         assertEquals(100, ModOptions.particleCountBase);
         assertTrue(ModOptions.enableVersionChecking);
         assertFalse(ModOptions.disableWeatherEffects);
+        assertTrue(ModOptions.respectExternalFog);
     }
 
     @Test

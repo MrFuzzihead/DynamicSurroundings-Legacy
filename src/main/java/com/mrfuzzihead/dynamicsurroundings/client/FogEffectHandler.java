@@ -40,7 +40,10 @@ public class FogEffectHandler implements IClientEffectHandler {
     }
 
     private boolean doFog() {
-        return ModOptions.enableBiomeFog || ModOptions.allowDesertFog;
+        return ModOptions.enableBiomeFog || ModOptions.allowDesertFog
+            || ModOptions.enableElevationHaze
+            || ModOptions.enableMorningFog
+            || ModOptions.enableWeatherFog;
     }
 
     @Override
@@ -70,11 +73,27 @@ public class FogEffectHandler implements IClientEffectHandler {
     public void fogRenderEvent(RenderFogEvent event) {
         if (this.doFog()) {
             Material material = event.block.getMaterial();
-            if (material != Material.lava && material != Material.water) {
+            if (material != Material.lava && material != Material.water && event.fogMode >= 0) {
                 FogResult result = this.fogRange.calculate(event);
-                if (result != null) {
-                    GL11.glFogf(2915, result.getStart());
-                    GL11.glFogf(2916, result.getEnd());
+                if (result != null && result.isValid(event)) {
+                    float baseStart;
+                    float baseEnd;
+                    if (ModOptions.respectExternalFog) {
+                        baseStart = GL11.glGetFloat(GL11.GL_FOG_START);
+                        baseEnd = GL11.glGetFloat(GL11.GL_FOG_END);
+                    } else {
+                        baseStart = event.farPlaneDistance * FogResult.DEFAULT_PLANE_SCALE;
+                        baseEnd = event.farPlaneDistance;
+                    }
+
+                    if (baseEnd > baseStart && baseEnd > 0.0F) {
+                        float start = baseStart * result.getStartScale();
+                        float end = baseEnd * result.getEndScale();
+                        if (end > start) {
+                            GL11.glFogf(GL11.GL_FOG_START, start);
+                            GL11.glFogf(GL11.GL_FOG_END, end);
+                        }
+                    }
                 }
             }
         }
