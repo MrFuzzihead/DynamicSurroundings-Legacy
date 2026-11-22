@@ -8,11 +8,13 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.world.WorldEvent.Load;
+import net.minecraftforge.event.world.WorldEvent.Unload;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.Footsteps;
 import com.mrfuzzihead.dynamicsurroundings.client.fx.BlockEffectHandler;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
+import com.mrfuzzihead.dynamicsurroundings.compat.angelica.AngelicaWeatherProvider;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 
 import cpw.mods.fml.client.FMLClientHandler;
@@ -99,6 +101,14 @@ public class ClientEffectHandler {
     public void onWorldLoad(Load e) {
         if (e.world.isRemote) {
             DimensionRegistry.loading(e.world);
+            AngelicaWeatherProvider.install(e.world);
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onWorldUnload(Unload e) {
+        if (e.world.isRemote) {
+            AngelicaWeatherProvider.uninstall(e.world);
         }
     }
 }

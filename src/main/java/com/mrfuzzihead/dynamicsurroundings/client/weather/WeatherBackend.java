@@ -5,6 +5,7 @@ import net.minecraft.client.multiplayer.WorldClient;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.compat.angelica.AngelicaBridge;
+import com.mrfuzzihead.dynamicsurroundings.compat.angelica.AngelicaWeatherProvider;
 import com.mrfuzzihead.dynamicsurroundings.compat.notfine.NotFineBridge;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 
@@ -65,7 +66,8 @@ public final class WeatherBackend {
             return Owner.VANILLA;
         }
 
-        boolean externalProvider = world.provider.getWeatherRenderer() != null;
+        boolean externalProvider = world.provider.getWeatherRenderer() != null
+            && !AngelicaWeatherProvider.isDsProvider(world.provider.getWeatherRenderer());
         return resolve(
             !ModOptions.disableWeatherEffects,
             DimensionRegistry.hasWeather(world),

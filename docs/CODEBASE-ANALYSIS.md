@@ -1,8 +1,8 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1 (weather/aurora), 2 (relative fog), 3 (client-thread safety) and 4 (NotFine HUD/void fog) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 30 test suites / 181 unit tests, plus a non-shipped in-game test mod.
+**Scope:** analysis + the implementation log below. Batches 1–5 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, and the Angelica provider bridge) are merged into the branch.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 31 test suites / 182 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -55,12 +55,19 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - `PotionHUD` now null-guards `thePlayer` and wraps its draw in `glPushAttrib`/`glPopAttrib`, so it cannot leak lighting/texture/colour state into the HUD cache or vanilla.
 - Still open from this theme: NotFine `CLOUD_HEIGHT` alignment for aurora/haze (DS dimension config currently wins) and per-effect text caching (P9).
 
-**Next batch:** the Angelica `WeatherColumnProvider` bridge and client compatibility matrix (batch 5).
+**Batch 5 — Angelica `WeatherColumnProvider` bridge (182 tests green)**
+
+- Added `compat/angelica/AngelicaWeatherProvider`. It detects Angelica's `WeatherColumnProvider` interface reflectively, creates a `Proxy` that implements both `IRenderHandler` and that interface, and installs it with `WorldProvider.setWeatherRenderer` on client world load. The previous provider is restored on unload.
+- The provider exposes DS's per-biome rain/snow/dust columns to Angelica's instanced weather renderer (layer period/drift/fade, per-column bottom/top, lightmap, scroll and RGBA), mirroring the legacy `StormRenderer` rules. Without Angelica the install path is a no-op.
+- `WeatherBackend` recognises the DS-owned provider, so with Angelica's instanced weather disabled the legacy DS renderer still owns the frame; with it enabled Angelica consumes the columns.
+- Added a no-op test for the absent-Angelica path.
+
+**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), decide whether the aurora needs an explicit Iris phase, and close the remaining non-compat findings (B9–B11, B15–B17, B38–B40, B48/B50, B64–B65, B87).
 
 ### The three compatibility moves that unlock the most value
 
 1. **A weather backend abstraction** with three owners: vanilla/external `IRenderHandler`, DS legacy renderer, and Angelica's instanced weather. DS mixins ask the backend before cancelling. **Done in batch 1.**
-2. **An Angelica `WeatherColumnProvider` bridge** so DS's per-biome rain/dust/snow is fed into Angelica's instanced pipeline instead of competing with it. Angelica's API already exists (`com.gtnewhorizons.angelica.api.weather`, `apiVersion = 1`). **Still to do.**
+2. **An Angelica `WeatherColumnProvider` bridge** so DS's per-biome rain/dust/snow is fed into Angelica's instanced pipeline instead of competing with it. Angelica's API already exists (`com.gtnewhorizons.angelica.api.weather`, `apiVersion = 1`). **Done in batch 5 (reflection proxy, no compile dependency).**
 3. **Relative fog + a NotFine setting bridge** (`jss.notfine.core.SettingsManager.downfallDistance`, `Settings.TERRAIN_FOG`, `Settings.FOG_NEAR_DISTANCE`) — reflective, optional, no compile dependency. **Done in batches 1–2 for downfall and fog range.**
 
 ### Coverage reality
@@ -280,9 +287,9 @@ static boolean isDsOwner(WorldClient world) { return owner(world) == DYNAMIC_SUR
 compat/
 ├── Compat.java                 minimal facade: isAngelica(), isNotFine(), isIris(), isBop()
 ├── angelica/
-│   ├── AngelicaBridge.java     guarded: enableInstancedWeather, downfall distance, shader phase
-│   ├── AngelicaWeatherProvider.java   IRenderHandler + WeatherColumnProvider via Proxy/compileOnly API
-│   └── AngelicaDebugEntries.java      optional DebugScreenApi registration
+│   ├── AngelicaBridge.java     guarded: enableInstancedWeather
+│   ├── AngelicaWeatherProvider.java   IRenderHandler + WeatherColumnProvider via a reflection Proxy (batch 5)
+│   └── AngelicaDebugEntries.java      optional DebugScreenApi registration (not implemented)
 ├── notfine/
 │   └── NotFineBridge.java      downfallDistance, terrainFog, fogNearPercent (reflection)
 └── bop/
