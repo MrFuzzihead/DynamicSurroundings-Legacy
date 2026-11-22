@@ -27,19 +27,27 @@ public final class VersionCheck implements Runnable {
     public static final VersionCheck.SoftwareVersion modVersion = new VersionCheck.SoftwareVersion("1.0.6.4");
     public static VersionCheck.SoftwareVersion currentVersion = new VersionCheck.SoftwareVersion();
     public static VersionCheck.UpdateStatus status = VersionCheck.UpdateStatus.UNKNOWN;
-    private static final String mcVersion = Loader.instance()
-        .getMinecraftModContainer()
-        .getVersion();
+    private static final String mcVersion = resolveMinecraftVersion();
     private static final String CURSE_PROJECT_NAME = "238891";
     private static final String MOD_NAME_TEMPLATE = "DynamicSurroundings-1.7.10-[].jar";
 
     private VersionCheck() {}
 
+    private static String resolveMinecraftVersion() {
+        try {
+            return Loader.instance()
+                .getMinecraftModContainer()
+                .getVersion();
+        } catch (Throwable t) {
+            return "unknown";
+        }
+    }
+
     public static void register() {
         if (Loader.isModLoaded("VersionChecker")) {
             NBTTagCompound nbt = new NBTTagCompound();
-            nbt.setString("curseProjectName", "238891");
-            nbt.setString("curseFilenameParser", "DynamicSurroundings-1.7.10-[].jar");
+            nbt.setString("curseProjectName", CURSE_PROJECT_NAME);
+            nbt.setString("curseFilenameParser", MOD_NAME_TEMPLATE);
             FMLInterModComms.sendRuntimeMessage("dynamicsurroundings", "VersionChecker", "addVersionCheck", nbt);
         }
 
@@ -48,7 +56,9 @@ public final class VersionCheck implements Runnable {
             FMLCommonHandler.instance()
                 .bus()
                 .register(test);
-            new Thread(test).start();
+            Thread thread = new Thread(test, "dynamicsurroundings-version-check");
+            thread.setDaemon(true);
+            thread.start();
         }
     }
 
@@ -64,17 +74,19 @@ public final class VersionCheck implements Runnable {
     }
 
     private static void versionCheck() {
+        HttpURLConnection conn = null;
         try {
-            String location = "https://raw.githubusercontent.com/OreCruncher/BetterRain/master/versions.txt";
+            String location = REMOTE_VERSION_FILE;
 
-            HttpURLConnection conn;
-            for (conn = null; location != null && !location.isEmpty(); location = conn.getHeaderField("Coordinates")) {
+            for (; location != null && !location.isEmpty(); location = conn.getHeaderField("Coordinates")) {
                 URL url = new URL(location);
                 if (conn != null) {
                     conn.disconnect();
                 }
 
                 conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(VERSION_CHECK_INTERVAL);
+                conn.setReadTimeout(VERSION_CHECK_INTERVAL);
                 conn.setRequestProperty(
                     "User-Agent",
                     "Mozilla/5.0 (Windows; U; Windows NT 6.0; ru; rv:1.9.0.11) Gecko/2009060215 Firefox/3.0.11 (.NET CLR 3.5.30729)");
@@ -82,17 +94,17 @@ public final class VersionCheck implements Runnable {
             }
 
             if (conn == null) {
-                throw new NullPointerException();
+                throw new IllegalStateException("No version-check URL");
             }
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] tokens = line.split(":");
-                if (mcVersion.matches(tokens[0])) {
-                    currentVersion = new VersionCheck.SoftwareVersion(tokens[1]);
-                    break;
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] tokens = line.split(":");
+                    if (tokens.length >= 2 && mcVersion.matches(tokens[0])) {
+                        currentVersion = new VersionCheck.SoftwareVersion(tokens[1]);
+                        break;
+                    }
                 }
             }
 
@@ -100,12 +112,14 @@ public final class VersionCheck implements Runnable {
             if (modVersion.compareTo(currentVersion) < 0) {
                 status = VersionCheck.UpdateStatus.OUTDATED;
             }
-
-            conn.disconnect();
-            reader.close();
-        } catch (Exception var5) {
-            ModLog.warn("Unable to read remote version data", var5);
+        } catch (Exception e) {
+            ModLog.warn("Unable to read remote version data");
+            ModLog.catching(e);
             status = VersionCheck.UpdateStatus.COMM_ERROR;
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
         }
     }
 
@@ -118,11 +132,11 @@ public final class VersionCheck implements Runnable {
             do {
                 if (count > 0) {
                     ModLog.info("Awaiting attempt %d", count);
-                    Thread.sleep(10000L);
+                    Thread.sleep(VERSION_CHECK_INTERVAL);
                 }
 
                 versionCheck();
-            } while (++count < 3 && status == VersionCheck.UpdateStatus.COMM_ERROR);
+            } while (++count < VERSION_CHECK_RETRIES && status == VersionCheck.UpdateStatus.COMM_ERROR);
         } catch (InterruptedException var3) {
             var3.printStackTrace();
         }
@@ -170,6 +184,10 @@ public final class VersionCheck implements Runnable {
         }
 
         public SoftwareVersion(String versionString) {
+            if (versionString == null || versionString.isEmpty()) {
+                throw new IllegalArgumentException("Version string is required");
+            }
+
             if (versionString.charAt(0) == '@') {
                 this.major = 0;
                 this.minor = 0;
@@ -177,35 +195,28 @@ public final class VersionCheck implements Runnable {
                 this.patch = 0;
                 this.isAlpha = false;
                 this.isBeta = false;
-            } else {
-                assert versionString != null;
-
-                assert versionString.length() > 0;
-
-                this.isAlpha = StringUtils.containsIgnoreCase(versionString, "ALPHA");
-                if (this.isAlpha) {
-                    versionString = StringUtils.remove(versionString, "ALPHA");
-                }
-
-                this.isBeta = StringUtils.containsIgnoreCase(versionString, "BETA");
-                if (this.isBeta) {
-                    versionString = StringUtils.remove(versionString, "BETA");
-                }
-
-                String[] parts = StringUtils.split(versionString, ".");
-                int numComponents = parts.length;
-
-                assert numComponents >= 3;
-
-                this.major = Integer.parseInt(parts[0]);
-                this.minor = Integer.parseInt(parts[1]);
-                this.revision = Integer.parseInt(parts[2]);
-                if (numComponents == 4) {
-                    this.patch = Integer.parseInt(parts[3]);
-                } else {
-                    this.patch = 0;
-                }
+                return;
             }
+
+            this.isAlpha = StringUtils.containsIgnoreCase(versionString, "ALPHA");
+            if (this.isAlpha) {
+                versionString = StringUtils.remove(versionString, "ALPHA");
+            }
+
+            this.isBeta = StringUtils.containsIgnoreCase(versionString, "BETA");
+            if (this.isBeta) {
+                versionString = StringUtils.remove(versionString, "BETA");
+            }
+
+            String[] parts = StringUtils.split(versionString, ".");
+            if (parts == null || parts.length < 3) {
+                throw new IllegalArgumentException("Expected major.minor.revision: " + versionString);
+            }
+
+            this.major = Integer.parseInt(parts[0]);
+            this.minor = Integer.parseInt(parts[1]);
+            this.revision = Integer.parseInt(parts[2]);
+            this.patch = parts.length >= 4 ? Integer.parseInt(parts[3]) : 0;
         }
 
         @Override
@@ -237,8 +248,16 @@ public final class VersionCheck implements Runnable {
                 return this.major - obj.major;
             } else if (this.minor != obj.minor) {
                 return this.minor - obj.minor;
+            } else if (this.revision != obj.revision) {
+                return this.revision - obj.revision;
+            } else if (this.patch != obj.patch) {
+                return this.patch - obj.patch;
+            } else if (this.isAlpha != obj.isAlpha) {
+                return this.isAlpha ? -1 : 1;
+            } else if (this.isBeta != obj.isBeta) {
+                return this.isBeta ? -1 : 1;
             } else {
-                return this.revision != obj.revision ? this.revision - obj.revision : this.patch - obj.patch;
+                return 0;
             }
         }
     }

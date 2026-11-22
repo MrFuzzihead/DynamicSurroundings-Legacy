@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 57 test suites / 248 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 58 test suites / 251 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -209,6 +209,12 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B52 (partial):** `ConfigProcessor` supports enum fields; invalid values log a warning and keep the default. `double`/`long`/enum tests now cover the new branches. A structured validation report remains open.
 - **B73 (partial):** `PotionParticleScrubHandler` only writes the potion datawatcher when the colour is non-zero, avoiding a write every tick. The datawatcher hack itself remains until a targeted particle mixin replaces it.
 - Added `PotionParticleScrubHandlerTest`.
+
+**Batch 29 — version-check parsing and lifecycle (251 tests green)**
+
+- **B61:** the version check uses `REMOTE_VERSION_FILE`, sets connect/read timeouts, closes its reader with try-with-resources, runs on a daemon thread, and uses the retry/interval constants. The `Loader`-dependent Minecraft version is resolved defensively so headless tests can load the class.
+- **B93:** `SoftwareVersion` replaces `assert` validation with explicit `IllegalArgumentException`s, parses versions safely, and orders alpha < beta < release. Tests cover valid/malformed strings and prerelease ordering.
+- Added `VersionCheckTest`.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B64, B73) and the optional per-effect HUD text cache (P9).
 
@@ -563,7 +569,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B58 | **M** | `data/DimensionRegistry.java:277-305` | `getData` uses a static cache keyed only by dimension id; `isFlatWorld` is set only when dimension 0 loads and only from the client event. Flat-world sea level is wrong on a dedicated server. |
 | B59 | **M** | `data/BiomeRegistry.java:118-146` | A miss calls `initialize()` (full rescan, regex recompile, event post) while holding `synchronized (registry)`; on a busy server this is a global stall and can recurse through listeners. Make the registry copy-on-write and publish an immutable snapshot. `initialize` also clears `biomeAliases` at the end, so aliases cannot be queried later. |
 | B60 | **M** | `data/BlockRegistry.java:28-35` | `getEffects` returned the internal mutable list and `getRandomSound` allocated a candidate list per call. **Fixed in batch 25:** cached unmodifiable view and `WeightedRandom.pick` without the candidate list. |
-| B61 | **M** | `VersionCheck.java:24,30-34,40-46` | Stale OreCruncher/BetterRain URL; `REMOTE_VERSION_FILE` unused in `versionCheck` (literal URL); no connect/read timeout; non-daemon thread; 3 retries × 10 s can delay shutdown. The mod version is hardcoded in three places. Use the generated `Tags.VERSION`, a daemon thread with timeouts, and make the check opt-in/disableable. |
+| B61 | **M** | `VersionCheck.java:24,30-34,40-46` | The check used a literal URL, no timeouts, a non-daemon thread, and duplicated retry constants. **Partially fixed in batch 29:** constant URL, connect/read timeouts, try-with-resources, daemon thread, and named retry/interval constants. The URL/version source and opt-in behavior remain. |
 | B62 | **L** | `Module.java:24-34` | `version = "1.0.6.4"`, `VERSION`, `mcmod.info` `${modVersion}`, and `VersionCheck.modVersion` are four independent version sources. Use `Tags.VERSION` once. `Module` registers itself on the FML bus but has no `@SubscribeEvent` methods. |
 | B63 | **L** | `ModOptions.java:86,89,93` | Copy-pasted comments ("Enable morning fog" for `enableWeatherFog`). Cosmetic but confusing in the GUI. |
 
@@ -610,7 +616,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B90 | **M** | `data/DimensionEffectData.java:30-32,88-95` | `NBT` inner classes and `MIN_INTENSITY`/`MAX_INTENSITY` were unused; `FORMATTER` is not thread-safe. **Partially fixed in batch 19:** dead NBT/constants removed; the static formatter remains. |
 | B91 | **M** | `data/AuroraData.java:59-67` | No `hashCode` (see B20). `equals` ignores seed/color/preset, so `HashSet` dedupe by column would drop updates; decide the intended identity and document it. |
 | B92 | **M** | `util/PlayerUtils.java:20-24,60-84` | `INSIDE_Y_ADJUST`, `RANGE`, `AREA` were unused (literals 3/3/49); `isReallyInside` only counts ceilings within 2 blocks, so a 5-block-high room is "outside". **Partially fixed in batch 20:** constants are used and open-sky/low-ceiling behavior is tested. The 2-block limitation remains. |
-| B93 | **M** | `VersionCheck.java:157-210` | `assert` is used for input validation (`numComponents >= 3`), which is disabled in production; `compareTo` ignores alpha/beta. Add proper parse/compare tests. |
+| B93 | **M** | `VersionCheck.java:157-210` | `assert` validation was disabled in production and `compareTo` ignored alpha/beta. **Fixed in batch 29:** explicit `IllegalArgumentException`s, alpha < beta < release ordering, and parse/compare tests. |
 | B94 | **L** | `util/JsonUtils.java:40-75` | `load(InputStream)` could return `null`; `clazz.newInstance()` is deprecated. **Partially fixed in batch 21:** null stream/JSON null fallbacks are handled and tested; reflective instantiation remains. |
 | B95 | **L** | `ModLog.java` | `error` printed a second stack trace and did not pass the throwable to Log4j; `catching` printed twice. **Fixed in batch 19:** both delegate to Log4j with the throwable. |
 
