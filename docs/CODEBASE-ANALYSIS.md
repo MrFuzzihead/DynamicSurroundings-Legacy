@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 62 test suites / 266 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 62 test suites / 267 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -293,6 +293,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B44:** aurora spawning is capped at 32 per dimension; `canAddAurora` is tested.
 - **B58:** overworld sea level detects `WorldType.FLAT` directly from `WorldInfo`, so it is correct on a dedicated server without the client load event. `DimensionRegistryTest` covers it.
 - Updated `DimensionEffectDataFileTest` to assert cache reuse and reload-after-unload.
+
+**Batch 42 — side-safe reload, WAILA, and damage split (267 tests green)**
+
+- **B46:** `/rain reload` now reloads server biome data and sends a `PacketReload` to clients, which schedule `BiomeRegistry`, `BlockRegistry`, and `SoundRegistry` initialization on the client thread. The server command no longer touches client-only `BlockRegistry`.
+- **B55:** WAILA registration moved to `ProxyClient`, is only touched when Waila is loaded, and is no longer gated on debug logging.
+- **B56:** the common `Proxy` no longer imports client classes. Server damage/heal detection moved to `server/DamageEffectServer` with a common `network/HealthData` DTO; the client keeps only `DamageEffectHandler.handleEvent`.
+- Added `PacketReload` codec coverage.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
@@ -627,7 +634,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B43 | **M** | `network/PacketAurora.java:41-47` | `colorSet`/`preset` were serialized as bytes but held as ints. **Fixed in batch 13:** both are written/read as `int`; the codec test pins the width. |
 | B44 | **M** | `server/ServerEffectHandler.java:90-95` | Aurora creation could grow without bound. **Fixed in batch 41:** 32-per-dimension cap with a tested `canAddAurora` guard; hash/range fixes from batches 1/41 handle dedupe. |
 | B45 | **L** | `commands/CommandRain.java:60` | `getCommandSenderAsPlayer` meant the server console could not run `/rain status`. **Fixed in batch 17:** `ICommandSender.getEntityWorld()` and sender replies; tested with a mocked console. |
-| B46 | **L** | `commands/CommandRain.java:81-86` | `/rain reload` calls `BiomeRegistry.initialize()` and `BlockRegistry.initialize()` from the server command. `BlockRegistry` (and its `MCHelper`/`JetEffect`/`SoundManager` dependencies) is effectively client-only, so this is both useless and a potential dedicated-server `NoClassDefFoundError`/`NoSuchMethodError`; the client also keeps its old biome/block/fog/sound data. Add a client reload packet and keep server/client reload paths separate. |
+| B46 | **L** | `commands/CommandRain.java:81-86` | `/rain reload` touched client-only `BlockRegistry` and never refreshed clients. **Fixed in batch 42:** server reload + `PacketReload` to client; client-thread registry rebuild. |
 | B47 | **H** | `data/DimensionEffectData.java:66-77` | `randomizeRain` ignored `minIntensity`: with `delta = max-min` and `mid = delta/2`, `rand*mid + rand*mid` produced `[0, delta]`, then clamped to `0.01`. **Fixed in batch 11:** `min + rand*(max-min)`, with tests for a non-zero minimum and the 1% floor. |
 
 ### 3.6 Registries, config and bootstrap
@@ -641,8 +648,8 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B52 | **M** | `util/ConfigProcessor.java:19-101` | No support for `double`/`long`/enums beyond `String[]`; parse failures were logged and ignored. **Fixed in batches 27+28+30:** `double`/`long`/enum support, invalid-value fallback, and a last-errors validation report are tested. |
 | B53 | **M** | `ModOptions.java:405-425` | `scrubCategory` removed any property with an empty comment. **Fixed in batch 26:** only unknown (non-annotated) properties are removed; known comment-less properties survive, with a unit test. |
 | B54 | **M** | `client/gui/DynamicSurroundingsConfigGui.java:92-96` | `super.actionPerformed` runs before the synthetic sound lists are saved; the screen may already be closing/saving. Save the synthetic categories first, then call `super`. Applying the config also does not re-run `BlockRegistry`/`BiomeRegistry`/`SoundRegistry` initialization or refresh `EnvironStateHandler` static finals, so several non-restart options appear to do nothing until a world reload. Either make them `@RestartRequired` or add a `reloadRuntime()` path. |
-| B55 | **M** | `client/waila/WailaHandler.java:119-121` | WAILA registration is gated on `enableDebugLogging`; the integration is off by default. Remove the gate. Also the class is loaded from the common `Proxy.init` on a dedicated server; the `@Optional.Method` annotations are incomplete and `gatherText` has no annotation. Split the WAILA client code into `ProxyClient`, or guard the whole class with `@SideOnly(Side.CLIENT)` + optional interface handling. |
-| B56 | **M** | `proxy/Proxy.java:31-36` | Common proxy imports/loads client classes (`DamageEffectHandler`, `WailaHandler`) and calls `DamageEffectHandler.initialize()` on the server. `DamageEffectHandler.handleEvent` is `@SideOnly(CLIENT)` but the class is not; a production dedicated server that resolves the method can `NoClassDefFoundError`. The same side leakage exists in `BlockRegistry` (client `MCHelper`/`JetEffect`/`SoundManager` references called from `CommandRain`). Move client init to `ProxyClient`, keep a server-only handler for the packet sender, and make `BlockRegistry` explicitly client-only. |
+| B55 | **M** | `client/waila/WailaHandler.java:119-121` | WAILA registration was debug-gated and loaded from the common proxy. **Fixed in batch 42:** registered from `ProxyClient` only when Waila is loaded; debug gate removed. |
+| B56 | **M** | `proxy/Proxy.java:31-36` | Common proxy imported client classes and initialized `DamageEffectHandler` on the server. **Fixed in batch 42:** common proxy has no client imports, server damage detection is `DamageEffectServer`, and the DTO is `network/HealthData`; client-only registries stay in `ProxyClient`. |
 | B57 | **M** | `data/DimensionRegistry.java:27` | `CALENDAR_API = Loader.isModLoaded("CalendarAPI")` in a static initializer forced FML bootstrap in tests. **Fixed in batch 15:** a safe class probe, no `Loader` call. |
 | B58 | **M** | `data/DimensionRegistry.java:277-305` | Flat-world sea level depended on a client-only load event. **Fixed in batch 41:** `WorldInfo.getTerrainType() == FLAT` is checked directly; tested. |
 | B59 | **M** | `data/BiomeRegistry.java:118-146` | A miss calls `initialize()` (full rescan, regex recompile, event post) while holding `synchronized (registry)`; on a busy server this is a global stall and can recurse through listeners. Make the registry copy-on-write and publish an immutable snapshot. `initialize` also clears `biomeAliases` at the end, so aliases cannot be queried later. |

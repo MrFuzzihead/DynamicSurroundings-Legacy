@@ -19,11 +19,13 @@ import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.TextPopOffRenderer
 import com.mrfuzzihead.dynamicsurroundings.client.hud.GuiHUDHandler;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.cache.SoundCacheReloadListener;
+import com.mrfuzzihead.dynamicsurroundings.client.waila.WailaHandler;
 import com.mrfuzzihead.dynamicsurroundings.compat.angelica.AngelicaDebugEntries;
 import com.mrfuzzihead.dynamicsurroundings.data.BlockRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.SoundHandlerAccessor;
 
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
@@ -41,6 +43,10 @@ public class ProxyClient extends Proxy {
     @Override
     public void init(FMLInitializationEvent event) {
         super.init(event);
+        if (Loader.isModLoaded("Waila")) {
+            WailaHandler.register();
+        }
+
         BlockRegistry.initialize();
         ClientEffectHandler.initialize();
         MinecraftForge.EVENT_BUS.register(new AuroraRenderHandler());

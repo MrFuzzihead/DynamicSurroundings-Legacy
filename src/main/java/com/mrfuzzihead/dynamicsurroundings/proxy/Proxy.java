@@ -5,12 +5,11 @@ import net.minecraft.command.ServerCommandManager;
 import net.minecraft.server.MinecraftServer;
 
 import com.mrfuzzihead.dynamicsurroundings.VersionCheck;
-import com.mrfuzzihead.dynamicsurroundings.client.DamageEffectHandler;
-import com.mrfuzzihead.dynamicsurroundings.client.waila.WailaHandler;
 import com.mrfuzzihead.dynamicsurroundings.commands.CommandRain;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 import com.mrfuzzihead.dynamicsurroundings.network.Network;
+import com.mrfuzzihead.dynamicsurroundings.server.DamageEffectServer;
 import com.mrfuzzihead.dynamicsurroundings.server.ServerEffectHandler;
 
 import cpw.mods.fml.common.event.FMLInitializationEvent;
@@ -27,8 +26,7 @@ public class Proxy {
     public void init(FMLInitializationEvent event) {
         Network.initialize();
         ServerEffectHandler.initialize();
-        DamageEffectHandler.initialize();
-        WailaHandler.register();
+        DamageEffectServer.initialize();
     }
 
     public void postInit(FMLPostInitializationEvent event) {

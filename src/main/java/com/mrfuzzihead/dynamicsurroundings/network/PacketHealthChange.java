@@ -20,7 +20,7 @@ public class PacketHealthChange implements IMessage, IMessageHandler<PacketHealt
 
     public PacketHealthChange() {}
 
-    public PacketHealthChange(DamageEffectHandler.HealthData data) {
+    public PacketHealthChange(HealthData data) {
         this.entityId = data.entityId;
         this.posX = data.posX;
         this.posY = data.posY;
@@ -30,7 +30,7 @@ public class PacketHealthChange implements IMessage, IMessageHandler<PacketHealt
     }
 
     public IMessage onMessage(PacketHealthChange message, MessageContext ctx) {
-        final DamageEffectHandler.HealthData data = new DamageEffectHandler.HealthData(
+        final HealthData data = new HealthData(
             message.entityId,
             message.posX,
             message.posY,

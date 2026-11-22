@@ -1,6 +1,5 @@
 package com.mrfuzzihead.dynamicsurroundings.network;
 
-import com.mrfuzzihead.dynamicsurroundings.client.DamageEffectHandler;
 import com.mrfuzzihead.dynamicsurroundings.data.AuroraData;
 
 import cpw.mods.fml.common.network.NetworkRegistry;
@@ -19,6 +18,7 @@ public final class Network {
         network.registerMessage(PacketRainIntensity.class, PacketRainIntensity.class, ++discriminator, Side.CLIENT);
         network.registerMessage(PacketAurora.class, PacketAurora.class, ++discriminator, Side.CLIENT);
         network.registerMessage(PacketHealthChange.class, PacketHealthChange.class, ++discriminator, Side.CLIENT);
+        network.registerMessage(PacketReload.class, PacketReload.class, ++discriminator, Side.CLIENT);
     }
 
     public static void sendRainIntensity(float intensity, int dimension) {
@@ -29,7 +29,11 @@ public final class Network {
         network.sendToDimension(new PacketAurora(data), dimension);
     }
 
-    public static void sendHealthUpdate(DamageEffectHandler.HealthData data, int dimension) {
+    public static void sendHealthUpdate(HealthData data, int dimension) {
         network.sendToDimension(new PacketHealthChange(data), dimension);
+    }
+
+    public static void sendReload(int dimension) {
+        network.sendToDimension(new PacketReload(), dimension);
     }
 }
