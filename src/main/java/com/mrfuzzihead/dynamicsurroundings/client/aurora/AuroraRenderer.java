@@ -1,7 +1,6 @@
 package com.mrfuzzihead.dynamicsurroundings.client.aurora;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.EntityRenderer;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
@@ -10,8 +9,6 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
-import com.mrfuzzihead.dynamicsurroundings.client.AuroraEffectHandler;
-import com.mrfuzzihead.dynamicsurroundings.client.IAtmosRenderer;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 import com.mrfuzzihead.dynamicsurroundings.util.Color;
 import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
@@ -21,14 +18,7 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
-public final class AuroraRenderer implements IAtmosRenderer {
-
-    @Override
-    public void render(EntityRenderer renderer, float partialTick) {
-        if (AuroraEffectHandler.currentAurora != null) {
-            renderAurora(partialTick, AuroraEffectHandler.currentAurora);
-        }
-    }
+public final class AuroraRenderer {
 
     private static void setColor(Color color, float alpha) {
         Tessellator.instance.setColorRGBA_F(color.red, color.green, color.blue, alpha);
@@ -42,6 +32,12 @@ public final class AuroraRenderer implements IAtmosRenderer {
     public static void renderAurora(float partialTick, Aurora aurora) {
         Minecraft mc = FMLClientHandler.instance()
             .getClient();
+        if (mc.theWorld == null || mc.thePlayer == null
+            || !ModOptions.auroraEnable
+            || !DimensionRegistry.hasAuroras(mc.theWorld)) {
+            return;
+        }
+
         float alpha = aurora.getAlpha() * moonlightFactor(mc.theWorld) / 255.0F;
         if (!(alpha <= 0.0F)) {
             Tessellator tess = Tessellator.instance;
@@ -64,8 +60,7 @@ public final class AuroraRenderer implements IAtmosRenderer {
 
             Color base = aurora.getBaseColor();
             Color fade = aurora.getFadeColor();
-            double lowY = 0.0;
-            double lowY2 = 0.0;
+            GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
             GL11.glPushMatrix();
             GL11.glTranslatef((float) tranX, tranY, (float) tranZ);
             GL11.glScaled(0.5, 8.0, 0.5);
@@ -134,16 +129,8 @@ public final class AuroraRenderer implements IAtmosRenderer {
             }
 
             tess.draw();
-            GL11.glScaled(3.5, 25.0, 3.5);
-            GL11.glDepthMask(true);
-            GL11.glEnable(2884);
-            GL11.glEnable(2896);
-            GL11.glDisable(3042);
-            GL11.glShadeModel(7424);
-            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-            GL11.glEnable(3553);
-            GL11.glEnable(3008);
             GL11.glPopMatrix();
+            GL11.glPopAttrib();
         }
     }
 }

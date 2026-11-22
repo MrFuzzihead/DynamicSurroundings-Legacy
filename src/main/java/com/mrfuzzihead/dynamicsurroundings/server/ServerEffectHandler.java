@@ -54,17 +54,21 @@ public final class ServerEffectHandler {
         }
     }
 
-    private static boolean isAuroraInRange(EntityPlayerMP player, Set<AuroraData> data) {
+    static boolean isAuroraInRange(int playerX, int playerZ, int spawnOffset, Set<AuroraData> data) {
         for (AuroraData aurora : data) {
-            long deltaX = aurora.posX - (int) player.posX;
-            long deltaZ = aurora.posZ - (int) player.posZ + -ModOptions.auroraSpawnOffset;
+            long deltaX = aurora.posX - playerX;
+            long deltaZ = aurora.posZ - (playerZ - spawnOffset);
             long distSq = deltaX * deltaX + deltaZ * deltaZ;
-            if (distSq <= 160000L) {
+            if (distSq <= MIN_AURORA_DISTANCE_SQ) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static boolean isAuroraInRange(EntityPlayerMP player, Set<AuroraData> data) {
+        return isAuroraInRange((int) player.posX, (int) player.posZ, ModOptions.auroraSpawnOffset, data);
     }
 
     private static boolean okToSpawnAurora(World world) {
@@ -81,7 +85,7 @@ public final class ServerEffectHandler {
             } else {
                 int tickCount = tickCounters.get(world.provider.dimensionId) + 1;
                 tickCounters.put(world.provider.dimensionId, tickCount);
-                if (tickCount % 100 == 0) {
+                if (tickCount % CHECK_INTERVAL == 0) {
                     if (okToSpawnAurora(world)) {
                         for (EntityPlayerMP player : MinecraftServer.getServer()
                             .getConfigurationManager().playerEntityList) {

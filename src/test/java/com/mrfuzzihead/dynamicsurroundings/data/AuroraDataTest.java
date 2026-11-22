@@ -43,6 +43,17 @@ public class AuroraDataTest {
     }
 
     @Test
+    public void equalColumnsHaveEqualHashCodes() {
+        AuroraData a = new AuroraData(0, 10, 20, 1L, 0, 0);
+        AuroraData b = new AuroraData(0, 10, 20, 999L, 5, 5);
+        AuroraData otherDimension = new AuroraData(1, 10, 20, 1L, 0, 0);
+        AuroraData otherColumn = new AuroraData(0, 11, 20, 1L, 0, 0);
+
+        assertEquals(a.hashCode(), b.hashCode());
+        assertTrue(a.hashCode() != otherDimension.hashCode() || a.hashCode() != otherColumn.hashCode());
+    }
+
+    @Test
     public void toStringReportsTheColumn() {
         String text = new AuroraData(0, 15, -30, 42L, 1, 2).toString();
         assertTrue(text, text.contains("[x: 15, z: -30]"));

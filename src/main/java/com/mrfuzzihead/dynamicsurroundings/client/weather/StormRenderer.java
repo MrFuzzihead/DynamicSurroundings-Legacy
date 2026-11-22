@@ -10,7 +10,6 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
-import net.minecraftforge.client.IRenderHandler;
 
 import org.lwjgl.opengl.GL11;
 
@@ -47,10 +46,12 @@ public class StormRenderer implements IAtmosRenderer {
         Minecraft mc = Minecraft.getMinecraft();
         int rendererUpdateCount = ((EntityRendererAccessor) renderer).dynamicsurroundings$getRendererUpdateCount();
         WorldClient world = mc.theWorld;
-        IRenderHandler r = null;
-        if ((r = world.provider.getWeatherRenderer()) != null) {
-            r.render(partialTicks, world, mc);
-        } else if (DimensionRegistry.hasWeather(world)) {
+        if (DimensionRegistry.hasWeather(world)) {
+            int radius = WeatherBackend.downfallDistance();
+            if (radius <= 0) {
+                return;
+            }
+
             float rainStrength = world.getRainStrength(partialTicks);
             if (!(rainStrength <= 0.0F)) {
                 float alphaRatio;
@@ -74,14 +75,13 @@ public class StormRenderer implements IAtmosRenderer {
                 double spawnY = entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * partialTicks;
                 double spawnZ = entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * partialTicks;
                 int locY = MathHelper.floor_double(spawnY);
-                int b0 = mc.gameSettings.fancyGraphics ? 10 : 5;
                 byte b1 = -1;
                 float f5 = rendererUpdateCount + partialTicks;
                 GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
                 Tessellator tessellator = Tessellator.instance;
 
-                for (int locZ = playerZ - b0; locZ <= playerZ + b0; locZ++) {
-                    for (int locX = playerX - b0; locX <= playerX + b0; locX++) {
+                for (int locZ = playerZ - radius; locZ <= playerZ + radius; locZ++) {
+                    for (int locX = playerX - radius; locX <= playerX + radius; locX++) {
                         int idx = (locZ - playerZ + 16) * 32 + locX - playerX + 16;
                         float f6 = RAIN_X_COORDS[idx] * 0.5F;
                         float f7 = RAIN_Y_COORDS[idx] * 0.5F;
@@ -89,8 +89,8 @@ public class StormRenderer implements IAtmosRenderer {
                         boolean hasDust = WeatherUtils.biomeHasDust(biome);
                         if (hasDust || BiomeRegistry.hasPrecipitation(biome)) {
                             int k1 = getPrecipitationHeight(world, locX, locZ);
-                            int l1 = playerY - b0;
-                            int i2 = playerY + b0;
+                            int l1 = playerY - radius;
+                            int i2 = playerY + radius;
                             if (l1 < k1) {
                                 l1 = k1;
                             }
@@ -128,7 +128,7 @@ public class StormRenderer implements IAtmosRenderer {
                                         + locZ * 13761 & 31) + partialTicks) / 32.0F * (3.0F + random.nextFloat());
                                     double deltaX = locX + 0.5F - entity.posX;
                                     double deltaZ = locZ + 0.5F - entity.posZ;
-                                    float dist = MathHelper.sqrt_double(deltaX * deltaX + deltaZ * deltaZ) / b0;
+                                    float dist = MathHelper.sqrt_double(deltaX * deltaX + deltaZ * deltaZ) / radius;
                                     tessellator.setBrightness(world.getLightBrightnessForSkyBlocks(locX, j2, locZ, 0));
                                     tessellator.setColorRGBA_F(
                                         1.0F,
@@ -184,7 +184,7 @@ public class StormRenderer implements IAtmosRenderer {
                                     float f11 = random.nextFloat() + f5 * (float) random.nextGaussian() * 0.001F;
                                     double deltaX = locX + 0.5F - entity.posX;
                                     double deltaZ = locZ + 0.5F - entity.posZ;
-                                    float dist = MathHelper.sqrt_double(deltaX * deltaX + deltaZ * deltaZ) / b0;
+                                    float dist = MathHelper.sqrt_double(deltaX * deltaX + deltaZ * deltaZ) / radius;
                                     tessellator.setBrightness(
                                         (world.getLightBrightnessForSkyBlocks(locX, j2, locZ, 0) * 3 + 15728880) / 4);
                                     Color color = new Color(1.0F, 1.0F, 1.0F);

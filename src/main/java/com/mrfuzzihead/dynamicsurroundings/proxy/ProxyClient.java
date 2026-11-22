@@ -6,10 +6,12 @@ import java.util.List;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SoundHandler;
+import net.minecraftforge.common.MinecraftForge;
 
 import com.mrfuzzihead.dynamicsurroundings.ModLog;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.ClientEffectHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.aurora.AuroraRenderHandler;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system.ForgeDictionary;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.user.GenerateBlockReport;
 import com.mrfuzzihead.dynamicsurroundings.client.hud.GuiHUDHandler;
@@ -37,6 +39,7 @@ public class ProxyClient extends Proxy {
         super.init(event);
         BlockRegistry.initialize();
         ClientEffectHandler.initialize();
+        MinecraftForge.EVENT_BUS.register(new AuroraRenderHandler());
         GuiHUDHandler.initialize();
         SoundRegistry.initialize();
         SoundManager.configureSound();

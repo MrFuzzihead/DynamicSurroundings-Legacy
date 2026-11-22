@@ -66,6 +66,14 @@ public final class AuroraData implements INBTSerialization {
     }
 
     @Override
+    public int hashCode() {
+        int result = this.dimensionId;
+        result = 31 * result + this.posX;
+        result = 31 * result + this.posZ;
+        return result;
+    }
+
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("[x: ")

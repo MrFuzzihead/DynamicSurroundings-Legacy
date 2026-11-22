@@ -10,6 +10,7 @@ import com.mrfuzzihead.dynamicsurroundings.ModLog;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.aurora.Aurora;
 import com.mrfuzzihead.dynamicsurroundings.data.AuroraData;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
 
 import cpw.mods.fml.relauncher.Side;
@@ -20,7 +21,7 @@ public final class AuroraEffectHandler implements IClientEffectHandler {
 
     private static int auroraDimension = 0;
     private static final Set<AuroraData> auroras = new HashSet<>();
-    public static Aurora currentAurora;
+    public static volatile Aurora currentAurora;
 
     public static void addAurora(AuroraData data) {
         if (ModOptions.auroraEnable) {
@@ -37,19 +38,30 @@ public final class AuroraEffectHandler implements IClientEffectHandler {
         }
     }
 
-    private Aurora getClosestAurora(World world) {
+    private Aurora getClosestAurora(World world, EntityPlayer player) {
+        if (!ModOptions.auroraEnable || !DimensionRegistry.hasAuroras(world) || DiurnalUtils.isDaytime(world)) {
+            synchronized (auroras) {
+                auroras.clear();
+                currentAurora = null;
+            }
+            return null;
+        }
+
+        if (player == null) {
+            return null;
+        }
+
         AuroraData ad = null;
         synchronized (auroras) {
-            if (auroraDimension != EnvironStateHandler.EnvironState.getDimensionId() || DiurnalUtils.isDaytime(world)) {
+            if (auroraDimension != world.provider.dimensionId) {
                 auroras.clear();
             }
 
-            if (auroras.size() == 0) {
+            if (auroras.isEmpty()) {
                 currentAurora = null;
                 return null;
             }
 
-            EntityPlayer player = EnvironStateHandler.EnvironState.getPlayer();
             int playerX = (int) player.posX;
             int playerZ = (int) player.posZ;
             boolean started = false;
@@ -69,7 +81,7 @@ public final class AuroraEffectHandler implements IClientEffectHandler {
 
         if (ad == null) {
             currentAurora = null;
-        } else if (currentAurora == null || currentAurora.posX != ad.posX && currentAurora.posZ != ad.posZ) {
+        } else if (currentAurora == null || currentAurora.posX != ad.posX || currentAurora.posZ != ad.posZ) {
             ModLog.debug("New aurora: " + ad.toString());
             currentAurora = new Aurora(ad);
         }
@@ -84,7 +96,7 @@ public final class AuroraEffectHandler implements IClientEffectHandler {
 
     @Override
     public void process(World world, EntityPlayer player) {
-        Aurora aurora = this.getClosestAurora(world);
+        Aurora aurora = this.getClosestAurora(world, player);
         if (aurora != null) {
             aurora.update();
             if (aurora.isAlive() && DiurnalUtils.isSunrise(world)) {

@@ -33,6 +33,7 @@ import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
 import com.mrfuzzihead.dynamicsurroundings.client.weather.Weather;
+import com.mrfuzzihead.dynamicsurroundings.client.weather.WeatherBackend;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 import com.mrfuzzihead.dynamicsurroundings.event.DiagnosticEvent;
@@ -153,6 +154,7 @@ public class EnvironStateHandler implements IClientEffectHandler {
                 + player.getFoodStats()
                     .getSaturationLevel());
         event.output.add(Weather.diagnostic());
+        event.output.add("Weather backend: " + WeatherBackend.owner(Minecraft.getMinecraft().theWorld));
         event.output.add("Biome: " + EnvironStateHandler.EnvironState.getBiomeName());
         event.output.add("Conditions: " + EnvironStateHandler.EnvironState.getConditions());
     }

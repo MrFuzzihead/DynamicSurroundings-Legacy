@@ -91,13 +91,15 @@ public class MixinWiringTest {
         assertNotNull(splashes);
         assertEquals("addRainParticles", splashes.method()[0]);
         assertTrue(splashes.cancellable());
+        assertEquals(900, splashes.order());
 
         Inject rainSnow = EntityRendererMixin.class
             .getDeclaredMethod("dynamicsurroundings$renderRainSnow", float.class, CallbackInfo.class)
             .getAnnotation(Inject.class);
         assertNotNull(rainSnow);
         assertEquals("renderRainSnow", rainSnow.method()[0]);
-        assertFalse(rainSnow.cancellable());
+        assertTrue("DS must be able to stop vanilla/NotFine from drawing after its own render", rainSnow.cancellable());
+        assertEquals(900, rainSnow.order());
     }
 
     @Test

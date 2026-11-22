@@ -1,8 +1,8 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis only — no production code was changed.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 24 test suites / 162 unit tests, plus a non-shipped in-game test mod.
+**Scope:** analysis + the implementation log below. Batch 1 (weather ownership and aurora lifecycle) is merged into the branch.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 28 test suites / 172 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -12,19 +12,34 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 ### The five things to fix first
 
-| # | Issue | Why it matters |
-|---|-------|----------------|
-| 1 | `EntityRendererMixin.renderRainSnow` no longer cancels vanilla (`mixins/early/EntityRendererMixin.java:30`) | The pre-mixin transformer inserted a `RETURN` after the DS renderer; the mixin converted that into a plain `HEAD` injection. Vanilla rain/snow now renders **on top of** DS rain, and a custom `IRenderHandler` is invoked **twice**. |
-| 2 | DS and Angelica both cancel `renderRainSnow` / `addRainParticles` at `HEAD` | Which mod wins depends on mixin application order. With Angelica's instanced weather enabled (default `true`), DS weather can silently disappear or Angelica's instanced weather is bypassed. Needs an explicit weather-ownership decision, not two `cancel()` calls. |
-| 3 | Fog ranges are written as absolute values at `EventPriority.LOWEST` (`client/FogEffectHandler.java:76`) | Overrides NotFine's `TERRAIN_FOG` / `FOG_NEAR_DISTANCE` settings (the exact cause of Angelica issue #2304) and any other mod's fog. Must be applied relative to the fog that vanilla/NotFine already produced. |
-| 4 | `SoundManager.update()` is only driven by the biome-sound handler (`client/sound/SoundManager.java:88`) | When biome sounds are disabled, pending block/step sounds never drain and emitters are never ticked. The handler that drives the queue must be registered unconditionally. |
-| 5 | Client packets mutate render/particle state on the Netty thread (`PacketHealthChange`, `PacketAurora`, `PacketRainIntensity`) | Off-thread `EffectRenderer.addEffect()` and render-state writes are a classic 1.7.10 crash/corruption source. |
+| # | Issue | Status | Why it matters |
+|---|-------|--------|----------------|
+| 1 | `EntityRendererMixin.renderRainSnow` no longer cancelled vanilla | **Fixed (batch 1)** | The pre-mixin transformer inserted a `RETURN` after the DS renderer; the mixin converted that into a plain `HEAD` injection. Vanilla rain/snow rendered **on top of** DS rain, and a custom `IRenderHandler` was invoked **twice**. Both injectors now cancel only when DS owns the frame. |
+| 2 | DS and Angelica both cancel `renderRainSnow` / `addRainParticles` at `HEAD` | **Fixed (batch 1)** | Which mod wins used to depend on mixin application order. `WeatherBackend` now has one owner per frame (external provider, Angelica instanced, DS, or vanilla); the DS injectors use `order = 900` and decline when they are not the owner. |
+| 3 | Fog ranges are written as absolute values at `EventPriority.LOWEST` (`client/FogEffectHandler.java:76`) | **Next batch** | Overrides NotFine's `TERRAIN_FOG` / `FOG_NEAR_DISTANCE` settings (the exact cause of Angelica issue #2304) and any other mod's fog. Must be applied relative to the fog that vanilla/NotFine already produced. |
+| 4 | `SoundManager.update()` is only driven by the biome-sound handler (`client/sound/SoundManager.java:88`) | **Pending** | When biome sounds are disabled, pending block/step sounds never drain and emitters are never ticked. The handler that drives the queue must be registered unconditionally. |
+| 5 | Client packets mutate render/particle state on the Netty thread (`PacketHealthChange`, `PacketAurora`, `PacketRainIntensity`) | **Pending** | Off-thread `EffectRenderer.addEffect()` and render-state writes are a classic 1.7.10 crash/corruption source. |
+
+### Implementation log
+
+**Batch 1 — weather ownership and aurora lifecycle (this branch, 172 tests green)**
+
+- Added `compat/Compat`, `compat/angelica/AngelicaBridge` (reads `AngelicaConfig.enableInstancedWeather`) and `compat/notfine/NotFineBridge` (reads `SettingsManager.downfallDistance`). Both bridges are reflection-only, cache their handles, and degrade to the vanilla fallback when the optional mod or field is absent.
+- Added `client/weather/WeatherBackend` with a pure, unit-tested `resolve(...)` matrix. DS cancels `renderRainSnow`/`addRainParticles` only when it is the owner; otherwise vanilla, an external `IRenderHandler`, or Angelica runs normally.
+- Removed the second `world.provider.getWeatherRenderer()` call from `StormRenderer`; a provider is now rendered by exactly one caller.
+- DS and splashes now use one effective radius from NotFine's `DOWNFALL_DISTANCE` (falling back to `fancyGraphics ? 10 : 5`). `0` disables downfall rendering.
+- Splash dispatch uses `mc.theWorld.provider.dimensionId`, not `EnvironState` (which is `0` before the first tick).
+- Moved the aurora out of the `RAIN_SNOW` phase and out of the `WEATHER` mixin gate: `AuroraRenderHandler` draws it from `RenderWorldLastEvent`. The draw is guarded by `auroraEnable` + `DimensionRegistry.hasAuroras` and wrapped in `glPushAttrib`/`glPopAttrib`, so it survives `disableWeatherEffects`, Angelica, and state leaks.
+- Fixed aurora identity/range: `AuroraData.hashCode`, `||` in the current-aurora comparison, `volatile currentAurora`, and the server range check now measures against the actual spawn target (`playerZ - offset`) instead of subtracting the offset twice.
+- Added optional `after:` relations for Angelica/NotFine/Iris/BOP to `mcmod.info`; the F3 diagnostics now print the active `WeatherBackend.Owner`.
+
+**Next batches:** relative fog + NotFine fog settings (batch 2); NotFine void fog/cloud height/HUD parity (batch 3); off-thread client packet queue (batch 4); the Angelica `WeatherColumnProvider` bridge and client compatibility matrix (batch 5).
 
 ### The three compatibility moves that unlock the most value
 
-1. **A weather backend abstraction** with three owners: vanilla/external `IRenderHandler`, DS legacy renderer, and Angelica's instanced weather. DS mixins ask the backend before cancelling.
-2. **An Angelica `WeatherColumnProvider` bridge** so DS's per-biome rain/dust/snow is fed into Angelica's instanced pipeline instead of competing with it. Angelica's API already exists (`com.gtnewhorizons.angelica.api.weather`, `apiVersion = 1`).
-3. **Relative fog + a NotFine setting bridge** (`jss.notfine.core.SettingsManager.downfallDistance`, `Settings.TERRAIN_FOG`, `Settings.FOG_NEAR_DISTANCE`) — reflective, optional, no compile dependency.
+1. **A weather backend abstraction** with three owners: vanilla/external `IRenderHandler`, DS legacy renderer, and Angelica's instanced weather. DS mixins ask the backend before cancelling. **Done in batch 1.**
+2. **An Angelica `WeatherColumnProvider` bridge** so DS's per-biome rain/dust/snow is fed into Angelica's instanced pipeline instead of competing with it. Angelica's API already exists (`com.gtnewhorizons.angelica.api.weather`, `apiVersion = 1`). **Still to do.**
+3. **Relative fog + a NotFine setting bridge** (`jss.notfine.core.SettingsManager.downfallDistance`, `Settings.TERRAIN_FOG`, `Settings.FOG_NEAR_DISTANCE`) — reflective, optional, no compile dependency. **Downfall bridge done; relative fog is batch 2.**
 
 ### Coverage reality
 
@@ -282,11 +297,11 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 
 | ID | Sev | File:line | Finding |
 |---|---|---|---|
-| B1 | **C** | `mixins/early/EntityRendererMixin.java:30` | `renderRainSnow` doubles vanilla rain and providers. Old transformer inserted `RETURN`; the mixin does not cancel. **Fix:** cancel after DS renders, and only when DS is the weather owner. |
-| B2 | **C** | `client/weather/StormRenderer.java:51`, `mixins/early/EntityRendererMixin.java:30-32` | DS calls `getWeatherRenderer()` itself, then vanilla calls it again. Remove one of the two. |
-| B3 | **H** | `mixins/early/EntityRendererMixin.java` (whole `WEATHER` group) | `disableWeatherEffects` also disables the aurora. Split the aurora hook out of the weather mixin. |
-| B4 | **H** | `client/weather/StormRenderer.java:77` | NotFine `DOWNFALL_DISTANCE` ignored; weather radius is `fancyGraphics ? 10 : 5`, and splashes always use 10. Read `downfallDistance` if NotFine is present; use one radius for both. |
-| B5 | **H** | `client/weather/StormSplashRenderer.java:43-51` | Dispatch uses `EnvironState.getDimensionId()` (0 before the first tick) instead of `mc.theWorld.provider.dimensionId`; `DEFAULT` overworld renderer can be used for the wrong dimension on the first frame. |
+| B1 | **C** | `mixins/early/EntityRendererMixin.java` | `renderRainSnow` doubled vanilla rain and providers. Old transformer inserted `RETURN`; the mixin did not cancel. **Fixed in batch 1:** cancel after DS renders, only when DS is the weather owner. |
+| B2 | **C** | `client/weather/StormRenderer.java:51`, `mixins/early/EntityRendererMixin.java` | DS called `getWeatherRenderer()` itself, then vanilla called it again. **Fixed in batch 1:** the provider is now rendered only by the owner selected by `WeatherBackend`. |
+| B3 | **H** | `mixins/early/EntityRendererMixin.java` (whole `WEATHER` group) | `disableWeatherEffects` also disabled the aurora. **Fixed in batch 1:** `AuroraRenderHandler` now draws from `RenderWorldLastEvent`, outside the weather mixin gate. |
+| B4 | **H** | `client/weather/StormRenderer.java:77` | NotFine `DOWNFALL_DISTANCE` was ignored; weather radius was `fancyGraphics ? 10 : 5`, and splashes always used 10. **Fixed in batch 1:** one effective radius from `NotFineBridge` is used by storm quads and splashes; `0` disables downfall. |
+| B5 | **H** | `client/weather/StormSplashRenderer.java:43-51` | Dispatch used `EnvironState.getDimensionId()` (0 before the first tick) instead of `mc.theWorld.provider.dimensionId`; the wrong dimension renderer could be used on the first frame. **Fixed in batch 1.** |
 | B6 | **H** | `client/weather/StormSplashRenderer.java:90-91`, `NetherSplashRenderer.java:30` | The base `getPrecipitationHeight` ignores its `range` parameter; the nether override uses `EnvironState.getPlayer()` instead of the passed view entity. |
 | B7 | **M** | `client/weather/Weather.java:119` | `level = (float)(level + 0.01)` is dead — the parameter is never used afterwards. Remove or use it in the threshold comparisons. |
 | B8 | **M** | `client/weather/Weather.java:25,111-131` | `intensity`/`intensityLevel`/texture statics are mutated from the packet handler (Netty) while the render thread reads them. Schedule on the client thread and/or make the fields `volatile`. |
@@ -310,14 +325,14 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 
 | ID | Sev | File:line | Finding |
 |---|---|---|---|
-| B19 | **H** | `client/AuroraEffectHandler.java:72` | `currentAurora.posX != ad.posX && currentAurora.posZ != ad.posZ` should be `||`. A new aurora with the same X but a different Z keeps the old one. |
-| B20 | **H** | `data/AuroraData.java:59` | `equals` but **no `hashCode`** → `HashSet<AuroraData>` uses identity hashes, so duplicates are never deduplicated. Server can accumulate auroras every 100 ticks and broadcast all of them. Add `hashCode` (dimension, x, z) and cap the set. |
-| B21 | **H** | `server/ServerEffectHandler.java:60-61` | `isAuroraInRange` subtracts `-auroraSpawnOffset` from a `posZ` that already contains the offset → the Z delta is doubled (`-2 * spawnOffset`), so the range check is wrong. Also `MIN_AURORA_DISTANCE_SQ` is unused (literal 160000). |
-| B22 | **M** | `client/AuroraEffectHandler.java:27-75` | `currentAurora` is written outside the `synchronized (auroras)` block and is read by the renderer; `addAurora` can run on the Netty thread. Make it `volatile` and make all mutations inside one lock, or move packet handling to the client thread. |
-| B23 | **M** | `client/aurora/AuroraRenderer.java:137` | `GL11.glScaled(3.5, 25.0, 3.5)` after `tess.draw()` is a leftover; remove. `lowY`/`lowY2` unused. |
+| B19 | **H** | `client/AuroraEffectHandler.java:72` | `currentAurora.posX != ad.posX && currentAurora.posZ != ad.posZ` should be `||`. A new aurora with the same X but a different Z kept the old one. **Fixed in batch 1.** |
+| B20 | **H** | `data/AuroraData.java:59` | `equals` but **no `hashCode`** → `HashSet<AuroraData>` used identity hashes, so duplicates were never deduplicated. Server could accumulate auroras every 100 ticks and broadcast all of them. **Fixed in batch 1:** `hashCode` on dimension/x/z; capping the per-dimension set is still open (B44). |
+| B21 | **H** | `server/ServerEffectHandler.java:60-61` | `isAuroraInRange` subtracted `-auroraSpawnOffset` from a `posZ` that already contains the offset → the Z delta was doubled (`-2 * spawnOffset`). **Fixed in batch 1:** it now measures against the actual spawn target (`playerZ - offset`) and uses `MIN_AURORA_DISTANCE_SQ`. |
+| B22 | **M** | `client/AuroraEffectHandler.java:27-75` | `currentAurora` was written outside the `synchronized (auroras)` block and read by the renderer; `addAurora` can run on the Netty thread. **Partially fixed in batch 1:** `currentAurora` is `volatile` and the closest-aurora selection is locked. Moving packet handling to the client thread remains in batch 4. |
+| B23 | **M** | `client/aurora/AuroraRenderer.java:137` | `GL11.glScaled(3.5, 25.0, 3.5)` after `tess.draw()` was a leftover; `lowY`/`lowY2` were unused. **Fixed in batch 1.** |
 | B24 | **M** | `client/aurora/Aurora.java:17-22` | `ANGLE1`, `FADE_LIMIT`, `AURORA_SPEED`, `AURORA_AMPLITUDE`, `AURORA_WAVELENGTH` unused; `cycle += 0.75F` and `18.0F`/`8.0F` literals remain. Remove or wire them. |
 | B25 | **M** | §2.4 | Aurora is drawn inside `RAIN_SNOW` and is disabled with weather. |
-| B26 | **L** | `client/aurora/AuroraRenderer.java:80-146` | Immediate-mode state is restored by enabling cull/lighting/texture unconditionally rather than restoring the previous state. Use `PushAttrib`/`PopAttrib`. |
+| B26 | **L** | `client/aurora/AuroraRenderer.java:80-146` | Immediate-mode state was restored by enabling cull/lighting/texture unconditionally rather than restoring the previous state. **Fixed in batch 1:** `glPushAttrib(GL_ALL_ATTRIB_BITS)` / `glPopAttrib`. |
 
 ### 3.4 Sound
 
