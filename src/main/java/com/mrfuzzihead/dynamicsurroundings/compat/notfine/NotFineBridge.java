@@ -67,10 +67,25 @@ public final class NotFineBridge {
         return booleanSetting("VOID_FOG", true);
     }
 
+    /** NotFine's configured cloud height, or {@code fallback} when NotFine is absent. */
+    public static int cloudHeight(int fallback) {
+        return intSetting("CLOUD_HEIGHT", fallback);
+    }
+
+    private static int intSetting(String name, int fallback) {
+        Object value = settingValue(name);
+        return value instanceof Number ? ((Number) value).intValue() : fallback;
+    }
+
     private static boolean booleanSetting(String name, boolean fallback) {
+        Object value = settingValue(name);
+        return value instanceof Boolean ? (Boolean) value : fallback;
+    }
+
+    private static Object settingValue(String name) {
         resolveSettings();
         if (!settingsAvailable || settingsClass == null || optionField == null || getStoreMethod == null) {
-            return fallback;
+            return null;
         }
 
         try {
@@ -81,14 +96,13 @@ public final class NotFineBridge {
                 }
 
                 Object option = optionField.get(constant);
-                Object value = getStoreMethod.invoke(option);
-                return value instanceof Boolean ? (Boolean) value : fallback;
+                return getStoreMethod.invoke(option);
             }
         } catch (ReflectiveOperationException | RuntimeException e) {
             ModLog.debug("NotFine setting %s unavailable: %s", name, e.toString());
         }
 
-        return fallback;
+        return null;
     }
 
     private static void resolve() {

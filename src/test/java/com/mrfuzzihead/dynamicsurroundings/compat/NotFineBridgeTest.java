@@ -25,5 +25,6 @@ public class NotFineBridgeTest {
     @Test
     public void absentNotFineKeepsDsVoidFogBehaviour() {
         assertTrue(NotFineBridge.isVoidFogEnabled());
+        assertEquals(128, NotFineBridge.cloudHeight(128));
     }
 }

@@ -35,6 +35,7 @@ public final class DimensionRegistry {
     protected Integer seaLevel;
     protected Integer skyHeight;
     protected Integer cloudHeight;
+    protected boolean explicitCloudHeight;
     protected Integer spaceHeight;
     protected Boolean hasHaze;
     protected Boolean hasAuroras;
@@ -151,6 +152,7 @@ public final class DimensionRegistry {
         this.hasAuroras = entry.hasAurora;
         this.hasWeather = entry.hasWeather;
         this.cloudHeight = entry.cloudHeight;
+        this.explicitCloudHeight = entry.cloudHeight != null;
         this.initialize(world.provider);
     }
 
@@ -210,6 +212,11 @@ public final class DimensionRegistry {
 
     public int getCloudHeight() {
         return this.cloudHeight;
+    }
+
+    /** True when the cloud height came from the dimension config rather than the computed default. */
+    public boolean hasExplicitCloudHeight() {
+        return this.explicitCloudHeight;
     }
 
     public int getSpaceHeight() {
@@ -288,6 +295,10 @@ public final class DimensionRegistry {
 
     public static int getCloudHeight(World world) {
         return getData(world).getCloudHeight();
+    }
+
+    public static boolean hasExplicitCloudHeight(World world) {
+        return getData(world).hasExplicitCloudHeight();
     }
 
     public static int getSpaceHeight(World world) {

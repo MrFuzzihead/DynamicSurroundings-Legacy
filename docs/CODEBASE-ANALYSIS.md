@@ -1,8 +1,8 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1–5 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, and the Angelica provider bridge) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 31 test suites / 182 unit tests, plus a non-shipped in-game test mod.
+**Scope:** analysis + the implementation log below. Batches 1–6 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, and BOP/cloud/phase compatibility) are merged into the branch.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 33 test suites / 184 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -62,7 +62,14 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - `WeatherBackend` recognises the DS-owned provider, so with Angelica's instanced weather disabled the legacy DS renderer still owns the frame; with it enabled Angelica consumes the columns.
 - Added a no-op test for the absent-Angelica path.
 
-**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), decide whether the aurora needs an explicit Iris phase, and close the remaining non-compat findings (B9–B11, B15–B17, B38–B40, B48/B50, B64–B65, B87).
+**Batch 6 — BOP fog, cloud height, Iris aurora phase (184 tests green)**
+
+- Added `Compat.isAngelicaBopFogActive()`. When Angelica's late BOP fog mixin is present, `BiomeRegistry` no longer imports `IBiomeFog` into DS's own biome entries, so BOP colour/density is blended once (by Angelica) instead of twice.
+- Added `NotFineBridge.cloudHeight(...)` and `DimensionRegistry` explicit-cloud-height tracking. Aurora height and elevation haze use NotFine's `CLOUD_HEIGHT` unless the dimension config explicitly overrides it.
+- Added `compat/angelica/IrisPhaseBridge`, a reflection-only `WorldRenderingPhase` scope. `AuroraRenderHandler` now draws inside `WorldRenderingPhase.CLOUDS` when Iris is active and restores the previous phase in a `finally` block; without Iris it is a no-op.
+- Added three tests: absent Angelica/BOP detection, absent Iris phase bridge, and the NotFine cloud-height fallback.
+
+**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the text-pop-off particle pass (§2.5) and the remaining non-compat findings (B9–B11, B15–B17, B38–B40, B48/B50, B64–B65, B87).
 
 ### The three compatibility moves that unlock the most value
 
@@ -222,7 +229,7 @@ static boolean isDsOwner(WorldClient world) { return owner(world) == DYNAMIC_SUR
 
 1. Separate the render paths: `RenderWeather.renderStorm(...)` and `AuroraRenderer.renderAurora(...)`, and stop putting the aurora in the weather list.
 2. Render the aurora from `EntityRenderer.renderWorld` at the `renderRainSnow` call **with `shift = AFTER`** (works whether or not anyone cancelled weather), or via `RenderWorldLastEvent`. Do not render it inside the `RAIN_SNOW` phase.
-3. Wrap the aurora draw in an appropriate Iris phase. Angelica exposes `WorldRenderingPipeline.setPhase(WorldRenderingPhase.CLOUDS / CUSTOM_SKY)` through `Iris.getPipelineManager().getPipelineNullable()`; use a guarded `AngelicaCompat` bridge (reflection or compileOnly API) so it is a no-op without Angelica.
+3. **Implemented in batch 6:** `IrisPhaseBridge` sets `WorldRenderingPhase.CLOUDS` around the aurora draw and restores the previous phase; it is a no-op without Iris.
 4. Wrap the draw in `GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS)` / `glPopAttrib`, or use Angelica's `GLSMAttribStack` if present, so the immediate-mode state changes (`glDisable(GL_TEXTURE_2D)`, shade model, blend, depth mask, cull) cannot leak into terrain/HUD/other mods. Prefer `GLStateManager`-tracked calls if a compile dep is acceptable; otherwise the redirected `GL11` calls are equivalent under Angelica.
 5. Move the aurora out of the `WEATHER` mixin gate so `disableWeatherEffects` leaves it working; gate it on `auroraEnable` + `DimensionRegistry.hasAuroras`.
 
@@ -254,7 +261,7 @@ static boolean isDsOwner(WorldClient world) { return owner(world) == DYNAMIC_SUR
 | `DOWNFALL_DISTANCE` (`SettingsManager.downfallDistance`, 0/5/10/15) | `StormRenderer.java:77` used `mc.gameSettings.fancyGraphics ? 10 : 5`; splashes used hard-coded `RANGE=10` | **Fixed in batch 1:** one reflected radius for quads and splashes; `0` disables downfall. |
 | `TERRAIN_FOG` / `FOG_NEAR_DISTANCE` | Overridden by absolute `glFogf` | **Fixed in batch 2:** relative fog preserves both settings. |
 | `VOID_FOG` | `BiomeFogColorCalculator.applyPlayerEffects` independently applies `getVoidFogYFactor` to the biome portion | **Fixed in batch 4:** `NotFineBridge.isVoidFogEnabled()` gates DS's term. |
-| `CLOUD_HEIGHT` | `DimensionRegistry` cloud height is used for aurora height/haze | Open: DS dimension config currently wins; document or bridge `Settings.CLOUD_HEIGHT` for aurora/haze alignment. |
+| `CLOUD_HEIGHT` | `DimensionRegistry` cloud height is used for aurora height/haze | **Fixed in batch 6:** NotFine `CLOUD_HEIGHT` is used for aurora/haze unless the dimension config explicitly overrides it. |
 | `MODE_CLOUDS`, `MODE_WATER`, `MODE_LEAVES`, `MODE_SKY` | no direct conflict | Add to the compat diagnostics, no action |
 
 **Bridge design:** `compat/notfine/NotFineCompat` with a `boolean available`, cached field/method handles, and `IBridge` fallback (`NONE`), mirroring the existing `BOPFogIntegration` pattern. Load it only when `Loader.isModLoaded("notfine")`, never reference `jss.notfine.*` from a class that is loaded unconditionally. Add a unit test that the bridge is a no-op when the class is absent and that it caches the lookup.
@@ -270,8 +277,8 @@ static boolean isDsOwner(WorldClient world) { return owner(world) == DYNAMIC_SUR
 
 - DS reads BOP's `IBiomeFog` (`data/compat/BOPFogCompat.java`) and adds the biome colour/density to its own `BiomeFogColorCalculator`/`BiomeFogRangeCalculator`.
 - Angelica has its own BOP fog pipeline (`compat/bop/BopFogBlend`, `FogColourGrid`, late `MixinFogHandlerBiomeCache`), which also blends BOP fog. With both installed and biome fog enabled, the BOP colour/density is applied twice (or two different blends compete).
-- Fix: when Angelica is present and its BOP fog is active, don't import BOP fog into `BiomeRegistry` (or expose a config `fog.compat.bopFog = ANGELICA | DS | OFF`). Keep DS's BOP import for non-Angelica installs.
-- Add a unit test with a mocked `IBiomeFog` that asserts the bridge is bypassed when `AngelicaCompat.bopFogActive()` is true.
+- **Fixed in batch 6:** `Compat.isAngelicaBopFogActive()` gates the `BiomeRegistry` import; DS keeps its BOP import only when Angelica's late BOP fog mixin is not present.
+- The existing `BOPFogCompatTest` still pins the non-Angelica bridge; a full Angelica+BOP client run remains in the matrix.
 
 ### 2.9 Conflict H — mixin robustness and ordering (medium)
 

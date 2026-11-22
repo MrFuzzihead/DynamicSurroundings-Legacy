@@ -17,6 +17,7 @@ import com.mrfuzzihead.dynamicsurroundings.ModLog;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.Module;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
+import com.mrfuzzihead.dynamicsurroundings.compat.Compat;
 import com.mrfuzzihead.dynamicsurroundings.data.compat.BOPFogIntegration;
 import com.mrfuzzihead.dynamicsurroundings.data.compat.IBOPFog;
 import com.mrfuzzihead.dynamicsurroundings.data.config.BiomeConfig;
@@ -314,9 +315,10 @@ public final class BiomeRegistry {
             this.sounds = new ArrayList<>();
             this.spotSounds = new ArrayList<>();
             this.spotSoundChance = 1200;
-            if (BOP_PRESENT) {
+            if (BOP_PRESENT && !Compat.isAngelicaBopFogActive()) {
                 // Optional integration: BOP biomes expose their fog through IBiomeFog. BOPFogIntegration loads the
-                // bridge only when BOP is present, so no BOP class is touched when the mod is absent.
+                // bridge only when BOP is present, so no BOP class is touched when the mod is absent. With Angelica
+                // installed, its late BOP fog mixin already owns the blend; importing it here would double-apply it.
                 IBOPFog bopFog = BOPFogIntegration.get();
                 if (bopFog.isFogBiome(biome)) {
                     int color = bopFog.getFogColor(biome);

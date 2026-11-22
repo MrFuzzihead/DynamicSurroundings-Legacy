@@ -9,6 +9,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.compat.notfine.NotFineBridge;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 import com.mrfuzzihead.dynamicsurroundings.util.Color;
 import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
@@ -45,7 +46,12 @@ public final class AuroraRenderer {
             if (ModOptions.auroraHeightPlayerRelative) {
                 tranY = ModOptions.playerFixedHeight;
             } else {
-                tranY = DimensionRegistry.getCloudHeight(mc.theWorld) + 5
+                int cloudHeight = DimensionRegistry.getCloudHeight(mc.theWorld);
+                if (!DimensionRegistry.hasExplicitCloudHeight(mc.theWorld)) {
+                    cloudHeight = NotFineBridge.cloudHeight(cloudHeight);
+                }
+
+                tranY = cloudHeight + 5
                     - (float) (mc.thePlayer.lastTickPosY
                         + (mc.thePlayer.posY - mc.thePlayer.lastTickPosY) * partialTick);
             }

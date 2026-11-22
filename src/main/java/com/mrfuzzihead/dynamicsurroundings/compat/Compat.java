@@ -15,6 +15,8 @@ public final class Compat {
     public static final String OCULUS = "oculus";
     public static final String BIOMES_O_PLENTY = "BiomesOPlenty";
 
+    private static volatile Boolean angelicaBopFogActive;
+
     private Compat() {}
 
     public static boolean isAngelicaLoaded() {
@@ -31,6 +33,31 @@ public final class Compat {
 
     public static boolean isBiomesOPlentyLoaded() {
         return isLoaded(BIOMES_O_PLENTY);
+    }
+
+    /**
+     * True when Angelica's late BOP fog mixin is present. The mixin applies whenever both mods are installed, so DS
+     * must not also import BOP's {@code IBiomeFog} into its own biome entries; that would blend the same colour and
+     * density twice.
+     */
+    public static boolean isAngelicaBopFogActive() {
+        Boolean cached = angelicaBopFogActive;
+        if (cached != null) {
+            return cached;
+        }
+
+        boolean active = isAngelicaLoaded() && isBiomesOPlentyLoaded();
+        if (active) {
+            try {
+                Class
+                    .forName("com.gtnewhorizons.angelica.compat.bop.BopFogBlend", false, Compat.class.getClassLoader());
+            } catch (ClassNotFoundException | LinkageError | RuntimeException e) {
+                active = false;
+            }
+        }
+
+        angelicaBopFogActive = active;
+        return active;
     }
 
     /**

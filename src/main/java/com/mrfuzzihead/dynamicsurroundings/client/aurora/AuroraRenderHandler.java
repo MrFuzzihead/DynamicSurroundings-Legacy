@@ -6,6 +6,7 @@ import net.minecraftforge.client.event.RenderWorldLastEvent;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.AuroraEffectHandler;
+import com.mrfuzzihead.dynamicsurroundings.compat.angelica.IrisPhaseBridge;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
@@ -39,7 +40,12 @@ public final class AuroraRenderHandler {
 
         Aurora aurora = AuroraEffectHandler.currentAurora;
         if (aurora != null) {
-            AuroraRenderer.renderAurora(event.partialTicks, aurora);
+            Object phase = IrisPhaseBridge.push("CLOUDS");
+            try {
+                AuroraRenderer.renderAurora(event.partialTicks, aurora);
+            } finally {
+                IrisPhaseBridge.pop(phase);
+            }
         }
     }
 }

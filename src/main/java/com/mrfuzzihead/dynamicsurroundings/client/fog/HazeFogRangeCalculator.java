@@ -5,6 +5,7 @@ import javax.annotation.Nonnull;
 import net.minecraftforge.client.event.EntityViewRenderEvent.RenderFogEvent;
 
 import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.compat.notfine.NotFineBridge;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 
 import cpw.mods.fml.relauncher.Side;
@@ -28,8 +29,13 @@ public class HazeFogRangeCalculator extends VanillaFogRangeCalculator {
             return this.cached;
         } else {
             if (di.getHasHaze()) {
-                float lowY = di.getCloudHeight() - 15;
-                float highY = di.getCloudHeight() + 15 + 10;
+                int cloudHeight = di.getCloudHeight();
+                if (!di.hasExplicitCloudHeight()) {
+                    cloudHeight = NotFineBridge.cloudHeight(cloudHeight);
+                }
+
+                float lowY = cloudHeight - 15;
+                float highY = cloudHeight + 15 + 10;
                 double eyeHeight = EnvironStateHandler.EnvironState.getPlayer().posY
                     + EnvironStateHandler.EnvironState.getPlayer().eyeHeight;
                 if (eyeHeight >= lowY && eyeHeight <= highY) {
