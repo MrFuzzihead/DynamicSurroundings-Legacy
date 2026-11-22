@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 41 test suites / 211 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 42 test suites / 213 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -116,6 +116,12 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B43:** `PacketAurora` now serializes `colorSet`/`preset` as `int` instead of `byte`, so future preset/colour IDs cannot silently truncate. The codec test pins the new width.
 - **B51:** `ConfigProcessor` uses `-Float.MAX_VALUE` as the no-minimum sentinel. A new test proves an unannotated negative float survives instead of being clamped to `1.4e-45`.
 - **B89 (partial):** `MathStuff.sqrt(double)` no longer casts to float; a 1e-15 precision test pins it. The trig/log approximations and absolute-value overflow cases remain in the backlog.
+
+**Batch 14 — footstep delay bounds and wake-up minimum (213 tests green)**
+
+- **B79:** `AcousticsManager.randomDelay` now samples `[a, b]` instead of `[a, a+b]` and clamps equal/inverted windows. The `think()` wake-up time is the actual minimum pending time, not whichever sound was visited last.
+- Replaced the remaining duplicated `1.2`/`0.75` literals with the named constants and removed the always-true `USING_*` flags.
+- Added `AcousticsManagerTest` for the delay bounds and inverted windows.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B38–B40, B64–B65, B73) and the optional per-effect HUD text cache (P9).
 
@@ -498,7 +504,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 |---|---|---|---|
 | B77 | **H** | `client/footsteps/game/system/PFSolver.java:49` | `if (Math.abs(ply.motionY) < 0.02) return null;` — verify against the original Presence Footsteps. If a player standing/walking on flat ground has `motionY == 0` at the client tick, this suppresses every footstep. Add a game test with a walking player and count `playAssociation` calls. |
 | B78 | **M** | `client/footsteps/game/system/PFReaderQP.java:50-85` | `if (2 == 2)`, `if (2 == 1)`, `if (2 == 0)` are dead branches; `USE_FUNCTION`, `overallMultiplier`, `ndm` are unused. `PFReaderQP` is also never instantiated (the port always uses `PFReaderH`), so the whole class is dead unless a config is added. |
-| B79 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:126-135` | `newMinimum` is assigned **every** remaining sound instead of the minimum; the wake-up time can be later than the earliest pending sound, delaying sounds. Compute `Math.min`. Also `randAB` uses `a + rng.nextInt((int)b + 1)`, which ignores the lower bound for the range (max is `a+b`, not `b`) and can overflow. |
+| B79 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:126-135` | `newMinimum` was assigned every remaining sound instead of the minimum, and `randAB` sampled `[a, a+b]` instead of `[a, b]`. **Fixed in batch 14:** `Math.min` for the wake-up and a bounded `randomDelay`, with tests. |
 | B80 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:40-43` | `USING_LATENESS`, `USING_EARLYNESS`, `LATENESS_THRESHOLD_DIVIDER`, `EARLYNESS_THRESHOLD_POW` unused; the literals are repeated. |
 | B81 | **M** | `client/footsteps/mcpackage/implem/LegacyCapableBlockMap.java:15-35` | Only `^` (94) and `.` (46) are treated as legacy separators; `id:meta` keys (YouTube-era blockmaps) go to `super.register` with the numeric string and fail to resolve. Add `:` to the separator search and a test with `1:0`, `1^0`, `1.0`. |
 | B82 | **M** | `client/footsteps/mcpackage/implem/BasicBlockMap.java:97-120` | The regex `([^:]+:[^^+]+)\^?(\d+)?\+?(\w+)?` is fragile (`[^^+]` negates `^` and `+`, not what the comment intends); `BlockInfo.hashCode` NPEs on a null block and `equals` casts without `instanceof`; `getBlockMap` reuses a mutable key (not thread-safe). Add parser tests. |
