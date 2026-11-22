@@ -20,7 +20,6 @@ public final class BiomeSurveyHandler implements IClientEffectHandler {
     private static BiomeGenBase lastPlayerBiome = null;
     private static int lastDimension = 0;
     private static int lastPlayerX = 0;
-    private static int lastPlayerY = 0;
     private static int lastPlayerZ = 0;
 
     public static int getArea() {
@@ -51,21 +50,30 @@ public final class BiomeSurveyHandler implements IClientEffectHandler {
         }
     }
 
+    static boolean shouldSurvey(int dimension, int playerX, int playerZ, BiomeGenBase playerBiome, int lastDimension,
+        int lastX, int lastZ, BiomeGenBase lastBiome) {
+        return dimension != lastDimension || playerX != lastX || playerZ != lastZ || lastBiome != playerBiome;
+    }
+
     @Override
     public void process(World world, EntityPlayer player) {
         int playerX = MathHelper.floor_double(player.posX);
-        int playerY = MathHelper.floor_double(player.posY);
         int playerZ = MathHelper.floor_double(player.posZ);
-        if (lastDimension != EnvironStateHandler.EnvironState.getDimensionId() || playerX != lastPlayerX
-            || playerY != lastPlayerY
-            || playerZ != lastPlayerZ
-            || lastPlayerBiome != EnvironStateHandler.EnvironState.getPlayerBiome()) {
-            lastPlayerBiome = EnvironStateHandler.EnvironState.getPlayerBiome();
+        BiomeGenBase playerBiome = EnvironStateHandler.EnvironState.getPlayerBiome();
+        if (shouldSurvey(
+            EnvironStateHandler.EnvironState.getDimensionId(),
+            playerX,
+            playerZ,
+            playerBiome,
+            lastDimension,
+            lastPlayerX,
+            lastPlayerZ,
+            lastPlayerBiome)) {
+            lastPlayerBiome = playerBiome;
             lastDimension = EnvironStateHandler.EnvironState.getDimensionId();
             lastPlayerX = playerX;
-            lastPlayerY = playerY;
             lastPlayerZ = playerZ;
-            doSurvey(player, 6);
+            doSurvey(player, BIOME_SURVEY_RANGE);
         }
     }
 

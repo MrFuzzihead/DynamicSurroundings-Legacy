@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 55 test suites / 239 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 56 test suites / 241 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -185,6 +185,12 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B89 (partial):** double `sin`/`cos`/`tan` delegate to the JDK instead of truncating to the float table; `log` is the JDK implementation. Integer/long `abs` use `< 0`; the `MIN_VALUE` overflow case remains.
 - Removed the now-unused `RAD_TO_INDEX`/`DEG_*`/`COS_TO_SIN`/`RAD_TO_DEG`/`DEG_TO_RAD` constants.
 - Added `StormRendererCoordinatesTest`; `MathStuffTest` now pins exact double trig/log.
+
+**Batch 25 — survey throttling and immutable effects (241 tests green)**
+
+- **B60:** `BlockRegistry.getEffects` returns a cached unmodifiable view instead of the live list; the weighted sound path no longer allocates a candidate list per call.
+- **B70 (partial):** the biome survey dirty check no longer includes `playerY`, so jumping does not re-scan 169 columns. The scan is still per block moved; the throttle/cache remains.
+- Added `BiomeSurveyHandlerTest` for Y-insensitivity and dimension/position/biome invalidation.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B64, B73) and the optional per-effect HUD text cache (P9).
 
@@ -538,7 +544,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B57 | **M** | `data/DimensionRegistry.java:27` | `CALENDAR_API = Loader.isModLoaded("CalendarAPI")` in a static initializer forced FML bootstrap in tests. **Fixed in batch 15:** a safe class probe, no `Loader` call. |
 | B58 | **M** | `data/DimensionRegistry.java:277-305` | `getData` uses a static cache keyed only by dimension id; `isFlatWorld` is set only when dimension 0 loads and only from the client event. Flat-world sea level is wrong on a dedicated server. |
 | B59 | **M** | `data/BiomeRegistry.java:118-146` | A miss calls `initialize()` (full rescan, regex recompile, event post) while holding `synchronized (registry)`; on a busy server this is a global stall and can recurse through listeners. Make the registry copy-on-write and publish an immutable snapshot. `initialize` also clears `biomeAliases` at the end, so aliases cannot be queried later. |
-| B60 | **M** | `data/BlockRegistry.java:28-35` | `getEffects` returns the internal mutable list; `getRandomSound` allocates a new `ArrayList` on every call (called ~1,000×/tick from `BlockEffectHandler`). Return an immutable list and avoid per-call allocation. |
+| B60 | **M** | `data/BlockRegistry.java:28-35` | `getEffects` returned the internal mutable list and `getRandomSound` allocated a candidate list per call. **Fixed in batch 25:** cached unmodifiable view and `WeightedRandom.pick` without the candidate list. |
 | B61 | **M** | `VersionCheck.java:24,30-34,40-46` | Stale OreCruncher/BetterRain URL; `REMOTE_VERSION_FILE` unused in `versionCheck` (literal URL); no connect/read timeout; non-daemon thread; 3 retries × 10 s can delay shutdown. The mod version is hardcoded in three places. Use the generated `Tags.VERSION`, a daemon thread with timeouts, and make the check opt-in/disableable. |
 | B62 | **L** | `Module.java:24-34` | `version = "1.0.6.4"`, `VERSION`, `mcmod.info` `${modVersion}`, and `VersionCheck.modVersion` are four independent version sources. Use `Tags.VERSION` once. `Module` registers itself on the FML bus but has no `@SubscribeEvent` methods. |
 | B63 | **L** | `ModOptions.java:86,89,93` | Copy-pasted comments ("Enable morning fog" for `enableWeatherFog`). Cosmetic but confusing in the GUI. |
@@ -553,7 +559,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B67 | **H** | `client/fx/BlockEffectHandler.java:40-62` | ~1,000 `BlockPos` allocations + two block lookups per sample per tick (plus `new ArrayList` in `BlockRegistry.getRandomSound`) → GC pressure and client tick cost. Reuse a mutable pos, read block+metadata once, and avoid allocation in the weighted pick. |
 | B68 | **M** | `client/EnvironStateHandler.java:205-225` | 21 `CONDITION_TOKEN_*` constants and `CONDITION_SEPARATOR` were unused. **Fixed in batch 19:** removed; `getPlayerConditions` is the single literal source. |
 | B69 | **M** | `client/EnvironStateHandler.java:188-470` | `EnvironState` is a static mutable god-object. `getPlayer()` can return null, `getWorld()` dereferences it, `isPlayerMoving` dereferences the static `player` without a null check, and `tick` is not re-entrant. Replace with an immutable per-tick `EnvironmentSnapshot` passed to consumers. |
-| B70 | **M** | `client/BiomeSurveyHandler.java:57-70` | The survey dirty check includes `playerY`, so jumping re-scans 169 columns; it also re-scans for every block moved. Drop Y, throttle to ~20 ticks or a biome/area change, and cache the last survey. |
+| B70 | **M** | `client/BiomeSurveyHandler.java:57-70` | The dirty check included `playerY`, so jumping re-scanned 169 columns; it also re-scans per block moved. **Partially fixed in batch 25:** Y is ignored and tested; the per-block throttle/cache remains. |
 | B71 | **M** | `client/PlayerSoundEffectHandler.java:42-63` | Every tick allocates a `TObjectIntHashMap`, a `List`, and a scaled `SoundEffect` per sound, and re-runs regex matching for every sound. Cache the weighted sound list per (conditions, survey revision) and only rebuild when the biome mix changes. |
 | B72 | **M** | `client/hud/PotionHUD.java:30-100` | Null `thePlayer`; no state restore; re-formats strings/widths every frame; rendered on every `RenderGameOverlayEvent`. **Partially fixed in batch 4:** dispatcher filter, null guard and `glPushAttrib`/`glPopAttrib`; per-effect text caching remains (P9). |
 | B73 | **M** | `client/PotionParticleScrubHandler.java:8-11` | Writes `dataWatcher.updateObject(7, 0)` (the potion liquid colour, not the particle flag) every tick to suppress particles. It also removes the colour other client code may read and is a global datawatcher hack that can fight other mods. Prefer a mixin/targeted redirect on the particle spawn path, and only update when the value actually changes. |

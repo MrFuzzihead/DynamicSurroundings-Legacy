@@ -2,6 +2,7 @@ package com.mrfuzzihead.dynamicsurroundings.data;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,7 @@ public final class BlockRegistry {
 
     public static List<BlockEffect> getEffects(Block block) {
         BlockRegistry.Entry entry = registry.get(block);
-        return entry != null ? entry.effects : null;
+        return entry != null ? entry.effectsView : null;
     }
 
     private static SoundEffect getRandomSound(List<SoundEffect> list, Random random, String conditions) {
@@ -186,6 +187,7 @@ public final class BlockRegistry {
         public final List<SoundEffect> sounds = new ArrayList<>();
         public final List<SoundEffect> stepSounds = new ArrayList<>();
         public final List<BlockEffect> effects = new ArrayList<>();
+        private final List<BlockEffect> effectsView = Collections.unmodifiableList(this.effects);
 
         public Entry(Block block) {
             this.block = block;
