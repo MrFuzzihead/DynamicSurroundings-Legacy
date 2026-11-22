@@ -1,6 +1,7 @@
 package com.mrfuzzihead.dynamicsurroundings.client;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import net.minecraft.block.Block;
@@ -34,6 +35,9 @@ import gnu.trove.map.hash.TObjectIntHashMap;
 public class PlayerSoundEffectHandler implements IClientEffectHandler {
 
     private static final List<EntityDropParticleFX> drops = new ArrayList<>();
+    private static String cachedConditions;
+    private static int cachedRevision = -1;
+    private static List<SoundEffect> cachedSounds = Collections.emptyList();
 
     private static boolean doBiomeSounds() {
         return EnvironStateHandler.EnvironState.isPlayerUnderground()
@@ -41,6 +45,11 @@ public class PlayerSoundEffectHandler implements IClientEffectHandler {
     }
 
     private static List<SoundEffect> getBiomeSounds(String conditions) {
+        int revision = BiomeSurveyHandler.getRevision();
+        if (revision == cachedRevision && conditions.equals(cachedConditions)) {
+            return cachedSounds;
+        }
+
         TObjectIntHashMap<SoundEffect> sounds = new TObjectIntHashMap();
         TObjectIntHashMap<BiomeGenBase> weights = BiomeSurveyHandler.getBiomes();
 
@@ -58,7 +67,10 @@ public class PlayerSoundEffectHandler implements IClientEffectHandler {
             result.add(SoundEffect.scaleVolume(sound, scale));
         }
 
-        return result;
+        cachedConditions = conditions;
+        cachedRevision = revision;
+        cachedSounds = Collections.unmodifiableList(result);
+        return cachedSounds;
     }
 
     private static void resetSounds() {

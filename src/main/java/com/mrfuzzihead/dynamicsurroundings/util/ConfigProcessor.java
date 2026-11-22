@@ -5,6 +5,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
@@ -15,11 +18,18 @@ import com.mrfuzzihead.dynamicsurroundings.ModLog;
 
 public final class ConfigProcessor {
 
+    private static final List<String> lastErrors = new ArrayList<>();
+
+    public static List<String> getLastErrors() {
+        return Collections.unmodifiableList(lastErrors);
+    }
+
     public static void process(Configuration config, Class<?> clazz) {
         process(config, clazz, null);
     }
 
     public static void process(Configuration config, Class<?> clazz, Object parameters) {
+        lastErrors.clear();
         for (Field field : clazz.getFields()) {
             ConfigProcessor.Parameter annotation = field.getAnnotation(ConfigProcessor.Parameter.class);
             if (annotation != null) {
@@ -90,11 +100,15 @@ public final class ConfigProcessor {
                             Object parsed = Enum.valueOf((Class<? extends Enum>) defaultValue.getClass(), value);
                             field.set(parameters, parsed);
                         } catch (IllegalArgumentException e) {
-                            ModLog.warn(
-                                "Invalid enum value '%s' for %s; keeping %s",
-                                value,
-                                property,
-                                ((Enum<?>) defaultValue).name());
+                            String message = "Invalid enum value '" + value
+                                + "' for "
+                                + category
+                                + "."
+                                + property
+                                + "; keeping "
+                                + ((Enum<?>) defaultValue).name();
+                            lastErrors.add(message);
+                            ModLog.warn(message);
                         }
                     } else if (defaultValue instanceof String) {
                         field.set(parameters, config.getString(property, category, annotation.defaultValue(), comment));
@@ -122,7 +136,9 @@ public final class ConfigProcessor {
 
                     prop.setShowInGui(field.getAnnotation(ConfigProcessor.Hidden.class) == null);
                 } catch (Throwable var15) {
-                    ModLog.error("Unable to parse configuration", var15);
+                    String message = "Unable to parse configuration " + category + "." + property;
+                    lastErrors.add(message + ": " + var15);
+                    ModLog.error(message, var15);
                 }
             }
         }

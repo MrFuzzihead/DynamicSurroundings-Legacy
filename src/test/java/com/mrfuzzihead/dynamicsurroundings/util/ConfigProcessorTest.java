@@ -1,6 +1,7 @@
 package com.mrfuzzihead.dynamicsurroundings.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import net.minecraftforge.common.config.Configuration;
 
@@ -17,6 +18,22 @@ public class ConfigProcessorTest {
         ConfigProcessor.process(config, EnumOptions.class);
 
         assertEquals(EnumOptions.Mode.BETA, EnumOptions.mode);
+    }
+
+    @Test
+    public void invalidEnumValuesAreReportedAndKeepTheDefault() {
+        Configuration config = new Configuration();
+        config.get("types", "mode", "ALPHA")
+            .set("GAMMA");
+        EnumOptions.mode = EnumOptions.Mode.ALPHA;
+
+        ConfigProcessor.process(config, EnumOptions.class);
+
+        assertEquals(EnumOptions.Mode.ALPHA, EnumOptions.mode);
+        assertTrue(
+            ConfigProcessor.getLastErrors()
+                .stream()
+                .anyMatch(error -> error.contains("types.mode")));
     }
 
     @Test

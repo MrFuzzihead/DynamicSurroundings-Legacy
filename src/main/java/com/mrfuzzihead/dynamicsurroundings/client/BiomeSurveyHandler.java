@@ -23,6 +23,7 @@ public final class BiomeSurveyHandler implements IClientEffectHandler {
     private static int lastPlayerX = 0;
     private static int lastPlayerZ = 0;
     private static int lastSurveyTick = -SURVEY_INTERVAL_TICKS;
+    private static int revision;
 
     public static int getArea() {
         return area;
@@ -30,6 +31,10 @@ public final class BiomeSurveyHandler implements IClientEffectHandler {
 
     public static TObjectIntHashMap<BiomeGenBase> getBiomes() {
         return weights;
+    }
+
+    public static int getRevision() {
+        return revision;
     }
 
     private static void doSurvey(EntityPlayer player, int range) {
