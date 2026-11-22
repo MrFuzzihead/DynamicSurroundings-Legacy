@@ -1,7 +1,7 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1–7 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, and text-pop-off instancing) are merged into the branch.
+**Scope:** analysis + the implementation log below. Batches 1–8 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, and the compileOnly Angelica API) are merged into the branch.
 **Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 34 test suites / 185 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
@@ -24,7 +24,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 **Batch 1 — weather ownership and aurora lifecycle (172 tests green)**
 
-- Added `compat/Compat`, `compat/angelica/AngelicaBridge` (reads `AngelicaConfig.enableInstancedWeather`) and `compat/notfine/NotFineBridge` (reads `SettingsManager.downfallDistance`). Both bridges are reflection-only, cache their handles, and degrade to the vanilla fallback when the optional mod or field is absent.
+- Added `compat/Compat`, `compat/angelica/AngelicaBridge` (reads `AngelicaConfig.enableInstancedWeather`) and `compat/notfine/NotFineBridge` (reads `SettingsManager.downfallDistance`). Both bridges are guarded, compileOnly-backed entry points: the optional type references live in small hook classes that are only loaded after the mod-id check, and degrade to the vanilla fallback when the mod is absent.
 - Added `client/weather/WeatherBackend` with a pure, unit-tested `resolve(...)` matrix. DS cancels `renderRainSnow`/`addRainParticles` only when it is the owner; otherwise vanilla, an external `IRenderHandler`, or Angelica runs normally.
 - Removed the second `world.provider.getWeatherRenderer()` call from `StormRenderer`; a provider is now rendered by exactly one caller.
 - DS and splashes now use one effective radius from NotFine's `DOWNFALL_DISTANCE` (falling back to `fancyGraphics ? 10 : 5`). `0` disables downfall rendering.
@@ -50,7 +50,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 **Batch 4 — NotFine HUD and void-fog parity (181 tests green)**
 
-- `NotFineBridge` now reads NotFine's `VOID_FOG` tick box (reflection over `Settings` → `option.getStore()`). `BiomeFogColorCalculator` skips its own void-fog darkening when the user disabled NotFine's void fog, while blindness/night vision still compose.
+- `NotFineBridge` now reads NotFine's `VOID_FOG` tick box directly through the compileOnly `Settings` API. `BiomeFogColorCalculator` skips its own void-fog darkening when the user disabled NotFine's void fog, while blindness/night vision still compose.
 - `GuiHUDHandler` filters at the dispatcher: only the non-cancelable `EXPERIENCE` overlay pass is rendered. This is the pass HUDCaching rebuilds, and it avoids Pre/Post/Text/synthetic passes calling the potion list several times per frame.
 - `PotionHUD` now null-guards `thePlayer` and wraps its draw in `glPushAttrib`/`glPopAttrib`, so it cannot leak lighting/texture/colour state into the HUD cache or vanilla.
 - Still open from this theme: NotFine `CLOUD_HEIGHT` alignment for aurora/haze (DS dimension config currently wins) and per-effect text caching (P9).
@@ -66,7 +66,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 - Added `Compat.isAngelicaBopFogActive()`. When Angelica's late BOP fog mixin is present, `BiomeRegistry` no longer imports `IBiomeFog` into DS's own biome entries, so BOP colour/density is blended once (by Angelica) instead of twice.
 - Added `NotFineBridge.cloudHeight(...)` and `DimensionRegistry` explicit-cloud-height tracking. Aurora height and elevation haze use NotFine's `CLOUD_HEIGHT` unless the dimension config explicitly overrides it.
-- Added `compat/angelica/IrisPhaseBridge`, a reflection-only `WorldRenderingPhase` scope. `AuroraRenderHandler` now draws inside `WorldRenderingPhase.CLOUDS` when Iris is active and restores the previous phase in a `finally` block; without Iris it is a no-op.
+- Added `compat/angelica/IrisPhaseBridge` (with a compileOnly `IrisPhaseHook`), a typed `WorldRenderingPhase` scope. `AuroraRenderHandler` now draws inside `WorldRenderingPhase.CLOUDS` when Iris is active and restores the previous phase in a `finally` block; without Iris it is a no-op.
 - Added three tests: absent Angelica/BOP detection, absent Iris phase bridge, and the NotFine cloud-height fallback.
 
 **Batch 7 — text pop-offs as a post-world overlay (185 tests green)**
@@ -76,12 +76,20 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - This keeps the font out of Angelica's `ParticleInstancer` capture and out of Iris gbuffer programs.
 - Added a unit test that pins the no-op `renderParticle` and the active-list lifecycle.
 
+**Batch 8 — compileOnly Angelica API (185 tests green)**
+
+- Added `compileOnly("com.github.GTNewHorizons:Angelica:2.2.46:dev") { transitive = false }`. The optional references are compile-time only and are not published or bundled.
+- Replaced the Angelica weather proxy/reflection with a direct `IRenderHandler + WeatherColumnProvider` nested provider. `AngelicaWeatherProvider` is now a small installer with no Angelica types in its bytecode; `AngelicaWeatherProviderFactory` is only loaded after the mod-id check.
+- Replaced the NotFine and Angelica-config reflection handles with guarded hook classes (`NotFineSettingsHook`, `AngelicaConfigHook`). Their direct optional types are loaded only when the corresponding mod id is present.
+- Replaced the Iris phase reflection with typed `Iris`/`WorldRenderingPhase` access in `IrisPhaseHook`; `IrisPhaseBridge` only probes for the Iris class and remains loadable without it.
+- This also fixed a latent bug in the old proxy: Forge's `IRenderHandler` is an abstract class, not an interface, so `Proxy.newProxyInstance` could never have created the weather provider.
+
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B38–B40, B48/B50, B64–B65, B73, B87) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
 
 1. **A weather backend abstraction** with three owners: vanilla/external `IRenderHandler`, DS legacy renderer, and Angelica's instanced weather. DS mixins ask the backend before cancelling. **Done in batch 1.**
-2. **An Angelica `WeatherColumnProvider` bridge** so DS's per-biome rain/dust/snow is fed into Angelica's instanced pipeline instead of competing with it. Angelica's API already exists (`com.gtnewhorizons.angelica.api.weather`, `apiVersion = 1`). **Done in batch 5 (reflection proxy, no compile dependency).**
+2. **An Angelica `WeatherColumnProvider` bridge** so DS's per-biome rain/dust/snow is fed into Angelica's instanced pipeline instead of competing with it. Angelica's API already exists (`com.gtnewhorizons.angelica.api.weather`, `apiVersion = 1`). **Done in batch 5; now uses a compileOnly Angelica reference (batch 8) instead of a reflection proxy.**
 3. **Relative fog + a NotFine setting bridge** (`jss.notfine.core.SettingsManager.downfallDistance`, `Settings.TERRAIN_FOG`, `Settings.FOG_NEAR_DISTANCE`) — reflective, optional, no compile dependency. **Done in batches 1–2 for downfall and fog range.**
 
 ### Coverage reality
@@ -216,7 +224,7 @@ static boolean isDsOwner(WorldClient world) { return owner(world) == DYNAMIC_SUR
    Scaling preserves NotFine's 1 % near distance, preserves `TERRAIN_FOG = false` (16 M × 0.4 is still effectively infinite), and preserves the vanilla 0.75/0.25 geometry.
 3. Only modify `GL_LINEAR` fog; use `GL_FOG_DENSITY` for `GL_EXP/GL_EXP2` if DS ever wants those modes. Do not touch water/lava (already skipped).
 4. Add `fog.respectExternalFog` (default `true`). When false, keep today's absolute behaviour for users who want DS to own fog.
-5. Optional NotFine bridge (reflection, no compile dep):
+5. Optional NotFine bridge (compileOnly Angelica/NotFine, guarded hook):
    - If `Loader.isModLoaded("notfine")`, read `jss.notfine.core.SettingsManager.downfallDistance` and `Settings.TERRAIN_FOG` / `FOG_NEAR_DISTANCE`.
    - This is also needed for `StormRenderer` (see 2.6).
 
@@ -302,10 +310,12 @@ compat/
 ├── Compat.java                 minimal facade: isAngelica(), isNotFine(), isIris(), isBop()
 ├── angelica/
 │   ├── AngelicaBridge.java     guarded: enableInstancedWeather
-│   ├── AngelicaWeatherProvider.java   IRenderHandler + WeatherColumnProvider via a reflection Proxy (batch 5)
+│   ├── AngelicaWeatherProvider.java   installer/factory, no Angelica types in its bytecode
+│   ├── AngelicaWeatherProviderFactory.java   direct IRenderHandler + WeatherColumnProvider
 │   └── AngelicaDebugEntries.java      optional DebugScreenApi registration (not implemented)
 ├── notfine/
-│   └── NotFineBridge.java      downfallDistance, terrainFog, fogNearPercent (reflection)
+│   ├── NotFineBridge.java      guarded entry point
+│   └── NotFineSettingsHook.java   direct SettingsManager/Settings references
 └── bop/
     └── BopFogBridge.java       existing BOPFogIntegration, gated on Angelica presence
 ```
