@@ -15,12 +15,14 @@ import gnu.trove.map.hash.TObjectIntHashMap;
 public final class BiomeSurveyHandler implements IClientEffectHandler {
 
     private static final int BIOME_SURVEY_RANGE = 6;
+    private static final int SURVEY_INTERVAL_TICKS = 20;
     private static int area;
     private static final TObjectIntHashMap<BiomeGenBase> weights = new TObjectIntHashMap();
     private static BiomeGenBase lastPlayerBiome = null;
     private static int lastDimension = 0;
     private static int lastPlayerX = 0;
     private static int lastPlayerZ = 0;
+    private static int lastSurveyTick = -SURVEY_INTERVAL_TICKS;
 
     public static int getArea() {
         return area;
@@ -51,8 +53,10 @@ public final class BiomeSurveyHandler implements IClientEffectHandler {
     }
 
     static boolean shouldSurvey(int dimension, int playerX, int playerZ, BiomeGenBase playerBiome, int lastDimension,
-        int lastX, int lastZ, BiomeGenBase lastBiome) {
-        return dimension != lastDimension || playerX != lastX || playerZ != lastZ || lastBiome != playerBiome;
+        int lastX, int lastZ, BiomeGenBase lastBiome, int tick, int lastTick) {
+        boolean moved = playerX != lastX || playerZ != lastZ;
+        boolean contextChanged = dimension != lastDimension || lastBiome != playerBiome;
+        return contextChanged || moved && tick - lastTick >= SURVEY_INTERVAL_TICKS;
     }
 
     @Override
@@ -68,8 +72,11 @@ public final class BiomeSurveyHandler implements IClientEffectHandler {
             lastDimension,
             lastPlayerX,
             lastPlayerZ,
-            lastPlayerBiome)) {
+            lastPlayerBiome,
+            EnvironStateHandler.EnvironState.getTickCounter(),
+            lastSurveyTick)) {
             lastPlayerBiome = playerBiome;
+            lastSurveyTick = EnvironStateHandler.EnvironState.getTickCounter();
             lastDimension = EnvironStateHandler.EnvironState.getDimensionId();
             lastPlayerX = playerX;
             lastPlayerZ = playerZ;

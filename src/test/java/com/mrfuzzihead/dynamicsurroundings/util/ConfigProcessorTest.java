@@ -9,6 +9,20 @@ import org.junit.Test;
 public class ConfigProcessorTest {
 
     @Test
+    public void doubleAndLongOptionsAreSupported() {
+        Configuration config = new Configuration();
+        config.get("types", "double", "1.5")
+            .set(2.5);
+        config.get("types", "long", "1")
+            .set("42");
+
+        ConfigProcessor.process(config, TypeOptions.class);
+
+        assertEquals(2.5D, TypeOptions.doubleValue, 0.0D);
+        assertEquals(42L, TypeOptions.longValue);
+    }
+
+    @Test
     public void unannotatedFloatOptionsAreNotClampedToTheSmallestPositiveFloat() {
         Configuration config = new Configuration();
         config.get("test", "value", 0.0F)
@@ -17,6 +31,15 @@ public class ConfigProcessorTest {
         ConfigProcessor.process(config, TestOptions.class);
 
         assertEquals(-1.5F, TestOptions.value, 0.0F);
+    }
+
+    public static final class TypeOptions {
+
+        @ConfigProcessor.Parameter(category = "types", property = "double", defaultValue = "1.5")
+        public static double doubleValue = 1.5D;
+
+        @ConfigProcessor.Parameter(category = "types", property = "long", defaultValue = "1")
+        public static long longValue = 1L;
     }
 
     public static final class TestOptions {

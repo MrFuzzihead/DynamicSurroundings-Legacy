@@ -72,6 +72,17 @@ public final class ConfigProcessor {
                                 minFloat,
                                 maxFloat,
                                 comment));
+                    } else if (defaultValue instanceof Double) {
+                        field.set(
+                            parameters,
+                            config.get(category, property, annotation.defaultValue(), comment)
+                                .getDouble(Double.parseDouble(annotation.defaultValue())));
+                    } else if (defaultValue instanceof Long) {
+                        field.set(
+                            parameters,
+                            Long.parseLong(
+                                config.get(category, property, annotation.defaultValue(), comment)
+                                    .getString()));
                     } else if (defaultValue instanceof String) {
                         field.set(parameters, config.getString(property, category, annotation.defaultValue(), comment));
                     } else if (defaultValue instanceof String[]) {
