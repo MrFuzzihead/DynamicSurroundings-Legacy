@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 58 test suites / 252 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 57 test suites / 251 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -221,6 +221,12 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B71 (partial):** `PlayerSoundEffectHandler` caches the weighted biome sound list by `(conditions, BiomeSurveyHandler revision)` and invalidates it when the survey changes.
 - **B52:** `ConfigProcessor` exposes the last validation errors; invalid enum values keep their defaults and are reported. Tests cover the report.
 - Added the enum-validation assertion.
+
+**Batch 31 — targeted potion particle suppression (251 tests green)**
+
+- **B73:** removed the datawatcher-colour hack. A new client-only `EntityLivingBasePotionMixin` cancels the `mobSpell`/`mobSpellAmbient` particle spawn only for the local player when `suppressPotionParticles` is enabled. The mixin is gated at apply time and also checks the option at runtime.
+- Mixin wiring and bytecode-target tests now assert `updatePotionEffects` still calls `World.spawnParticle`.
+- Removed the old `PotionParticleScrubHandler`.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B64, B73) and the optional per-effect HUD text cache (P9).
 

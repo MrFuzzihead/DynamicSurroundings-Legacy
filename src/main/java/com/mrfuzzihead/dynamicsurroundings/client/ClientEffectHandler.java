@@ -69,9 +69,6 @@ public class ClientEffectHandler {
             register(new PlayerSoundEffectHandler());
         }
 
-        if (ModOptions.suppressPotionParticles) {
-            register(new PotionParticleScrubHandler());
-        }
     }
 
     static boolean canProcess(World world, EntityPlayer player) {

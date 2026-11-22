@@ -35,6 +35,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.mrfuzzihead.dynamicsurroundings.mixins.early.EntityLivingBasePotionMixin;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.EntityRendererMixin;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.SoundManagerMixin;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.WorldMixin;
@@ -100,6 +101,20 @@ public class MixinWiringTest {
         assertEquals("renderRainSnow", rainSnow.method()[0]);
         assertTrue("DS must be able to stop vanilla/NotFine from drawing after its own render", rainSnow.cancellable());
         assertEquals(900, rainSnow.order());
+    }
+
+    @Test
+    public void potionMixinTargetsThePlayerParticleSpawn() throws Exception {
+        Inject potion = EntityLivingBasePotionMixin.class
+            .getDeclaredMethod("dynamicsurroundings$suppressPotionParticles", CallbackInfo.class)
+            .getAnnotation(Inject.class);
+        assertNotNull(potion);
+        assertEquals("updatePotionEffects", potion.method()[0]);
+        assertTrue(potion.cancellable());
+        assertEquals("INVOKE", potion.at()[0].value());
+        assertTrue(
+            potion.at()[0].target()
+                .contains("spawnParticle"));
     }
 
     @Test
@@ -283,12 +298,13 @@ public class MixinWiringTest {
     // ---------------------------------------------------------------------------------------------------------
 
     @Test
-    public void catalogueKeepsTheFourFeatureGroups() {
-        assertEquals(4, Mixins.values().length);
+    public void catalogueKeepsTheFeatureGroups() {
+        assertEquals(5, Mixins.values().length);
         assertNotNull(Mixins.valueOf("ACCESSORS"));
         assertNotNull(Mixins.valueOf("WEATHER"));
         assertNotNull(Mixins.valueOf("SOUND"));
         assertNotNull(Mixins.valueOf("SOUND_CRASH_FIX"));
+        assertNotNull(Mixins.valueOf("POTION_PARTICLES"));
         for (Mixins entry : Mixins.values()) {
             assertNotNull(entry.name(), entry.getBuilder());
         }

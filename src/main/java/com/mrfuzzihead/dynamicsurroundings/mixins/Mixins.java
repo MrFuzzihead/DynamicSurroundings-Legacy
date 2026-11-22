@@ -37,6 +37,11 @@ public enum Mixins implements IMixins {
         .addClientMixins("EntityRendererMixin")
         .setApplyIf(() -> !ModOptions.disableWeatherEffects)),
 
+    /** Optional local-player potion swirl suppression. */
+    POTION_PARTICLES(new MixinBuilder().setPhase(Phase.EARLY)
+        .addClientMixins("EntityLivingBasePotionMixin")
+        .setApplyIf(() -> ModOptions.suppressPotionParticles)),
+
     /**
      * Sound engine hooks: the old {@code PatchSoundManager*}, {@code SoundPlayFlush} and
      * {@code PatchSoundManagerPlayTime}. They are part of the sound subsystem and have no separate config switch.
