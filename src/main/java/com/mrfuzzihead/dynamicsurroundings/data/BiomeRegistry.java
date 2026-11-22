@@ -25,6 +25,7 @@ import com.mrfuzzihead.dynamicsurroundings.data.config.SoundConfig;
 import com.mrfuzzihead.dynamicsurroundings.event.RegistryReloadEvent;
 import com.mrfuzzihead.dynamicsurroundings.util.Color;
 import com.mrfuzzihead.dynamicsurroundings.util.MyUtils;
+import com.mrfuzzihead.dynamicsurroundings.util.WeightedRandom;
 
 import gnu.trove.map.hash.TIntObjectHashMap;
 
@@ -165,35 +166,11 @@ public final class BiomeRegistry {
 
     public static SoundEffect getSpotSound(BiomeGenBase biome, String conditions, Random random) {
         BiomeRegistry.Entry e = get(biome);
-        if (e != null && !e.spotSounds.isEmpty() && random.nextInt(e.spotSoundChance) == 0) {
-            int totalWeight = 0;
-            List<SoundEffect> candidates = new ArrayList<>();
-
-            for (SoundEffect s : e.spotSounds) {
-                if (s.matches(conditions)) {
-                    candidates.add(s);
-                    totalWeight += s.weight;
-                }
-            }
-
-            if (totalWeight <= 0) {
-                return null;
-            } else if (candidates.size() == 1) {
-                return candidates.get(0);
-            } else {
-                int targetWeight = random.nextInt(totalWeight);
-                int i = 0;
-                i = candidates.size();
-
-                while ((targetWeight -= candidates.get(i - 1).weight) >= 0) {
-                    i--;
-                }
-
-                return candidates.get(i - 1);
-            }
-        } else {
+        if (e == null || e.spotSounds.isEmpty() || !WeightedRandom.roll(random, e.spotSoundChance)) {
             return null;
         }
+
+        return WeightedRandom.pick(e.spotSounds, s -> s.matches(conditions) ? s.weight : 0, random);
     }
 
     private static void processConfig() {

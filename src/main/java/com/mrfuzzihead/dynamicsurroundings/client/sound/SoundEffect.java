@@ -42,7 +42,7 @@ public final class SoundEffect {
         this.volume = volume;
         this.pitch = pitch;
         this.conditions = ".*";
-        this.pattern = null;
+        this.pattern = Pattern.compile(this.conditions);
         this.weight = 1;
         this.type = SoundEffect.SoundType.SPOT;
         this.variable = variable;

@@ -20,6 +20,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.fx.JetEffect;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
 import com.mrfuzzihead.dynamicsurroundings.data.config.BlockConfig;
 import com.mrfuzzihead.dynamicsurroundings.data.config.SoundConfig;
+import com.mrfuzzihead.dynamicsurroundings.util.WeightedRandom;
 
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.ModContainer;
@@ -47,43 +48,19 @@ public final class BlockRegistry {
     }
 
     private static SoundEffect getRandomSound(List<SoundEffect> list, Random random, String conditions) {
-        int totalWeight = 0;
-        List<SoundEffect> candidates = new ArrayList<>();
-
-        for (SoundEffect s : list) {
-            if (s.matches(conditions)) {
-                candidates.add(s);
-                totalWeight += s.weight;
-            }
-        }
-
-        if (totalWeight <= 0) {
-            return null;
-        } else if (candidates.size() == 1) {
-            return candidates.get(0);
-        } else {
-            int targetWeight = random.nextInt(totalWeight);
-            int i = 0;
-            i = candidates.size();
-
-            while ((targetWeight -= candidates.get(i - 1).weight) >= 0) {
-                i--;
-            }
-
-            return candidates.get(i - 1);
-        }
+        return WeightedRandom.pick(list, s -> s.matches(conditions) ? s.weight : 0, random);
     }
 
     public static SoundEffect getSound(Block block, Random random, String conditions) {
         BlockRegistry.Entry entry = registry.get(block);
-        return entry != null && !entry.sounds.isEmpty() && random.nextInt(entry.chance) == 0
+        return entry != null && !entry.sounds.isEmpty() && WeightedRandom.roll(random, entry.chance)
             ? getRandomSound(entry.sounds, random, conditions)
             : null;
     }
 
     public static SoundEffect getStepSound(Block block, Random random, String conditions) {
         BlockRegistry.Entry entry = registry.get(block);
-        return entry != null && !entry.stepSounds.isEmpty() && random.nextInt(entry.stepChance) == 0
+        return entry != null && !entry.stepSounds.isEmpty() && WeightedRandom.roll(random, entry.stepChance)
             ? getRandomSound(entry.stepSounds, random, conditions)
             : null;
     }

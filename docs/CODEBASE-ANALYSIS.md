@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 37 test suites / 200 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 40 test suites / 210 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -103,7 +103,15 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B87:** `BlockPos` now has coordinate `equals`/`hashCode`; the copy constructor uses getters so `MutableBlockPos.getImmutable()` returns the live coordinates; both `getAllInBox` iterators now terminate and are tested.
 - **B88:** `ImmutableColor` now rejects `scale(r,g,b)`, `add`, `blend`, and `mix(Color)` as well as the existing mutators; `Color` has a matching `hashCode`. The palette constants are asserted unchanged.
 
-**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B38–B40, B48/B50, B64–B65, B73) and the optional per-effect HUD text cache (P9).
+**Batch 12 — chance, weighted selection, and programmatic sound patterns (210 tests green)**
+
+- Added `WeightedRandom` with guarded `roll`, `pickIndex`, and `pick`. Non-positive chances mean "never"; negative weights are ignored; empty/all-zero tables return no result instead of calling `nextInt(0)` or walking past index 0.
+- Replaced the duplicated reverse-cumulative picks in `BiomeRegistry`, `BlockRegistry`, and `ProbabilityWeightsAcoustic`.
+- `BlockEffect.trigger` and the block/biome chance checks now use `WeightedRandom.roll`, so a configured `chance = 0` no longer throws.
+- `SoundEffect`'s programmatic constructors now compile the `.*` pattern instead of leaving `pattern = null`; `matches()` is safe for effects created in code.
+- Added `WeightedRandomTest` (zero/negative chance, negative weights, distribution, empty candidates), `BlockEffectTest`, and `SoundEffectTest`.
+
+**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B38–B40, B64–B65, B73) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
 
@@ -419,7 +427,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B31 | **M** | `client/sound/SoundManager.java:161-167` | `isSoundPlaying` does `containsValue` on the whole playing map for every emitter every tick; O(n²). Maintain a set of playing sounds/ids. |
 | B32 | **M** | `client/sound/PlayerSound.java:30-33` | `this.volume = sound.volume; ... this.volume = 0.002F;` — the first assignment is dead. |
 | B33 | **M** | `client/sound/SoundManager.java:240-275` | `configureSound()` creates and destroys a temporary OpenAL context just to query the channel count; can disturb audio and is expensive. Cache the count from the live context, or use `ALC10.alcGetInteger` after the real device exists. Magic `4112`. |
-| B34 | **M** | `client/sound/SoundEffect.java:55` | The no-pattern constructor leaves `pattern = null`; `matches()` NPEs for programmatically created effects. Compile `.*` or guard. `equals` compares only the sound name (intentional for emitters, but document it). |
+| B34 | **M** | `client/sound/SoundEffect.java:55` | The no-pattern constructor left `pattern = null`; `matches()` NPE'd for programmatically created effects. **Fixed in batch 12:** the `.*` pattern is compiled in the string constructors. |
 | B35 | **M** | `client/sound/SoundManager.java:116-118` | `canFitSound()` counts all playing sounds but compares to `normalChannels - 6` and ignores streaming channels; use the normal-channel map or the manager's own bookkeeping. |
 | B36 | **L** | `client/sound/fix/SoundFixMethods.java` | The paulscode `ISourceRemoved` cast assumes the `Source` mixin always applied. If the mixin fails (e.g., a SoundSystem version change), this throws `ClassCastException`. Add `instanceof` fallback and a log. |
 
@@ -443,9 +451,9 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 
 | ID | Sev | File:line | Finding |
 |---|---|---|---|
-| B48 | **H** | `data/BiomeRegistry.java:167`, `data/BlockRegistry.java:79,86`, `client/fx/BlockEffect.java:31` | `random.nextInt(chance)`/`nextInt(spotSoundChance)` throws `IllegalArgumentException` when the configured chance is `0`. Config allows 0 (`@MinMaxInt(min = 0)` for effect chance; block chance has no min annotation). Guard `chance <= 0` (disable) at load and at use. |
-| B49 | **M** | `data/BiomeRegistry.java:187`, `data/BlockRegistry.java:69`, `client/footsteps/engine/implem/ProbabilityWeightsAcoustic.java:42` | The reverse-cumulative weighted pick is **correct for positive weights**, but it is duplicated three times and is not guarded: a negative weight makes the loop walk past index 0 (`ArrayIndexOutOfBoundsException`), and a zero/negative `totalWeight` gives `nextInt(0)` or a wrong pick. Extract one `WeightedRandom` helper, validate weights at load, and test the distribution (`[10,1]` → 10/11 vs 1/11) plus the negative-weight guard. |
-| B50 | **H** | `data/config/BiomeConfig.java:43`, `data/config/BlockConfig.java:26,41` | The JSON config models accept any `Integer` for `spotSoundChance`/`chance`/`stepChance`; there is no validation (0 or negative) before the value reaches `nextInt` (B48). Validate at load and clamp to `>= 1` or disable the feature. |
+| B48 | **H** | `data/BiomeRegistry.java:167`, `data/BlockRegistry.java:79,86`, `client/fx/BlockEffect.java:31` | `random.nextInt(chance)` threw `IllegalArgumentException` when the configured chance was `0`. **Fixed in batch 12:** all call sites use `WeightedRandom.roll`, where `chance <= 0` means never. |
+| B49 | **M** | `data/BiomeRegistry.java:187`, `data/BlockRegistry.java:69`, `client/footsteps/engine/implem/ProbabilityWeightsAcoustic.java:42` | The reverse-cumulative pick was duplicated and unguarded: negative weights could walk past index 0 and an empty table called `nextInt(0)`. **Fixed in batch 12:** one `WeightedRandom` helper, negative weights ignored, empty tables return no pick, distribution and guard tested. |
+| B50 | **H** | `data/config/BiomeConfig.java:43`, `data/config/BlockConfig.java:26,41` | The JSON models accept any `Integer` for `spotSoundChance`/`chance`/`stepChance`. **Fixed in batch 12 at the use site:** zero/negative values are treated as "never" rather than reaching `nextInt`; no ambiguous clamping to "always". |
 | B51 | **M** | `util/ConfigProcessor.java:58` | `Float.MIN_VALUE` as the "no minimum" sentinel means any float property without `@MinMaxFloat` is clamped to `1.4e-45`; negative and zero values silently become ~0. Use `-Float.MAX_VALUE`. All current float options happen to carry the annotation, so this is latent. |
 | B52 | **M** | `util/ConfigProcessor.java:19-101` | No support for `double`/`long`/enums/lists beyond `String[]`; every parse failure is logged and ignored (a typo leaves a static at its previous value). Add a validation report and a unit test per type. |
 | B53 | **M** | `ModOptions.java:405-425` | `scrubCategory` removes any property with an empty comment. A legitimately comment-less entry is deleted on every load. Use an explicit `removedOptions` list instead of comment emptiness. |
@@ -684,7 +692,7 @@ Do not try to unit-test `GL11`/`Tessellator` draw calls directly. Extract the ma
 - Add the client smoke/game test skeleton and the empty-report guard.
 
 **Phase 1 — regressions and stability (PR 2–4)**
-- Fix B1/B2 (cancel weather + single provider owner), B3 (aurora not gated on weather), B19/B20/B21 (aurora identity/range), B37 (off-thread client packets), B27 (sound update), B38/B39/B40 (server weather/packet/dirty), B48/B50 (chance guards + config validation), B64/B65 (null player + step block).
+- Fix B1/B2 (cancel weather + single provider owner), B3 (aurora not gated on weather), B19/B20/B21 (aurora identity/range), B37 (off-thread client packets), B27 (sound update), B38/B39/B40 (server weather/packet/dirty), B64/B65 (null player + step block).
 
 **Phase 2 — compat layer (PR 5–7)**
 - `compat/Compatibility`, `NotFineBridge`, `AngelicaBridge`, `WeatherBackend`; relative fog; NotFine downfall distance; BOP fog source; diagnostics.
