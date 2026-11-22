@@ -44,9 +44,13 @@ public class PFSolver implements ISolver {
         }
     }
 
+    static boolean isStationaryAirborne(EntityPlayer ply) {
+        return !ply.onGround && !ply.isInWater() && !ply.isOnLadder() && Math.abs(ply.motionY) < 0.02;
+    }
+
     @Override
     public Association findAssociationForPlayer(EntityPlayer ply, double verticalOffsetAsMinus, boolean isRightFoot) {
-        if (Math.abs(ply.motionY) < 0.02) {
+        if (isStationaryAirborne(ply)) {
             return null;
         } else {
             int yy = MathHelper.floor_double(ply.boundingBox.minY - 0.1 - verticalOffsetAsMinus);

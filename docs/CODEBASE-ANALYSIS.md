@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 50 test suites / 229 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 52 test suites / 233 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -156,6 +156,12 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B78:** removed the unused `PFReaderQP` class (the port always uses `PFReaderH`).
 - **B90 (partial):** removed the unused NBT holder classes and the unused `MIN_INTENSITY`/`MAX_INTENSITY` constants from `DimensionEffectData`, `DimensionEffectDataFile`, and `AuroraData`. The static `DecimalFormat` remains.
 - **B95:** `ModLog.error`/`catching` now pass the throwable to Log4j instead of printing a second stack trace.
+
+**Batch 20 — footstep ground detection and inside-cover constants (233 tests green)**
+
+- **B77:** `PFSolver` now skips only a stationary *airborne* player. A player on the ground with `motionY == 0` is no longer treated as having no association, so flat-ground footsteps can resolve. Water/ladder cases remain exempt.
+- **B92 (partial):** `PlayerUtils` uses its `RANGE`, `AREA`, and `INSIDE_Y_ADJUST` constants instead of the duplicated `3`/`49`/`2` literals. Unit tests cover open sky and a low ceiling. The 2-block ceiling-height limitation remains.
+- Added `PFSolverTest` and `PlayerUtilsTest`.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B64, B73) and the optional per-effect HUD text cache (P9).
 
@@ -536,7 +542,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 
 | ID | Sev | File:line | Finding |
 |---|---|---|---|
-| B77 | **H** | `client/footsteps/game/system/PFSolver.java:49` | `if (Math.abs(ply.motionY) < 0.02) return null;` — verify against the original Presence Footsteps. If a player standing/walking on flat ground has `motionY == 0` at the client tick, this suppresses every footstep. Add a game test with a walking player and count `playAssociation` calls. |
+| B77 | **H** | `client/footsteps/game/system/PFSolver.java:49` | `Math.abs(motionY) < 0.02` returned null for every grounded player with zero vertical motion, suppressing flat-ground footsteps. **Fixed in batch 20:** only stationary airborne players are skipped; ground/water/ladder cases are tested. |
 | B78 | **M** | `client/footsteps/game/system/PFReaderQP.java:50-85` | Dead branches and unused fields in a class never instantiated. **Fixed in batch 19:** class removed. |
 | B79 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:126-135` | `newMinimum` was assigned every remaining sound instead of the minimum, and `randAB` sampled `[a, a+b]` instead of `[a, b]`. **Fixed in batch 14:** `Math.min` for the wake-up and a bounded `randomDelay`, with tests. |
 | B80 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:40-43` | `USING_LATENESS`, `USING_EARLYNESS`, `LATENESS_THRESHOLD_DIVIDER`, `EARLYNESS_THRESHOLD_POW` unused; the literals are repeated. |
@@ -556,7 +562,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B89 | **M** | `util/MathStuff.java:139-144` | `sqrt(double)` returned `(float) Math.sqrt(value)`; `sin/cos(double)` truncate to float; `log` is an approximation; `abs(MIN_VALUE)` overflows; several constants are unused. **Partially fixed in batches 13+17:** `sqrt(double)` preserves double precision; integer/long `abs` use `< 0`. The double trig/log approximations and `MIN_VALUE` overflow remain open. |
 | B90 | **M** | `data/DimensionEffectData.java:30-32,88-95` | `NBT` inner classes and `MIN_INTENSITY`/`MAX_INTENSITY` were unused; `FORMATTER` is not thread-safe. **Partially fixed in batch 19:** dead NBT/constants removed; the static formatter remains. |
 | B91 | **M** | `data/AuroraData.java:59-67` | No `hashCode` (see B20). `equals` ignores seed/color/preset, so `HashSet` dedupe by column would drop updates; decide the intended identity and document it. |
-| B92 | **M** | `util/PlayerUtils.java:20-24,60-84` | `INSIDE_Y_ADJUST`, `RANGE`, `AREA` unused (literals 3/3/49); `isReallyInside` only counts ceilings within 2 blocks, so a 5-block-high room is "outside". Use `world.canBlockSeeTheSky`/heightmap or a configurable coverage test. Add unit tests with mocked worlds. |
+| B92 | **M** | `util/PlayerUtils.java:20-24,60-84` | `INSIDE_Y_ADJUST`, `RANGE`, `AREA` were unused (literals 3/3/49); `isReallyInside` only counts ceilings within 2 blocks, so a 5-block-high room is "outside". **Partially fixed in batch 20:** constants are used and open-sky/low-ceiling behavior is tested. The 2-block limitation remains. |
 | B93 | **M** | `VersionCheck.java:157-210` | `assert` is used for input validation (`numComponents >= 3`), which is disabled in production; `compareTo` ignores alpha/beta. Add proper parse/compare tests. |
 | B94 | **L** | `util/JsonUtils.java:40-75` | `load(InputStream)` can return `null` (JSON `null`); `clazz.newInstance()` is deprecated; the stream is not closed by the method (documented by callers). Add null checks and try-with-resources. |
 | B95 | **L** | `ModLog.java` | `error` printed a second stack trace and did not pass the throwable to Log4j; `catching` printed twice. **Fixed in batch 19:** both delegate to Log4j with the throwable. |
