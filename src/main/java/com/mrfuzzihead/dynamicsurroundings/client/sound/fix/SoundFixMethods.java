@@ -28,7 +28,7 @@ public final class SoundFixMethods {
         if (source == null) {
             return null;
         }
-        if (((ISourceRemoved) source).dynamicsurroundings$isRemoved()) {
+        if (source instanceof ISourceRemoved && ((ISourceRemoved) source).dynamicsurroundings$isRemoved()) {
             source.cleanup();
             return null;
         }
@@ -45,7 +45,7 @@ public final class SoundFixMethods {
         if (source == null) {
             return;
         }
-        if (source.toStream) {
+        if (source.toStream && source instanceof ISourceRemoved) {
             ((ISourceRemoved) source).dynamicsurroundings$setRemoved(true);
         } else {
             source.cleanup();

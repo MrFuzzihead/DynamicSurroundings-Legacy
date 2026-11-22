@@ -6,6 +6,7 @@ import java.util.List;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SoundHandler;
+import net.minecraft.client.resources.IReloadableResourceManager;
 import net.minecraftforge.common.MinecraftForge;
 
 import com.mrfuzzihead.dynamicsurroundings.ModLog;
@@ -17,6 +18,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.user.GenerateBl
 import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.TextPopOffRenderer;
 import com.mrfuzzihead.dynamicsurroundings.client.hud.GuiHUDHandler;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.cache.SoundCacheReloadListener;
 import com.mrfuzzihead.dynamicsurroundings.compat.angelica.AngelicaDebugEntries;
 import com.mrfuzzihead.dynamicsurroundings.data.BlockRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry;
@@ -47,6 +49,8 @@ public class ProxyClient extends Proxy {
         GuiHUDHandler.initialize();
         SoundRegistry.initialize();
         SoundManager.configureSound();
+        ((IReloadableResourceManager) Minecraft.getMinecraft()
+            .getResourceManager()).registerReloadListener(new SoundCacheReloadListener());
     }
 
     @Override

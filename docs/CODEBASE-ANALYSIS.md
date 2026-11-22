@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 59 test suites / 256 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 60 test suites / 261 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -264,6 +264,16 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B15/B16/P3:** `BiomeFogRangeCalculator` and `BiomeFogColorCalculator` now key their scans to 4-block coarse cells, so walking within a cell does not rescan 1,681/169 columns. Rain, far-plane, dimension and fog-mode invalidation are retained.
 - **B17:** replaced hardcoded `0.9F`/`1681` in the biome fog range calculator with `DUST_FOG_IMPACT` and `(2*DISTANCE+1)^2`.
 - Added `WeatherColumnCacheTest` for reuse, bucket expiry, and dimension invalidation.
+
+**Batch 38 — sound engine correctness (261 tests green)**
+
+- **B28 (partial):** `SoundCache` now resolves the `IResourceManager` lazily, uses a `ThreadLocal` 64 KiB buffer, uses a `ConcurrentHashMap`, clears on resource reload via `SoundCacheReloadListener`, reads until EOF instead of trusting `available()`, and logs/falls back to silence instead of throwing `Error`. The cache remains unbounded (no LRU/soft references).
+- **B29:** `queueAmbientSounds` deduplicates by sound name and fades removed emitters instead of replacing an equal key.
+- **B31:** removed the redundant `containsValue` scan from `isSoundPlaying`; it relies on vanilla's inverse-map check plus the delayed map.
+- **B32:** removed the dead `PlayerSound.volume` assignment.
+- **B35:** `canFitSound` now accounts for normal + streaming channels via a tested pure overload.
+- **B36:** `SoundFixMethods` uses `instanceof ISourceRemoved` with a cleanup fallback.
+- Added duplicate-name, channel-capacity, and missing-mixin fallback tests. **B33/P17** (temporary OpenAL context) remains open.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
@@ -575,15 +585,15 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | ID | Sev | File:line | Finding |
 |---|---|---|---|
 | B27 | **C** | `client/sound/SoundManager.java:88` | `SoundManager.update()` was only called from `PlayerSoundEffectHandler.process`, which is registered only when `enableBiomeSounds` is true. With biome sounds off, pending block/step sounds never flushed and emitters never ticked. **Fixed in batch 3:** `ClientEffectHandler.clientTick` updates the queue unconditionally. |
-| B28 | **H** | `client/sound/cache/SoundCache.java:25-27,48` | Static `IResourceManager` captured once; shared static 64 KiB `BUFFER` read from the sound thread; cache never invalidated on resource reload; `throw new Error(...)` on failure; `available()` is not a reliable size check. Use a per-call buffer or `ThreadLocal`, resolve the manager lazily, implement `IResourceManagerReloadListener`, fall back to the vanilla URL, and bound the cache (LRU/soft refs). |
-| B29 | **H** | `client/sound/SoundManager.java:84` | `emitters.put(sound, new Emitter(sound))` replaces an equal key (same sound name) without fading the old emitter → a playing sound can be orphaned and never stopped. Handle duplicates by name explicitly. |
+| B28 | **H** | `client/sound/cache/SoundCache.java:25-27,48` | Static manager/buffer, no reload invalidation, `Error` on failure, unreliable `available()`. **Partially fixed in batch 38:** lazy manager, `ThreadLocal` buffer, concurrent cache, reload listener, EOF read, logger/silence fallback. The cache is still unbounded. |
+| B29 | **H** | `client/sound/SoundManager.java:84` | Equal emitter keys could be replaced without fading. **Fixed in batch 38:** dedupe by sound name and fade removed emitters. |
 | B30 | **M** | `client/sound/SoundManager.java:67-84` | `queueAmbientSounds` is O(n²) and mutates `sounds` while iterating (safe only because of the immediate `break`). Use maps/sets. |
-| B31 | **M** | `client/sound/SoundManager.java:161-167` | `isSoundPlaying` does `containsValue` on the whole playing map for every emitter every tick; O(n²). Maintain a set of playing sounds/ids. |
-| B32 | **M** | `client/sound/PlayerSound.java:30-33` | `this.volume = sound.volume; ... this.volume = 0.002F;` — the first assignment is dead. |
+| B31 | **M** | `client/sound/SoundManager.java:161-167` | `isSoundPlaying` scanned the whole playing map. **Fixed in batch 38:** vanilla inverse-map check + delayed map; no `containsValue`. |
+| B32 | **M** | `client/sound/PlayerSound.java:30-33` | The first `volume` assignment was dead. **Fixed in batch 38.** |
 | B33 | **M** | `client/sound/SoundManager.java:240-275` | `configureSound()` creates and destroys a temporary OpenAL context just to query the channel count; can disturb audio and is expensive. Cache the count from the live context, or use `ALC10.alcGetInteger` after the real device exists. Magic `4112`. |
 | B34 | **M** | `client/sound/SoundEffect.java:55` | The no-pattern constructor left `pattern = null`; `matches()` NPE'd for programmatically created effects. **Fixed in batch 12:** the `.*` pattern is compiled in the string constructors. |
-| B35 | **M** | `client/sound/SoundManager.java:116-118` | `canFitSound()` counts all playing sounds but compares to `normalChannels - 6` and ignores streaming channels; use the normal-channel map or the manager's own bookkeeping. |
-| B36 | **L** | `client/sound/fix/SoundFixMethods.java` | The paulscode `ISourceRemoved` cast assumes the `Source` mixin always applied. If the mixin fails (e.g., a SoundSystem version change), this throws `ClassCastException`. Add `instanceof` fallback and a log. |
+| B35 | **M** | `client/sound/SoundManager.java:116-118` | `canFitSound` ignored streaming channels. **Fixed in batch 38:** normal + streaming capacity, tested via a pure overload. |
+| B36 | **L** | `client/sound/fix/SoundFixMethods.java` | The `ISourceRemoved` cast assumed the mixin applied. **Fixed in batch 38:** `instanceof` fallback to direct cleanup; tested. |
 
 ### 3.5 Network & server
 
@@ -701,8 +711,8 @@ Ordered by expected win. Each item is independent and testable.
 | P4 | `BlockEffectHandler` | ~1,000 samples/tick × 2 block reads + allocations + weighted-list allocation | Mutable `BlockPos`, one `getBlock`+metadata read, allocation-free weighted pick, and an early-out when no block effects/sounds are configured. Optionally sample 1/2 or 1/4 of the volume per tick on a rolling schedule. |
 | P5 | `PlayerSoundEffectHandler` | New maps/lists/scaled effects every tick; regex per sound | Cache the weighted sound list per (conditions, survey revision); reuse lists; precompile `SoundEffect` patterns. |
 | P6 | `BiomeSurveyHandler` | 169 biome lookups per block moved (including Y changes) | Drop Y from the key, throttle to 20 ticks/area change, skip if the player hasn't moved a block. |
-| P7 | `SoundCache` | Unbounded retention of every played ogg; 64 KiB static buffer | LRU/soft-reference bound, per-call or `ThreadLocal` buffer, clear on resource reload. |
-| P8 | `SoundManager` | O(n²) `containsValue`/`contains`/`remove` per tick | `Map<ResourceLocation, ISound>`/set-based bookkeeping; maintain a playing-id set. |
+| P7 | `SoundCache` | Unbounded retention of every played ogg; 64 KiB static buffer | **Partially done in batch 38:** `ThreadLocal` buffer and reload clear; unbounded cache remains. |
+| P8 | `SoundManager` | O(n²) `containsValue`/`contains`/`remove` per tick | **Partially done in batch 38:** removed `containsValue`; emitter bookkeeping is map-based by name. |
 | P9 | `PotionHUD` | `I18n.format`, `getStringWidth`, string building every frame | Cache per `PotionEffect` and refresh when the displayed second changes. |
 | P10 | Config GUI | Builds 570 Boolean + 570 Integer properties on open | Virtualize/lazy-load the sound lists, or move per-sound volume to a separate searchable screen. |
 | P11 | `DimensionEffectDataFile` | `loadItemData` + `markDirty` per tick per world | Cache per world; mark dirty on mutation. |

@@ -4,6 +4,7 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -54,34 +55,27 @@ public class SoundManager {
     }
 
     public static void queueAmbientSounds(List<SoundEffect> sounds) {
-        List<SoundEffect> working = new ArrayList<>(sounds);
-        for (SoundEffect effect : new ArrayList<>(emitters.keySet())) {
-            if (!working.contains(effect)) {
-                emitters.remove(effect)
+        Map<String, SoundEffect> working = new LinkedHashMap<>();
+        for (SoundEffect sound : sounds) {
+            working.put(sound.sound, sound);
+        }
+
+        Iterator<SoundEffect> iterator = emitters.keySet()
+            .iterator();
+        while (iterator.hasNext()) {
+            SoundEffect effect = iterator.next();
+            SoundEffect incoming = working.remove(effect.sound);
+            if (incoming == null) {
+                emitters.get(effect)
                     .fade();
+                iterator.remove();
             } else {
-                Emitter emitter = emitters.get(effect);
-                SoundEffect incoming = null;
-                Iterator var6 = sounds.iterator();
-
-                while (true) {
-                    if (var6.hasNext()) {
-                        SoundEffect sound = (SoundEffect) var6.next();
-                        if (!sound.equals(effect)) {
-                            continue;
-                        }
-
-                        incoming = sound;
-                    }
-
-                    emitter.setVolume(incoming.getVolume());
-                    working.remove(effect);
-                    break;
-                }
+                emitters.get(effect)
+                    .setVolume(incoming.getVolume());
             }
         }
 
-        for (SoundEffect sound : working) {
+        for (SoundEffect sound : working.values()) {
             emitters.put(sound, new Emitter(sound));
         }
     }
@@ -114,8 +108,15 @@ public class SoundManager {
         return SoundSystemConfig.getNumberNormalChannels() + SoundSystemConfig.getNumberStreamingChannels();
     }
 
+    static boolean canFitSound(int current, int normalChannels, int streamingChannels) {
+        return current < normalChannels + streamingChannels - SOUND_QUEUE_SLACK;
+    }
+
     private static boolean canFitSound() {
-        return currentSoundCount() < SoundSystemConfig.getNumberNormalChannels() - 6;
+        return canFitSound(
+            currentSoundCount(),
+            SoundSystemConfig.getNumberNormalChannels(),
+            SoundSystemConfig.getNumberStreamingChannels());
     }
 
     static void playSound(ISound sound) {
@@ -162,10 +163,8 @@ public class SoundManager {
     public static boolean isSoundPlaying(@Nonnull ISound sound) {
         net.minecraft.client.audio.SoundManager manager = liveSoundManager();
         SoundManagerAccessor accessor = (SoundManagerAccessor) manager;
-        return manager.isSoundPlaying(sound) || accessor.dynamicsurroundings$getPlayingSounds()
-            .containsValue(sound)
-            || accessor.dynamicsurroundings$getDelayedSounds()
-                .containsKey(sound);
+        return manager.isSoundPlaying(sound) || accessor.dynamicsurroundings$getDelayedSounds()
+            .containsKey(sound);
     }
 
     private static net.minecraft.client.audio.SoundManager liveSoundManager() {

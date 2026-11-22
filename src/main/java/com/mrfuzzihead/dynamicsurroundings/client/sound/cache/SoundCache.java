@@ -1,10 +1,10 @@
 package com.mrfuzzihead.dynamicsurroundings.client.sound.cache;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Nonnull;
 
@@ -12,7 +12,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.util.ResourceLocation;
 
-import com.google.common.io.ByteStreams;
 import com.mrfuzzihead.dynamicsurroundings.ModLog;
 
 import cpw.mods.fml.relauncher.Side;
@@ -22,18 +21,25 @@ import cpw.mods.fml.relauncher.SideOnly;
 public final class SoundCache {
 
     private static final int BUFFER_SIZE = 65536;
-    private static final byte[] BUFFER = new byte[65536];
-    private static final IResourceManager manager = Minecraft.getMinecraft()
-        .getResourceManager();
-    private static final Map<ResourceLocation, URL> cache = new HashMap<>(256);
-    private static final byte[] SILENCE = getBuffer(
-        new ResourceLocation("dynamicsurroundings:sounds/ambient/silence.ogg"));
+    private static final ThreadLocal<byte[]> BUFFER = new ThreadLocal<byte[]>() {
+
+        @Override
+        protected byte[] initialValue() {
+            return new byte[BUFFER_SIZE];
+        }
+    };
+    private static final ResourceLocation SILENCE_RESOURCE = new ResourceLocation(
+        "dynamicsurroundings:sounds/ambient/silence.ogg");
+    private static final Map<ResourceLocation, URL> cache = new ConcurrentHashMap<>(256);
+    private static final byte[] SILENCE = getBuffer(SILENCE_RESOURCE);
+    private static final URL SILENCE_URL = silenceUrl();
 
     private static byte[] getBuffer(@Nonnull ResourceLocation resource) {
         InputStream stream = null;
 
-        byte[] var19;
         try {
+            IResourceManager manager = Minecraft.getMinecraft()
+                .getResourceManager();
             stream = manager.getResource(resource)
                 .getInputStream();
             if (stream == null) {
@@ -41,16 +47,18 @@ public final class SoundCache {
                 return SILENCE;
             }
 
-            if (stream.available() >= 65536) {
-                return null;
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            byte[] buffer = BUFFER.get();
+            int bytesRead;
+            while ((bytesRead = stream.read(buffer)) != -1) {
+                if (output.size() + bytesRead >= BUFFER_SIZE) {
+                    return null;
+                }
+
+                output.write(buffer, 0, bytesRead);
             }
 
-            int bytesRead = ByteStreams.read(stream, BUFFER, 0, 65536);
-            if (bytesRead == 0 || bytesRead == 65536) {
-                return null;
-            }
-
-            var19 = Arrays.copyOf(BUFFER, bytesRead);
+            return output.size() == 0 ? null : output.toByteArray();
         } catch (Throwable var16) {
             ModLog.warn("Error reading stream [%s]", resource.toString());
             return SILENCE;
@@ -61,8 +69,6 @@ public final class SoundCache {
                 } catch (Throwable var15) {}
             }
         }
-
-        return var19;
     }
 
     private static URL load(@Nonnull ResourceLocation key) throws Exception {
@@ -79,13 +85,29 @@ public final class SoundCache {
 
     private SoundCache() {}
 
+    public static void clearCache() {
+        cache.clear();
+    }
+
+    private static URL silenceUrl() {
+        try {
+            SoundStreamHandler handler = new MemoryStreamHandler(SILENCE_RESOURCE, SILENCE);
+            return new URL((URL) null, handler.getSpec(), handler);
+        } catch (Exception e) {
+            ModLog.error("Unable to build the silence sound URL", e);
+            return null;
+        }
+    }
+
     public static URL getURLForSoundResource(@Nonnull ResourceLocation soundResource) {
         URL result = cache.get(soundResource);
         if (result == null) {
             try {
-                cache.put(soundResource, result = load(soundResource));
+                result = load(soundResource);
+                cache.put(soundResource, result);
             } catch (Throwable var3) {
-                throw new Error("Unable to load sound from cache!");
+                ModLog.error("Unable to load sound from cache: " + soundResource, var3);
+                return SILENCE_URL;
             }
         }
 
