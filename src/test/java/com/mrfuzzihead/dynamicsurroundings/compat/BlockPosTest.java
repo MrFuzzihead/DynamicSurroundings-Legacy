@@ -1,6 +1,7 @@
 package com.mrfuzzihead.dynamicsurroundings.compat;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -15,14 +16,6 @@ import org.junit.Test;
 /**
  * The 1.7.10 backport of 1.8's BlockPos. The long serialization is the packed form the mod uses to key positions, so
  * a round trip failure would corrupt that mapping silently.
- *
- * <p>
- * Two pieces of 1.8's class are deliberately not exercised: the {@code getAllInBox} iterators and {@code
- * MutableBlockPos#getImmutable}. The iterators compare against the far corner with {@code equals}, which {@link
- * BlockPos} does not override, so they never terminate; and {@code getImmutable} copies through the private fields
- * of the base class, which a mutable instance never sets, so it returns the origin. Nothing in the mod calls either
- * (they were carried over by the decompile), and fixing them is a separate change from adding the test harness.
- * </p>
  */
 public class BlockPosTest {
 
@@ -151,6 +144,58 @@ public class BlockPosTest {
             pos.offset(EnumFacing.EAST, 3)
                 .getX());
         assertSame(pos, pos.offset(EnumFacing.UP, 0));
+    }
+
+    @Test
+    public void equalityAndHashingUseTheCoordinates() {
+        BlockPos a = new BlockPos(4, 5, 6);
+        BlockPos b = new BlockPos(4, 5, 6);
+        BlockPos other = new BlockPos(4, 5, 7);
+
+        assertEquals(a, b);
+        assertEquals(a.hashCode(), b.hashCode());
+        assertNotEquals(a, other);
+        assertFalse(a.equals(null));
+        assertFalse(a.equals("not a position"));
+
+        Set<BlockPos> positions = new HashSet<>();
+        positions.add(a);
+        positions.add(b);
+        assertEquals(1, positions.size());
+    }
+
+    @Test
+    public void mutablePositionsReturnAnIndependentImmutableCopy() {
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos(4, 5, 6);
+        BlockPos immutable = mutable.getImmutable();
+
+        assertEquals(new BlockPos(4, 5, 6), immutable);
+        mutable.setPos(7, 8, 9);
+        assertEquals(new BlockPos(4, 5, 6), immutable);
+    }
+
+    @Test
+    public void boxIteratorsVisitEveryPositionInclusive() {
+        Set<BlockPos> positions = new HashSet<>();
+        for (BlockPos pos : BlockPos.getAllInBox(new BlockPos(0, 0, 0), new BlockPos(1, 1, 1))) {
+            positions.add(pos);
+        }
+
+        assertEquals(8, positions.size());
+        assertTrue(positions.contains(new BlockPos(0, 0, 0)));
+        assertTrue(positions.contains(new BlockPos(1, 1, 1)));
+    }
+
+    @Test
+    public void mutableBoxIteratorVisitsEveryPositionInclusive() {
+        Set<String> positions = new HashSet<>();
+        for (BlockPos pos : BlockPos.getAllInBoxMutable(new BlockPos(0, 0, 0), new BlockPos(1, 1, 1))) {
+            positions.add(pos.getX() + ":" + pos.getY() + ":" + pos.getZ());
+        }
+
+        assertEquals(8, positions.size());
+        assertTrue(positions.contains("0:0:0"));
+        assertTrue(positions.contains("1:1:1"));
     }
 
     @Test

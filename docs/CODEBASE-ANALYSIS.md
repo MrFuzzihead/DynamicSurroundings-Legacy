@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 37 test suites / 193 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 37 test suites / 200 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -97,7 +97,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - Extracted `FogEffectHandler.computeRange(...)` and added `FogEffectHandlerTest`: relative scaling preserves NotFine's near-fog base, the `TERRAIN_FOG=false` 16 M range stays effectively off, and empty/inverted/no-op ranges are rejected.
 - Re-ran `gameTestServer` after the extraction: **65/65** dedicated-server checks still pass.
 
-**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B38–B40, B48/B50, B64–B65, B73, B87) and the optional per-effect HUD text cache (P9).
+**Batch 11 — high-priority, headless-testable data fixes (200 tests green)**
+
+- **B47:** `DimensionEffectData.randomizeRain` now uses `min + rand*(max-min)`. Tests cover a non-zero minimum (`[0.5, 1.0]`), the closed window, and the 1% floor.
+- **B87:** `BlockPos` now has coordinate `equals`/`hashCode`; the copy constructor uses getters so `MutableBlockPos.getImmutable()` returns the live coordinates; both `getAllInBox` iterators now terminate and are tested.
+- **B88:** `ImmutableColor` now rejects `scale(r,g,b)`, `add`, `blend`, and `mix(Color)` as well as the existing mutators; `Color` has a matching `hashCode`. The palette constants are asserted unchanged.
+
+**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B38–B40, B48/B50, B64–B65, B73) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
 
@@ -431,7 +437,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B44 | **M** | `server/ServerEffectHandler.java:90-95` | A new aurora is created for a player whenever `!isAuroraInRange`; with the broken range check (B21) and no `hashCode` (B20) this can grow without bound. Cap per dimension/player and dedupe. |
 | B45 | **L** | `commands/CommandRain.java:60` | `getCommandSenderAsPlayer` means the server console cannot run `/rain status`. Use `sender.getEntityWorld()` (and `ICommandSender`) so it works from console/RCON. |
 | B46 | **L** | `commands/CommandRain.java:81-86` | `/rain reload` calls `BiomeRegistry.initialize()` and `BlockRegistry.initialize()` from the server command. `BlockRegistry` (and its `MCHelper`/`JetEffect`/`SoundManager` dependencies) is effectively client-only, so this is both useless and a potential dedicated-server `NoClassDefFoundError`/`NoSuchMethodError`; the client also keeps its old biome/block/fog/sound data. Add a client reload packet and keep server/client reload paths separate. |
-| B47 | **H** | `data/DimensionEffectData.java:66-77` | `randomizeRain` ignores `minIntensity`: with `delta = max-min` and `mid = delta/2`, `rand*mid + rand*mid` produces `[0, delta]` (a triangular distribution), then clamps to `0.01`. For `min=0.5, max=1.0` it returns `[0.01, 0.5]`, never the intended `[0.5, 1.0]`. Use `min + rand*(max-min)`. The existing test only covers `min=0` and `min=max`. |
+| B47 | **H** | `data/DimensionEffectData.java:66-77` | `randomizeRain` ignored `minIntensity`: with `delta = max-min` and `mid = delta/2`, `rand*mid + rand*mid` produced `[0, delta]`, then clamped to `0.01`. **Fixed in batch 11:** `min + rand*(max-min)`, with tests for a non-zero minimum and the 1% floor. |
 
 ### 3.6 Registries, config and bootstrap
 
@@ -491,8 +497,8 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 
 | ID | Sev | File:line | Finding |
 |---|---|---|---|
-| B87 | **H** | `compat/BlockPos.java:145-220` | No `equals`/`hashCode`; `getAllInBox`/`getAllInBoxMutable` compare with `equals` and never terminate; `MutableBlockPos.getImmutable()` copies the base class's private fields (always 0) so it returns the origin. The test documents this as known/unused. Delete the iterators or fix `equals`/`hashCode`/`getImmutable`; leaving broken public API is worse than removing it. |
-| B88 | **H** | `util/Color.java:222-250` | `ImmutableColor` overrides `scale`, `mix` and `adjust` but not `add`, `blend`, `scale(r,g,b)`, so `Color.RED.add(...)` mutates a shared static constant. `Color` has `equals` but no `hashCode`. Make the class truly immutable (final fields + `with*` methods) or remove `ImmutableColor`. |
+| B87 | **H** | `compat/BlockPos.java:145-220` | No `equals`/`hashCode`; the box iterators compared with `equals` and never terminated; `MutableBlockPos.getImmutable()` copied the base class's private fields (always 0). **Fixed in batch 11:** coordinate `equals`/`hashCode`, getter-based copy construction, and tests for both box iterators and mutable immutability. |
+| B88 | **H** | `util/Color.java:222-250` | `ImmutableColor` overrode `scale`, `mix` and `adjust` but not `add`, `blend`, or `scale(r,g,b)`, so `Color.RED.add(...)` could mutate a shared static constant. `Color` had `equals` but no `hashCode`. **Fixed in batch 11:** every mutator is rejected and the hash contract is tested. |
 | B89 | **M** | `util/MathStuff.java:139-144` | `sqrt(double)` returns `(float) Math.sqrt(value)` (precision loss); `sin/cos(double)` truncate to float; `log` is an approximation used for `nextGaussian`, which biases the distribution. `abs(Long.MIN_VALUE)` / `abs(Integer.MIN_VALUE)` overflow; `RAD_TO_INDEX`, `DEG_FULL`, `DEG_TO_INDEX`, `COS_TO_SIN`, `RAD_TO_DEG`, `DEG_TO_RAD` unused (some only by tests). Use `Math` for accuracy where it matters. |
 | B90 | **M** | `data/DimensionEffectData.java:30-32,88-95` | `NBT` inner classes in `DimensionEffectData`, `DimensionEffectDataFile` and `AuroraData` are unused; `MIN_INTENSITY`/`MAX_INTENSITY` unused; `FORMATTER` (static `DecimalFormat`) is not thread-safe. |
 | B91 | **M** | `data/AuroraData.java:59-67` | No `hashCode` (see B20). `equals` ignores seed/color/preset, so `HashSet` dedupe by column would drop updates; decide the intended identity and document it. |
@@ -678,7 +684,7 @@ Do not try to unit-test `GL11`/`Tessellator` draw calls directly. Extract the ma
 - Add the client smoke/game test skeleton and the empty-report guard.
 
 **Phase 1 — regressions and stability (PR 2–4)**
-- Fix B1/B2 (cancel weather + single provider owner), B3 (aurora not gated on weather), B19/B20/B21 (aurora identity/range), B37 (off-thread client packets), B27 (sound update), B38/B39/B40 (server weather/packet/dirty), B48/B50 (chance guards + config validation), B64/B65 (null player + step block), B87 (BlockPos).
+- Fix B1/B2 (cancel weather + single provider owner), B3 (aurora not gated on weather), B19/B20/B21 (aurora identity/range), B37 (off-thread client packets), B27 (sound update), B38/B39/B40 (server weather/packet/dirty), B48/B50 (chance guards + config validation), B64/B65 (null player + step block).
 
 **Phase 2 — compat layer (PR 5–7)**
 - `compat/Compatibility`, `NotFineBridge`, `AngelicaBridge`, `WeatherBackend`; relative fog; NotFine downfall distance; BOP fog source; diagnostics.

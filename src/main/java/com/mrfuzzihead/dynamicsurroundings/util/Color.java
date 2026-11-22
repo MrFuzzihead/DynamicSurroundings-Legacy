@@ -200,6 +200,14 @@ public class Color {
         }
     }
 
+    @Override
+    public int hashCode() {
+        int result = Float.floatToIntBits(this.red);
+        result = 31 * result + Float.floatToIntBits(this.green);
+        result = 31 * result + Float.floatToIntBits(this.blue);
+        return result;
+    }
+
     @Nonnull
     public Color asImmutable() {
         return new Color.ImmutableColor(this);
@@ -235,6 +243,31 @@ public class Color {
 
         @Override
         public Color scale(float scaleFactor) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Color scale(float scaleRed, float scaleGreen, float scaleBlue) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Color add(@Nonnull Color color) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Color add(float red, float green, float blue) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Color blend(@Nonnull Color color, float factor) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Color mix(@Nonnull Color color) {
             throw new UnsupportedOperationException();
         }
 

@@ -58,6 +58,29 @@ public class DimensionEffectDataTest {
     }
 
     @Test
+    public void randomRainRespectsANonZeroMinimum() {
+        DimensionEffectData data = new DimensionEffectData(0);
+        data.setMinRainIntensity(0.5F);
+        data.setMaxRainIntensity(1.0F);
+        for (int i = 0; i < 200; i++) {
+            data.randomizeRain();
+            float intensity = data.getRainIntensity();
+            assertTrue("intensity " + intensity, intensity >= 0.5F && intensity <= 1.0F);
+        }
+    }
+
+    @Test
+    public void randomRainStillUsesTheOnePercentFloor() {
+        DimensionEffectData data = new DimensionEffectData(0);
+        data.setMinRainIntensity(0.0F);
+        data.setMaxRainIntensity(0.01F);
+        for (int i = 0; i < 50; i++) {
+            data.randomizeRain();
+            assertEquals(0.01F, data.getRainIntensity(), 0.0F);
+        }
+    }
+
+    @Test
     public void randomRainCollapsesToTheMinWhenTheWindowIsClosed() {
         DimensionEffectData data = new DimensionEffectData(0);
         data.setMinRainIntensity(0.4F);
@@ -89,7 +112,6 @@ public class DimensionEffectDataTest {
             1,
             restored.getAuroraList()
                 .size());
-        // AuroraData overrides equals but not hashCode, so the set can only be searched by iterating.
         AuroraData restoredAurora = restored.getAuroraList()
             .iterator()
             .next();

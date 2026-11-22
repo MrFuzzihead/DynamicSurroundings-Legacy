@@ -202,6 +202,48 @@ public class ColorTest {
         } catch (UnsupportedOperationException expected) {
             // expected
         }
+
+        try {
+            immutable.scale(2.0F, 2.0F, 2.0F);
+            fail("per-channel scale should not be allowed on an immutable color");
+        } catch (UnsupportedOperationException expected) {
+            // expected
+        }
+
+        try {
+            immutable.add(1.0F, 1.0F, 1.0F);
+            fail("add should not be allowed on an immutable color");
+        } catch (UnsupportedOperationException expected) {
+            // expected
+        }
+
+        try {
+            immutable.add(new Color(1.0F, 1.0F, 1.0F));
+            fail("color add should not be allowed on an immutable color");
+        } catch (UnsupportedOperationException expected) {
+            // expected
+        }
+
+        try {
+            immutable.blend(new Color(1.0F, 1.0F, 1.0F), 0.5F);
+            fail("blend should not be allowed on an immutable color");
+        } catch (UnsupportedOperationException expected) {
+            // expected
+        }
+
+        try {
+            immutable.mix(new Color(1.0F, 1.0F, 1.0F));
+            fail("color mix should not be allowed on an immutable color");
+        } catch (UnsupportedOperationException expected) {
+            // expected
+        }
+
+        assertEquals(0xFF0000, Color.RED.rgb());
+    }
+
+    @Test
+    public void equalColorsShareAHashCode() {
+        assertEquals(new Color(1, 2, 3).hashCode(), new Color(1, 2, 3).hashCode());
     }
 
     @Test
