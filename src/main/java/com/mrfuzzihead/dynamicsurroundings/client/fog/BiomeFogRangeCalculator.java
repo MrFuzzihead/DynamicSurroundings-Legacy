@@ -19,6 +19,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 public class BiomeFogRangeCalculator extends VanillaFogRangeCalculator {
 
     protected static final int DISTANCE = 20;
+    protected static final int COARSE_SHIFT = 2;
     protected static final float DUST_FOG_IMPACT = 0.9F;
     protected final BiomeFogRangeCalculator.Context[] context = new BiomeFogRangeCalculator.Context[] {
         new BiomeFogRangeCalculator.Context(), new BiomeFogRangeCalculator.Context(),
@@ -37,8 +38,10 @@ public class BiomeFogRangeCalculator extends VanillaFogRangeCalculator {
         int playerY = MathStuff.floor(player.posY);
         int playerZ = MathStuff.floor(player.posZ);
         float rainStr = Weather.getIntensityLevel();
+        int scanX = playerX >> COARSE_SHIFT;
+        int scanZ = playerZ >> COARSE_SHIFT;
         BiomeFogRangeCalculator.Context ctx = this.context[this.getIdx(event)];
-        if (ctx.returnCached(playerX, playerZ, rainStr, event)) {
+        if (ctx.returnCached(scanX, scanZ, rainStr, event)) {
             return ctx.cached;
         } else {
             float fpDistanceBiomeFog = 0.0F;
@@ -56,7 +59,7 @@ public class BiomeFogRangeCalculator extends VanillaFogRangeCalculator {
                     float weightPart = 1.0F;
                     ctx.doScan = ctx.doScan | !world.blockExists(theX, playerY, theZ);
                     if (isRaining && BiomeRegistry.hasDust(biome)) {
-                        distancePart = 1.0F - 0.9F * rainStr;
+                        distancePart = 1.0F - DUST_FOG_IMPACT * rainStr;
                     } else if (BiomeRegistry.hasFog(biome)) {
                         distancePart = BiomeRegistry.getFogDensity(biome);
                     }
@@ -66,15 +69,16 @@ public class BiomeFogRangeCalculator extends VanillaFogRangeCalculator {
                 }
             }
 
-            float weightMixed = 1681.0F;
-            float weightDefault = 1681.0F - weightBiomeFog;
+            float weightMixed = (DISTANCE * 2 + 1) * (DISTANCE * 2 + 1);
+            float weightDefault = weightMixed - weightBiomeFog;
             float fpDistanceBiomeFogAvg = weightBiomeFog == 0.0F ? 0.0F : fpDistanceBiomeFog / weightBiomeFog;
-            float farPlaneDistance = (fpDistanceBiomeFog * 240.0F + event.farPlaneDistance * weightDefault) / 1681.0F;
+            float farPlaneDistance = (fpDistanceBiomeFog * 240.0F + event.farPlaneDistance * weightDefault)
+                / weightMixed;
             float farPlaneDistanceScaleBiome = 0.1F * (1.0F - fpDistanceBiomeFogAvg) + 0.75F * fpDistanceBiomeFogAvg;
             float farPlaneDistanceScale = (farPlaneDistanceScaleBiome * weightBiomeFog + 0.75F * weightDefault)
-                / 1681.0F;
-            ctx.posX = playerX;
-            ctx.posZ = playerZ;
+                / weightMixed;
+            ctx.posX = scanX;
+            ctx.posZ = scanZ;
             ctx.lastFarPlane = event.farPlaneDistance;
             farPlaneDistance = Math.min(farPlaneDistance, event.farPlaneDistance);
             float reference = event.farPlaneDistance > 0.0F ? event.farPlaneDistance : 1.0F;

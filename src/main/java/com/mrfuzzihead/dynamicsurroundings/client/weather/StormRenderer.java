@@ -14,7 +14,6 @@ import net.minecraft.world.biome.BiomeGenBase;
 import org.lwjgl.opengl.GL11;
 
 import com.mrfuzzihead.dynamicsurroundings.client.IAtmosRenderer;
-import com.mrfuzzihead.dynamicsurroundings.client.WeatherUtils;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.EntityRendererAccessor;
@@ -85,10 +84,11 @@ public class StormRenderer implements IAtmosRenderer {
                         int idx = (locZ - playerZ + 16) * 32 + locX - playerX + 16;
                         float f6 = RAIN_X_COORDS[idx] * 0.5F;
                         float f7 = RAIN_Y_COORDS[idx] * 0.5F;
-                        BiomeGenBase biome = world.getBiomeGenForCoords(locX, locZ);
-                        boolean hasDust = WeatherUtils.biomeHasDust(biome);
-                        if (hasDust || BiomeRegistry.hasPrecipitation(biome)) {
-                            int k1 = getPrecipitationHeight(world, locX, locZ);
+                        WeatherColumnCache.Column column = WeatherColumnCache.INSTANCE.get(world, locX, locZ);
+                        BiomeGenBase biome = column.biome;
+                        boolean hasDust = column.hasDust;
+                        if (hasDust || column.hasPrecipitation) {
+                            int k1 = column.precipitationHeight;
                             int l1 = playerY - radius;
                             int i2 = playerY + radius;
                             if (l1 < k1) {
@@ -108,8 +108,7 @@ public class StormRenderer implements IAtmosRenderer {
                             if (l1 != i2) {
                                 random.setSeed(
                                     locX * locX * 3121 + locX * 45238971 ^ locZ * locZ * 418711 + locZ * 13761);
-                                float heightTemp = world.getWorldChunkManager()
-                                    .getTemperatureAtHeight(biome.getFloatTemperature(locX, l1, locZ), k1);
+                                float heightTemp = column.temperatureAt(world, l1);
                                 if (!hasDust && heightTemp >= 0.15F) {
                                     if (b1 != 0) {
                                         if (b1 >= 0) {

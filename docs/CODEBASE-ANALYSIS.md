@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 58 test suites / 253 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 59 test suites / 256 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -257,6 +257,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
   - unknown sound type, OpenAL channel query, default biome/block/dimension config loads, per-mod block config load, and version-check interruption.
 - `VersionCheck` restores the interrupt flag before logging.
 - Production `src/main/java` now has **zero** `System.out`/`System.err` and **zero** `printStackTrace()` calls. The game-test module keeps its stdout markers intentionally.
+
+**Batch 37 — shared weather columns and coarse fog scans (256 tests green)**
+
+- **B9/B10/P2:** added `WeatherColumnCache`, a dimension + 20-tick-bucket cache for biome, precipitation height, temperature, dust/precipitation flags. `StormRenderer` and `StormSplashRenderer` share it; splashes no longer repeat biome lookups.
+- **B15/B16/P3:** `BiomeFogRangeCalculator` and `BiomeFogColorCalculator` now key their scans to 4-block coarse cells, so walking within a cell does not rescan 1,681/169 columns. Rain, far-plane, dimension and fog-mode invalidation are retained.
+- **B17:** replaced hardcoded `0.9F`/`1681` in the biome fog range calculator with `DUST_FOG_IMPACT` and `(2*DISTANCE+1)^2`.
+- Added `WeatherColumnCacheTest` for reuse, bucket expiry, and dimension invalidation.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
@@ -534,8 +541,8 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B6 | **H** | `client/weather/StormSplashRenderer.java:90-91`, `NetherSplashRenderer.java:30` | The base `getPrecipitationHeight` ignores its `range` parameter; the nether override used `EnvironState.getPlayer()` instead of the passed view entity. **Fixed in batch 15 for the nether path:** it receives the view entity; the base remains a vanilla delegate. |
 | B7 | **M** | `client/weather/Weather.java:119` | `level = (float)(level + 0.01)` is dead — the parameter is never used afterwards. Remove or use it in the threshold comparisons. |
 | B8 | **M** | `client/weather/Weather.java:25,111-131` | `intensity`/`intensityLevel`/texture statics were mutated from the packet handler (Netty) while the render thread read them. **Fixed in batch 3:** `PacketRainIntensity` schedules on the client thread. |
-| B9 | **M** | `client/weather/StormRenderer.java:90-100` | 441 columns × `getBiomeGenForCoords` + temperature + precipitation + light per frame; no cache. Share a 20-tick column cache with `StormSplashRenderer`. |
-| B10 | **M** | `client/weather/StormSplashRenderer.java:100-160` | Up to 100 attempts/frame, each with world lookups; no column cache; `new Color` per column. |
+| B9 | **M** | `client/weather/StormRenderer.java:90-100` | 441 columns × biome/temperature/precipitation per frame; no cache. **Fixed in batch 37:** shared 20-tick `WeatherColumnCache`; light is still per-call. |
+| B10 | **M** | `client/weather/StormSplashRenderer.java:100-160` | Up to 100 attempts/frame with repeated world lookups. **Fixed in batch 37:** biome/height/temperature flags come from the shared weather cache; per-particle `Color` remains. |
 | B11 | **L** | `client/weather/StormRenderer.java:247-257` | `RAIN_X_COORDS/RAIN_Y_COORDS` divided by zero at the centre column (NaN vertices). **Fixed in batch 24:** minimum radius clamp and a finite-centre test. |
 
 ### 3.2 Fog
@@ -546,8 +553,8 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B13 | **H** | `client/FogEffectHandler.java:42-44` | `doFog()` was `enableBiomeFog || allowDesertFog`; elevation haze, morning fog and weather fog were ignored when those two were off. **Fixed in batch 2:** all fog options are considered. |
 | B14 | **M** | `client/fog/MorningFogRangeCalculator.java:39` | `clamp(start - shift*2, 11, newEnd)` could return `11` when `newEnd < 11`, producing `start > end`. **Fixed in batch 2:** the floor is scaled and `FogResult` clamps `start <= end`. |
 | B15 | **M** | `client/fog/BiomeFogRangeCalculator.java:47-80` | 41×41 = 1,681 biome lookups whenever the player moves one block (or the rain/far-plane changes). Cache on a coarser grid (e.g., 4-block cells) or only re-scan when the biome mix changes. |
-| B16 | **M** | `client/fog/BiomeFogColorCalculator.java:60-79` | Same per-block 169-column rescan; `applyPlayerEffects` re-implements void fog/blindness/night vision. **Partially fixed in batch 4:** NotFine's `VOID_FOG` now gates the DS term; the scan/caching remains (P3). |
-| B17 | **L** | `client/fog/BiomeFogRangeCalculator.java:13-15` | `DUST_FOG_IMPACT` unused (literal `0.9F`); `weightMixed` hardcoded 1681 instead of `(2*DISTANCE+1)^2`. |
+| B16 | **M** | `client/fog/BiomeFogColorCalculator.java:60-79` | Same per-block 169-column rescan. **Fixed in batches 4+37:** NotFine `VOID_FOG` gating and 4-block coarse scan keying; `applyPlayerEffects` remains a local reimplementation. |
+| B17 | **L** | `client/fog/BiomeFogRangeCalculator.java:13-15` | `DUST_FOG_IMPACT`/`weightMixed` were unused literals. **Fixed in batch 37:** named constants and a derived grid weight. |
 | B18 | **L** | `client/fog/HolisticFogRangeCalculator.java:30-37` | `Math.min` of starts/ends could produce an invalid pair. **Fixed in batch 2:** `FogResult` clamps `start <= end` and the handler checks `isValid`. |
 
 ### 3.3 Aurora
@@ -689,7 +696,7 @@ Ordered by expected win. Each item is independent and testable.
 | # | Hotspot | Current cost | Fix |
 |---|---|---|---|
 | P1 | `ServerEffectHandler` rain packet | 20 packets/s/dimension, always | Send only on change (compare last sent value), on join, and at a low keep-alive rate (e.g., 20 ticks). |
-| P2 | `StormRenderer` + `StormSplashRenderer` world lookups | 441 columns × (biome + temperature + precipitation + light) per frame, up to 100 more per frame for splashes | One shared `WeatherColumnCache` keyed by (x, z, dimension, 20-tick bucket) and block-exists invalidation. Angelica's `WeatherColumns` is a good reference. |
+| P2 | `StormRenderer` + `StormSplashRenderer` world lookups | 441 columns × (biome + temperature + precipitation + light) per frame, up to 100 more per frame for splashes | **Done in batch 37:** shared `WeatherColumnCache` keyed by column/dimension/20-tick bucket; light remains uncached. |
 | P3 | `BiomeFogRangeCalculator` | 1,681 biome lookups on every block move / rain / far-plane change | Coarse grid (4×4 cells), rescan only when the biome mix changes, keep the old result on chunk-not-loaded. |
 | P4 | `BlockEffectHandler` | ~1,000 samples/tick × 2 block reads + allocations + weighted-list allocation | Mutable `BlockPos`, one `getBlock`+metadata read, allocation-free weighted pick, and an early-out when no block effects/sounds are configured. Optionally sample 1/2 or 1/4 of the volume per tick on a rolling schedule. |
 | P5 | `PlayerSoundEffectHandler` | New maps/lists/scaled effects every tick; regex per sound | Cache the weighted sound list per (conditions, survey revision); reuse lists; precompile `SoundEffect` patterns. |

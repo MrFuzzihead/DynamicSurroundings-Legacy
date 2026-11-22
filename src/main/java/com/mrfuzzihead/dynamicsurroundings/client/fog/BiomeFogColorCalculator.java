@@ -25,6 +25,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public class BiomeFogColorCalculator extends VanillaFogColorCalculator {
 
+    protected static final int COARSE_SHIFT = 2;
     protected int posX;
     protected int posZ;
     protected double weightBiomeFog;
@@ -46,11 +47,13 @@ public class BiomeFogColorCalculator extends VanillaFogColorCalculator {
         }
 
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(0, 0, 0);
-        this.doScan = this.doScan | (this.posX != playerX || this.posZ != playerZ);
+        int scanX = playerX >> COARSE_SHIFT;
+        int scanZ = playerZ >> COARSE_SHIFT;
+        this.doScan = this.doScan | (this.posX != scanX || this.posZ != scanZ);
         if (this.doScan) {
             this.doScan = false;
-            this.posX = playerX;
-            this.posZ = playerZ;
+            this.posX = scanX;
+            this.posZ = scanZ;
             this.biomeFogColor = new Color(0, 0, 0);
             this.weightBiomeFog = 0.0;
 

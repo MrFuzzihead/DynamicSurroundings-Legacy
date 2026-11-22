@@ -19,7 +19,6 @@ import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.WeatherUtils;
 import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.ParticleFactory;
 import com.mrfuzzihead.dynamicsurroundings.compat.IParticleFactory;
-import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.EntityRendererAccessor;
 import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
@@ -87,7 +86,7 @@ public class StormSplashRenderer {
     }
 
     protected int getPrecipitationHeight(World world, int range, int x, int z, EntityLivingBase view) {
-        return world.getPrecipitationHeight(x, z);
+        return WeatherColumnCache.INSTANCE.get(world, x, z).precipitationHeight;
     }
 
     protected void playSplashSound(EntityRenderer renderer, WorldClient world, EntityLivingBase player, double x,
@@ -143,11 +142,12 @@ public class StormSplashRenderer {
                         int locX = playerX + RANDOM.nextInt(radius) - RANDOM.nextInt(radius);
                         int locZ = playerZ + RANDOM.nextInt(radius) - RANDOM.nextInt(radius);
                         int locY = this.getPrecipitationHeight(worldclient, radius, locX, locZ, entity);
-                        BiomeGenBase biome = worldclient.getBiomeGenForCoords(locX, locZ);
-                        boolean hasDust = WeatherUtils.biomeHasDust(biome);
+                        WeatherColumnCache.Column column = WeatherColumnCache.INSTANCE.get(worldclient, locX, locZ);
+                        BiomeGenBase biome = column.biome;
+                        boolean hasDust = column.hasDust;
                         if (locY <= playerY + radius && locY >= playerY - radius
-                            && (hasDust || BiomeRegistry.hasPrecipitation(biome)
-                                && biome.getFloatTemperature(locX, locY, locZ) >= 0.15F)) {
+                            && (hasDust
+                                || column.hasPrecipitation && column.temperatureAt(worldclient, locY) >= 0.15F)) {
                             Block block = worldclient.getBlock(locX, locY - 1, locZ);
                             double posX = locX + RANDOM.nextFloat();
                             double posY = locY + 0.1F - block.getBlockBoundsMinY();
