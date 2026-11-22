@@ -1,7 +1,7 @@
 package com.mrfuzzihead.dynamicsurroundings.commands;
 
-import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Locale;
 
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
@@ -20,7 +20,6 @@ public final class CommandRain extends CommandBase {
     private static final List<String> ALIAS = ImmutableList.<String>builder()
         .add("r", "br")
         .build();
-    private static final DecimalFormat FORMATTER = new DecimalFormat("0.0");
 
     public static String statusOutput(World world, DimensionEffectData data) {
         StringBuilder builder = new StringBuilder();
@@ -33,9 +32,9 @@ public final class CommandRain extends CommandBase {
         builder.append("; isSurface: ")
             .append(Boolean.toString(world.provider.isSurfaceWorld()));
         builder.append("; strength: ")
-            .append(FORMATTER.format(world.getRainStrength(1.0F) * 100.0F));
+            .append(String.format(Locale.ENGLISH, "%.1f", world.getRainStrength(1.0F) * 100.0F));
         builder.append("; timer: ")
-            .append(FORMATTER.format(minutes))
+            .append(String.format(Locale.ENGLISH, "%.1f", minutes))
             .append(" minutes");
         return builder.toString();
     }
@@ -79,7 +78,7 @@ public final class CommandRain extends CommandBase {
                     new ChatComponentText(
                         StatCollector.translateToLocalFormatted(
                             "msg.RainIntensitySet",
-                            new Object[] { FORMATTER.format(data.getRainIntensity() * 100.0F) })));
+                            new Object[] { String.format(Locale.ENGLISH, "%.1f", data.getRainIntensity() * 100.0F) })));
             }
         } else if (parms.length == 2) {
             if ("setmin".compareToIgnoreCase(parms[0]) == 0) {
@@ -89,7 +88,8 @@ public final class CommandRain extends CommandBase {
                     new ChatComponentText(
                         StatCollector.translateToLocalFormatted(
                             "msg.MinRainIntensitySet",
-                            new Object[] { FORMATTER.format(data.getMinRainIntensity() * 100.0F) })));
+                            new Object[] {
+                                String.format(Locale.ENGLISH, "%.1f", data.getMinRainIntensity() * 100.0F) })));
             } else {
                 if ("setmax".compareToIgnoreCase(parms[0]) != 0) {
                     throw new CommandException(this.getCommandUsage(sender), new Object[0]);
@@ -101,7 +101,8 @@ public final class CommandRain extends CommandBase {
                     new ChatComponentText(
                         StatCollector.translateToLocalFormatted(
                             "msg.MaxRainIntensitySet",
-                            new Object[] { FORMATTER.format(data.getMaxRainIntensity() * 100.0F) })));
+                            new Object[] {
+                                String.format(Locale.ENGLISH, "%.1f", data.getMaxRainIntensity() * 100.0F) })));
             }
         } else {
             sender.addChatMessage(new ChatComponentText(this.getCommandUsage(sender)));

@@ -228,7 +228,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - Mixin wiring and bytecode-target tests now assert `updatePotionEffects` still calls `World.spawnParticle`.
 - Removed the old `PotionParticleScrubHandler`.
 
-**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B64, B73) and the optional per-effect HUD text cache (P9).
+**Batch 32 — thread-safe formatting and reflective construction (251 tests green)**
+
+- **B90:** removed the shared `DecimalFormat` from `DimensionEffectData` and `CommandRain`; formatting uses locale-stable `String.format`. The remaining unused/dead-data cleanup is already covered by batch 19.
+- **B94:** replaced deprecated `Class.newInstance()` with `getDeclaredConstructor().newInstance()`.
+- Existing formatting, command, and JSON tests pass unchanged.
+
+**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
 
@@ -598,7 +604,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B70 | **M** | `client/BiomeSurveyHandler.java:57-70` | The dirty check included `playerY` and re-scanned per block moved. **Fixed in batches 25+27:** Y is ignored and position movement is throttled to one scan per 20 ticks; dimension/biome changes are immediate. |
 | B71 | **M** | `client/PlayerSoundEffectHandler.java:42-63` | Every tick allocated a map/list and re-ran regex matching per sound. **Partially fixed in batch 30:** weighted sounds are cached by conditions + survey revision; the remaining per-tick spot-sound work is unchanged. |
 | B72 | **M** | `client/hud/PotionHUD.java:30-100` | Null `thePlayer`; no state restore; re-formats strings/widths every frame; rendered on every `RenderGameOverlayEvent`. **Partially fixed in batch 4:** dispatcher filter, null guard and `glPushAttrib`/`glPopAttrib`; per-effect text caching remains (P9). |
-| B73 | **M** | `client/PotionParticleScrubHandler.java:8-11` | Writes `dataWatcher.updateObject(7, 0)` (the potion liquid colour, not the particle flag) every tick to suppress particles. It also removes the colour other client code may read and is a global datawatcher hack that can fight other mods. **Partially fixed in batch 28:** the write is skipped when the value is already zero; a targeted particle-spawn mixin remains the proper fix. |
+| B73 | **M** | `client/PotionParticleScrubHandler.java:8-11` | Wrote the potion liquid colour datawatcher every tick. **Fixed in batch 31:** removed; a client-only mixin cancels the local player `mobSpell` spawn when enabled. |
 | B74 | **M** | `client/fx/particle/EntityTextPopOffFX.java:59-89` | Immediate-mode font draw and depth-func state leak; see §2.5. **Fixed in batch 7:** render-less marker + post-world renderer with pushed attributes and an Iris `PARTICLES` phase. |
 | B75 | **L** | `client/hud/GuiHUDHandler.java:36-40` | The dispatcher forwards all overlay phases to all overlays; filter by `ElementType` in the dispatcher. |
 | B76 | **L** | `client/EnvironStateHandler.java:104-109` | `craftSoundThrottle` initial value makes the first craft test depend on the tick counter; use `Integer.MIN_VALUE` or a boolean. |
@@ -625,11 +631,11 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B87 | **H** | `compat/BlockPos.java:145-220` | No `equals`/`hashCode`; the box iterators compared with `equals` and never terminated; `MutableBlockPos.getImmutable()` copied the base class's private fields (always 0). **Fixed in batch 11:** coordinate `equals`/`hashCode`, getter-based copy construction, and tests for both box iterators and mutable immutability. |
 | B88 | **H** | `util/Color.java:222-250` | `ImmutableColor` overrode `scale`, `mix` and `adjust` but not `add`, `blend`, or `scale(r,g,b)`, so `Color.RED.add(...)` could mutate a shared static constant. `Color` had `equals` but no `hashCode`. **Fixed in batch 11:** every mutator is rejected and the hash contract is tested. |
 | B89 | **M** | `util/MathStuff.java:139-144` | `sqrt(double)` returned `(float) Math.sqrt(value)`; `sin/cos(double)` truncate to float; `log` is an approximation; `abs(MIN_VALUE)` overflows; several constants are unused. **Partially fixed in batches 13+17+24:** `sqrt(double)` preserves double precision, double trig/log use the JDK, and integer/long `abs` use `< 0`. The `MIN_VALUE` overflow remains. |
-| B90 | **M** | `data/DimensionEffectData.java:30-32,88-95` | `NBT` inner classes and `MIN_INTENSITY`/`MAX_INTENSITY` were unused; `FORMATTER` is not thread-safe. **Partially fixed in batch 19:** dead NBT/constants removed; the static formatter remains. |
+| B90 | **M** | `data/DimensionEffectData.java:30-32,88-95` | `NBT` inner classes and `MIN_INTENSITY`/`MAX_INTENSITY` were unused; `FORMATTER` was not thread-safe. **Fixed in batches 19+32:** dead data removed and formatting uses `String.format`. |
 | B91 | **M** | `data/AuroraData.java:59-67` | No `hashCode` (see B20). `equals` ignores seed/color/preset, so `HashSet` dedupe by column would drop updates; decide the intended identity and document it. |
 | B92 | **M** | `util/PlayerUtils.java:20-24,60-84` | `INSIDE_Y_ADJUST`, `RANGE`, `AREA` were unused (literals 3/3/49); `isReallyInside` only counts ceilings within 2 blocks, so a 5-block-high room is "outside". **Partially fixed in batch 20:** constants are used and open-sky/low-ceiling behavior is tested. The 2-block limitation remains. |
 | B93 | **M** | `VersionCheck.java:157-210` | `assert` validation was disabled in production and `compareTo` ignored alpha/beta. **Fixed in batch 29:** explicit `IllegalArgumentException`s, alpha < beta < release ordering, and parse/compare tests. |
-| B94 | **L** | `util/JsonUtils.java:40-75` | `load(InputStream)` could return `null`; `clazz.newInstance()` is deprecated. **Partially fixed in batch 21:** null stream/JSON null fallbacks are handled and tested; reflective instantiation remains. |
+| B94 | **L** | `util/JsonUtils.java:40-75` | `load(InputStream)` could return `null`; `clazz.newInstance()` was deprecated. **Fixed in batches 21+32:** null stream/JSON null fallbacks and `getDeclaredConstructor().newInstance()`; tested. |
 | B95 | **L** | `ModLog.java` | `error` printed a second stack trace and did not pass the throwable to Log4j; `catching` printed twice. **Fixed in batch 19:** both delegate to Log4j with the throwable. |
 
 ### 3.10 Exact line references for the top items

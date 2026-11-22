@@ -1,7 +1,7 @@
 package com.mrfuzzihead.dynamicsurroundings.data;
 
-import java.text.DecimalFormat;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 import net.minecraft.nbt.NBTTagCompound;
@@ -16,7 +16,6 @@ import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 public final class DimensionEffectData implements INBTSerialization {
 
     private static final XorShiftRandom random = new XorShiftRandom();
-    private static final DecimalFormat FORMATTER = new DecimalFormat("0");
     private int dimensionId = 0;
     private float intensity = 0.0F;
     private float minIntensity = ModOptions.defaultMinRainStrength;
@@ -135,11 +134,11 @@ public final class DimensionEffectData implements INBTSerialization {
             .append(this.dimensionId)
             .append(": ");
         builder.append("intensity: ")
-            .append(FORMATTER.format(this.intensity * 100.0F));
+            .append(String.format(Locale.ENGLISH, "%.0f", this.intensity * 100.0F));
         builder.append(" [")
-            .append(FORMATTER.format(this.minIntensity * 100.0F));
+            .append(String.format(Locale.ENGLISH, "%.0f", this.minIntensity * 100.0F));
         builder.append(",")
-            .append(FORMATTER.format(this.maxIntensity * 100.0F));
+            .append(String.format(Locale.ENGLISH, "%.0f", this.maxIntensity * 100.0F));
         builder.append("]");
         builder.append(", auroras: ")
             .append(this.auroras.size());

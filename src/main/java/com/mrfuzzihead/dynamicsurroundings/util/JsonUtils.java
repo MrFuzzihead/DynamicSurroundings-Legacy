@@ -17,7 +17,9 @@ public class JsonUtils {
             stream = new FileInputStream(file);
             if (stream != null) {
                 T loaded = load(stream, clazz);
-                return loaded != null ? loaded : clazz.newInstance();
+                return loaded != null ? loaded
+                    : clazz.getDeclaredConstructor()
+                        .newInstance();
             }
         } finally {
             try {
@@ -27,7 +29,8 @@ public class JsonUtils {
             } catch (Throwable var11) {}
         }
 
-        return clazz.newInstance();
+        return clazz.getDeclaredConstructor()
+            .newInstance();
     }
 
     public static <T> T load(String modId, Class<T> clazz) throws Exception {
@@ -38,7 +41,9 @@ public class JsonUtils {
             stream = clazz.getResourceAsStream("/assets/dynamicsurroundings/data/" + fileName + ".json");
             if (stream != null) {
                 T loaded = load(stream, clazz);
-                return loaded != null ? loaded : clazz.newInstance();
+                return loaded != null ? loaded
+                    : clazz.getDeclaredConstructor()
+                        .newInstance();
             }
         } finally {
             try {
@@ -48,7 +53,8 @@ public class JsonUtils {
             } catch (Throwable var12) {}
         }
 
-        return clazz.newInstance();
+        return clazz.getDeclaredConstructor()
+            .newInstance();
     }
 
     public static <T> T load(InputStream stream, Class<T> clazz) {
