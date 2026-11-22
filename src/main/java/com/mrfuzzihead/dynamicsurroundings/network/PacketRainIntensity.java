@@ -31,10 +31,13 @@ public final class PacketRainIntensity implements IMessage, IMessageHandler<Pack
     }
 
     public IMessage onMessage(PacketRainIntensity message, MessageContext ctx) {
-        if (message.dimension == PlayerUtils.getClientPlayerDimension()) {
-            Weather.setIntensity(message.intensity);
-        }
-
+        final int dimension = message.dimension;
+        final float intensity = message.intensity;
+        ClientPacketHandler.schedule(() -> {
+            if (dimension == PlayerUtils.getClientPlayerDimension()) {
+                Weather.setIntensity(intensity);
+            }
+        });
         return null;
     }
 }

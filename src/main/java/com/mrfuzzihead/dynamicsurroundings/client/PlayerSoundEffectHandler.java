@@ -95,7 +95,6 @@ public class PlayerSoundEffectHandler implements IClientEffectHandler {
             }
 
             this.processWaterDrops();
-            SoundManager.update();
         }
     }
 

@@ -99,6 +99,10 @@ public final class DamageEffectHandler {
                 double distance = EnvironStateHandler.EnvironState.distanceToPlayer(data.posX, data.posY, data.posZ);
                 if (!(distance >= 1024.0)) {
                     World world = EnvironStateHandler.EnvironState.getWorld();
+                    if (world == null) {
+                        return;
+                    }
+
                     EffectRenderer renderer = Minecraft.getMinecraft().effectRenderer;
                     if (data.isCritical) {
                         EntityFX fx = new EntityCriticalPopOffFX(world, data.posX, data.posY, data.posZ);

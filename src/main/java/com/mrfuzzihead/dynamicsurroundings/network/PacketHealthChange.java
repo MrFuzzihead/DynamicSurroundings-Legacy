@@ -30,14 +30,14 @@ public class PacketHealthChange implements IMessage, IMessageHandler<PacketHealt
     }
 
     public IMessage onMessage(PacketHealthChange message, MessageContext ctx) {
-        DamageEffectHandler.handleEvent(
-            new DamageEffectHandler.HealthData(
-                message.entityId,
-                message.posX,
-                message.posY,
-                message.posZ,
-                message.isCritical,
-                message.amount));
+        final DamageEffectHandler.HealthData data = new DamageEffectHandler.HealthData(
+            message.entityId,
+            message.posX,
+            message.posY,
+            message.posZ,
+            message.isCritical,
+            message.amount);
+        ClientPacketHandler.schedule(() -> DamageEffectHandler.handleEvent(data));
         return null;
     }
 

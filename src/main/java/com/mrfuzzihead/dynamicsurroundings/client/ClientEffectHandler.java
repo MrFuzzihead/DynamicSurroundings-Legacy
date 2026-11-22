@@ -12,6 +12,7 @@ import net.minecraftforge.event.world.WorldEvent.Load;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.Footsteps;
 import com.mrfuzzihead.dynamicsurroundings.client.fx.BlockEffectHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 
 import cpw.mods.fml.client.FMLClientHandler;
@@ -85,6 +86,10 @@ public class ClientEffectHandler {
                     for (IClientEffectHandler handler : effectHandlers) {
                         handler.process(world, player);
                     }
+
+                    // The ambience handler is conditional, but the sound queue also receives block/step sounds from
+                    // always-registered handlers. Drive it unconditionally so those sounds play with biome sounds off.
+                    SoundManager.update();
                 }
             }
         }

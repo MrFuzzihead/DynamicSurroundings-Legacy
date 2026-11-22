@@ -1,7 +1,7 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1 (weather/aurora) and 2 (relative fog) are merged into the branch.
+**Scope:** analysis + the implementation log below. Batches 1 (weather/aurora), 2 (relative fog) and 3 (client-thread safety) are merged into the branch.
 **Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 30 test suites / 180 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
@@ -17,8 +17,8 @@ This document is the working backlog for the refactor branch. It is ordered by r
 | 1 | `EntityRendererMixin.renderRainSnow` no longer cancelled vanilla | **Fixed (batch 1)** | The pre-mixin transformer inserted a `RETURN` after the DS renderer; the mixin converted that into a plain `HEAD` injection. Vanilla rain/snow rendered **on top of** DS rain, and a custom `IRenderHandler` was invoked **twice**. Both injectors now cancel only when DS owns the frame. |
 | 2 | DS and Angelica both cancel `renderRainSnow` / `addRainParticles` at `HEAD` | **Fixed (batch 1)** | Which mod wins used to depend on mixin application order. `WeatherBackend` now has one owner per frame (external provider, Angelica instanced, DS, or vanilla); the DS injectors use `order = 900` and decline when they are not the owner. |
 | 3 | Fog ranges are written as absolute values at `EventPriority.LOWEST` (`client/FogEffectHandler.java:76`) | **Fixed (batch 2)** | Overrides NotFine's `TERRAIN_FOG` / `FOG_NEAR_DISTANCE` settings (the exact cause of Angelica issue #2304) and any other mod's fog. Must be applied relative to the fog that vanilla/NotFine already produced. |
-| 4 | `SoundManager.update()` is only driven by the biome-sound handler (`client/sound/SoundManager.java:88`) | **Pending** | When biome sounds are disabled, pending block/step sounds never drain and emitters are never ticked. The handler that drives the queue must be registered unconditionally. |
-| 5 | Client packets mutate render/particle state on the Netty thread (`PacketHealthChange`, `PacketAurora`, `PacketRainIntensity`) | **Pending** | Off-thread `EffectRenderer.addEffect()` and render-state writes are a classic 1.7.10 crash/corruption source. |
+| 4 | `SoundManager.update()` is only driven by the biome-sound handler (`client/sound/SoundManager.java:88`) | **Fixed (batch 3)** | When biome sounds are disabled, pending block/step sounds never drain and emitters are never ticked. The handler that drives the queue must be registered unconditionally. |
+| 5 | Client packets mutate render/particle state on the Netty thread (`PacketHealthChange`, `PacketAurora`, `PacketRainIntensity`) | **Fixed (batch 3)** | Off-thread `EffectRenderer.addEffect()` and render-state writes are a classic 1.7.10 crash/corruption source. |
 
 ### Implementation log
 
@@ -42,7 +42,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - Fixed the morning-fog clamp so `start` can no longer exceed `end`; the `11`-block floor is now expressed in scale space.
 - Added 8 fog unit tests: relative-scale semantics, clamping, mode mismatch, vanilla/weather/holistic calculators, and the new config default.
 
-**Next batches:** NotFine void fog/cloud height/HUD parity (batch 3); off-thread client packet queue (batch 4); the Angelica `WeatherColumnProvider` bridge and client compatibility matrix (batch 5).
+**Batch 3 — client-thread safety (180 tests green)**
+
+- Added `network/ClientPacketHandler`, which hands packet bodies to `Minecraft.func_152344_a` when the handler is on the Netty thread and runs them directly on the client thread. All three packets (`PacketAurora`, `PacketHealthChange`, `PacketRainIntensity`) now mutate client state only from the client thread.
+- `SoundManager.update()` moved from the conditional `PlayerSoundEffectHandler` to `ClientEffectHandler.clientTick`, so block/step sounds drain and emitters tick even with `Enable Biome Sounds` off. It runs once per tick, after all effect handlers.
+- `DamageEffectHandler.handleEvent` now guards a null client world (possible between a scheduled packet and a world unload).
+
+**Next batches:** NotFine void fog/cloud height/HUD parity (batch 4); the Angelica `WeatherColumnProvider` bridge and client compatibility matrix (batch 5).
 
 ### The three compatibility moves that unlock the most value
 
@@ -315,7 +321,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B5 | **H** | `client/weather/StormSplashRenderer.java:43-51` | Dispatch used `EnvironState.getDimensionId()` (0 before the first tick) instead of `mc.theWorld.provider.dimensionId`; the wrong dimension renderer could be used on the first frame. **Fixed in batch 1.** |
 | B6 | **H** | `client/weather/StormSplashRenderer.java:90-91`, `NetherSplashRenderer.java:30` | The base `getPrecipitationHeight` ignores its `range` parameter; the nether override uses `EnvironState.getPlayer()` instead of the passed view entity. |
 | B7 | **M** | `client/weather/Weather.java:119` | `level = (float)(level + 0.01)` is dead — the parameter is never used afterwards. Remove or use it in the threshold comparisons. |
-| B8 | **M** | `client/weather/Weather.java:25,111-131` | `intensity`/`intensityLevel`/texture statics are mutated from the packet handler (Netty) while the render thread reads them. Schedule on the client thread and/or make the fields `volatile`. |
+| B8 | **M** | `client/weather/Weather.java:25,111-131` | `intensity`/`intensityLevel`/texture statics were mutated from the packet handler (Netty) while the render thread read them. **Fixed in batch 3:** `PacketRainIntensity` schedules on the client thread. |
 | B9 | **M** | `client/weather/StormRenderer.java:90-100` | 441 columns × `getBiomeGenForCoords` + temperature + precipitation + light per frame; no cache. Share a 20-tick column cache with `StormSplashRenderer`. |
 | B10 | **M** | `client/weather/StormSplashRenderer.java:100-160` | Up to 100 attempts/frame, each with world lookups; no column cache; `new Color` per column. |
 | B11 | **L** | `client/weather/StormRenderer.java:247-257` | `RAIN_X_COORDS/RAIN_Y_COORDS` divide by zero at the centre column (i=j=16, NaN vertices). Vanilla has the same quirk, but the copied code could clamp to a minimum radius. |
@@ -339,7 +345,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B19 | **H** | `client/AuroraEffectHandler.java:72` | `currentAurora.posX != ad.posX && currentAurora.posZ != ad.posZ` should be `||`. A new aurora with the same X but a different Z kept the old one. **Fixed in batch 1.** |
 | B20 | **H** | `data/AuroraData.java:59` | `equals` but **no `hashCode`** → `HashSet<AuroraData>` used identity hashes, so duplicates were never deduplicated. Server could accumulate auroras every 100 ticks and broadcast all of them. **Fixed in batch 1:** `hashCode` on dimension/x/z; capping the per-dimension set is still open (B44). |
 | B21 | **H** | `server/ServerEffectHandler.java:60-61` | `isAuroraInRange` subtracted `-auroraSpawnOffset` from a `posZ` that already contains the offset → the Z delta was doubled (`-2 * spawnOffset`). **Fixed in batch 1:** it now measures against the actual spawn target (`playerZ - offset`) and uses `MIN_AURORA_DISTANCE_SQ`. |
-| B22 | **M** | `client/AuroraEffectHandler.java:27-75` | `currentAurora` was written outside the `synchronized (auroras)` block and read by the renderer; `addAurora` can run on the Netty thread. **Partially fixed in batch 1:** `currentAurora` is `volatile` and the closest-aurora selection is locked. Moving packet handling to the client thread remains in batch 4. |
+| B22 | **M** | `client/AuroraEffectHandler.java:27-75` | `currentAurora` was written outside the `synchronized (auroras)` block and read by the renderer; `addAurora` could run on the Netty thread. **Fixed in batches 1+3:** `currentAurora` is `volatile`, selection is locked, and `PacketAurora` is scheduled on the client thread. |
 | B23 | **M** | `client/aurora/AuroraRenderer.java:137` | `GL11.glScaled(3.5, 25.0, 3.5)` after `tess.draw()` was a leftover; `lowY`/`lowY2` were unused. **Fixed in batch 1.** |
 | B24 | **M** | `client/aurora/Aurora.java:17-22` | `ANGLE1`, `FADE_LIMIT`, `AURORA_SPEED`, `AURORA_AMPLITUDE`, `AURORA_WAVELENGTH` unused; `cycle += 0.75F` and `18.0F`/`8.0F` literals remain. Remove or wire them. |
 | B25 | **M** | §2.4 | Aurora is drawn inside `RAIN_SNOW` and is disabled with weather. |
@@ -349,7 +355,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 
 | ID | Sev | File:line | Finding |
 |---|---|---|---|
-| B27 | **C** | `client/sound/SoundManager.java:88` | `SoundManager.update()` is only called from `PlayerSoundEffectHandler.process`, and that handler is only registered when `enableBiomeSounds` is true. With biome sounds off, anything that lands in `pending` (block/step sounds when the channel check fails, water drips from the same handler) is never flushed and the list grows without bound; emitters are also never ticked. Call `update()` from `ClientEffectHandler` (or a dedicated always-registered handler) unconditionally. |
+| B27 | **C** | `client/sound/SoundManager.java:88` | `SoundManager.update()` was only called from `PlayerSoundEffectHandler.process`, which is registered only when `enableBiomeSounds` is true. With biome sounds off, pending block/step sounds never flushed and emitters never ticked. **Fixed in batch 3:** `ClientEffectHandler.clientTick` updates the queue unconditionally. |
 | B28 | **H** | `client/sound/cache/SoundCache.java:25-27,48` | Static `IResourceManager` captured once; shared static 64 KiB `BUFFER` read from the sound thread; cache never invalidated on resource reload; `throw new Error(...)` on failure; `available()` is not a reliable size check. Use a per-call buffer or `ThreadLocal`, resolve the manager lazily, implement `IResourceManagerReloadListener`, fall back to the vanilla URL, and bound the cache (LRU/soft refs). |
 | B29 | **H** | `client/sound/SoundManager.java:84` | `emitters.put(sound, new Emitter(sound))` replaces an equal key (same sound name) without fading the old emitter → a playing sound can be orphaned and never stopped. Handle duplicates by name explicitly. |
 | B30 | **M** | `client/sound/SoundManager.java:67-84` | `queueAmbientSounds` is O(n²) and mutates `sounds` while iterating (safe only because of the immediate `break`). Use maps/sets. |
@@ -364,7 +370,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 
 | ID | Sev | File:line | Finding |
 |---|---|---|---|
-| B37 | **C** | `network/PacketHealthChange.java:33` | `DamageEffectHandler.handleEvent` calls `mc.effectRenderer.addEffect` on the Netty thread. Schedule via `Minecraft.func_152344_a`/`addScheduledTask`, or handle packets in `ClientTickEvent`. Same class of bug in `PacketAurora` (`AuroraEffectHandler.addAurora`) and `PacketRainIntensity` (`Weather.setIntensity` → `setTextures`). |
+| B37 | **C** | `network/PacketHealthChange.java`, `network/PacketAurora.java`, `network/PacketRainIntensity.java` | The handlers called `EffectRenderer.addEffect`, `AuroraEffectHandler`, and `Weather.setIntensity` directly on the Netty thread. **Fixed in batch 3:** all three use `ClientPacketHandler.schedule` (`Minecraft.func_152344_a`). |
 | B38 | **H** | `server/ServerEffectHandler.java:52` | Sends a `PacketRainIntensity` every `Phase.START` for every dimension (20 packets/s/dimension, even with no players), although the value changes only when rain starts/stops. Send on change, on player join, and at a low keep-alive rate at most. |
 | B39 | **H** | `server/WorldHandler.java:28-31` | The replacement for `World.updateWeatherBody` dropped vanilla's `if (!provider.hasNoSky)` guard, so the state machine runs in the Nether and the End too. `WorldServerMulti` installs a `DerivedWorldInfo` whose setters are no-ops (`DerivedWorldInfo.setRaining/setRainTime`), so those dimensions read the overworld's rain flags but mutate their own `rainingStrength`, and the End still randomizes `DimensionEffectData`. Gate on `DimensionRegistry.hasWeather(world)` (config-driven, so the Nether can still opt in) and skip `hasNoSky` worlds that are configured weatherless. |
 | B40 | **M** | `data/DimensionEffectDataFile.java:31` | `getFile()` calls `markDirty()` on **every** access; `get()` is called from `ServerEffectHandler` every tick and `WorldHandler` every tick. The data is always dirty, so every autosave rewrites it even when nothing changed. Mark dirty in the setters (`setRainIntensity`, aurora add/remove) instead, and cache the `WorldSavedData` per world. |

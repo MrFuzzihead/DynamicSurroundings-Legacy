@@ -51,14 +51,14 @@ public final class PacketAurora implements IMessage, IMessageHandler<PacketAuror
     }
 
     public IMessage onMessage(PacketAurora message, MessageContext ctx) {
-        AuroraEffectHandler.addAurora(
-            new AuroraData(
-                message.dimension,
-                message.posX,
-                message.posZ,
-                message.seed,
-                message.colorSet,
-                message.preset));
+        final AuroraData data = new AuroraData(
+            message.dimension,
+            message.posX,
+            message.posZ,
+            message.seed,
+            message.colorSet,
+            message.preset);
+        ClientPacketHandler.schedule(() -> AuroraEffectHandler.addAurora(data));
         return null;
     }
 }
