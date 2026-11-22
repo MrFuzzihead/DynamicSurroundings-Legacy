@@ -55,7 +55,7 @@ public class EnvironStateHandler implements IClientEffectHandler {
     private static final SoundEffect CRAFTING;
     private static final SoundEffect BOW_PULL;
     private List<String> diagnostics;
-    private int craftSoundThrottle = 0;
+    private int craftSoundThrottle = Integer.MIN_VALUE;
 
     @Override
     public void process(World world, EntityPlayer player) {
@@ -354,24 +354,29 @@ public class EnvironStateHandler implements IClientEffectHandler {
 
         public static EntityPlayer getPlayer() {
             if (player == null) {
-                player = Minecraft.getMinecraft().thePlayer;
+                Minecraft mc = Minecraft.getMinecraft();
+                if (mc != null) {
+                    player = mc.thePlayer;
+                }
             }
 
             return player;
         }
 
         public static boolean isPlayer(Entity entity) {
-            if (entity instanceof EntityPlayer) {
-                EntityPlayer ep = (EntityPlayer) entity;
-                return ep.getUniqueID()
-                    .equals(getPlayer().getUniqueID());
-            } else {
+            EntityPlayer current = getPlayer();
+            if (current == null || !(entity instanceof EntityPlayer)) {
                 return false;
             }
+
+            EntityPlayer ep = (EntityPlayer) entity;
+            return ep.getUniqueID()
+                .equals(current.getUniqueID());
         }
 
         public static boolean isPlayer(UUID id) {
-            return getPlayer().getUniqueID()
+            EntityPlayer current = getPlayer();
+            return current != null && current.getUniqueID()
                 .equals(id);
         }
 
@@ -430,7 +435,8 @@ public class EnvironStateHandler implements IClientEffectHandler {
         }
 
         public static boolean isPlayerMoving() {
-            return getPlayer().distanceWalkedModified != player.prevDistanceWalkedModified;
+            EntityPlayer current = getPlayer();
+            return current != null && current.distanceWalkedModified != player.prevDistanceWalkedModified;
         }
 
         public static boolean isPlayerInside() {
@@ -466,7 +472,8 @@ public class EnvironStateHandler implements IClientEffectHandler {
         }
 
         public static World getWorld() {
-            return getPlayer().worldObj;
+            EntityPlayer current = getPlayer();
+            return current == null ? null : current.worldObj;
         }
 
         public static int getTickCounter() {

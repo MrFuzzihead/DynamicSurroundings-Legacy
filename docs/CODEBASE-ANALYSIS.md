@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 62 test suites / 267 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 63 test suites / 268 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -307,6 +307,12 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - After the first initialization, an unknown biome gets a default entry instead of triggering a full rescan under the lock.
 - Aliases are no longer cleared at the end of initialization.
 - Existing biome registry tests remain green.
+
+**Batch 44 — HUD text cache and environment null guards (268 tests green)**
+
+- **B72/P9:** `PotionHUD` now uses `PotionTextCache`, caching the potion name per potion/amplifier and the duration string per displayed second. Added `PotionTextCacheTest`.
+- **B69 (partial):** `EnvironState.getPlayer/getWorld/isPlayer/isPlayerMoving` now tolerate a missing client player instead of dereferencing null. The broader static-state refactor remains.
+- **B76:** `craftSoundThrottle` starts at `Integer.MIN_VALUE`, so the first craft is not tick-counter dependent.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
@@ -674,14 +680,14 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B66 | **H** | `client/fx/JetEffect.java:83-89` | `Dust.trigger` required `world.isAirBlock(x, y-1, z)`, so dust only spawned on floating blocks. **Fixed in batch 15:** it now requires air above, like fire/fountain; tested both directions. |
 | B67 | **H** | `client/fx/BlockEffectHandler.java:40-62` | ~1,000 `BlockPos` allocations and repeated work per sample. **Fixed in batch 40:** one mutable position, cached sample count, registry early-out, and allocation-free weighted sound selection. |
 | B68 | **M** | `client/EnvironStateHandler.java:205-225` | 21 `CONDITION_TOKEN_*` constants and `CONDITION_SEPARATOR` were unused. **Fixed in batch 19:** removed; `getPlayerConditions` is the single literal source. |
-| B69 | **M** | `client/EnvironStateHandler.java:188-470` | `EnvironState` is a static mutable god-object. `getPlayer()` can return null, `getWorld()` dereferences it, `isPlayerMoving` dereferences the static `player` without a null check, and `tick` is not re-entrant. Replace with an immutable per-tick `EnvironmentSnapshot` passed to consumers. |
+| B69 | **M** | `client/EnvironStateHandler.java:188-470` | `EnvironState` is a static mutable god-object. **Partially fixed in batch 44:** `getPlayer/getWorld/isPlayer/isPlayerMoving` are null-safe. The immutable `EnvironmentSnapshot` refactor remains. |
 | B70 | **M** | `client/BiomeSurveyHandler.java:57-70` | The dirty check included `playerY` and re-scanned per block moved. **Fixed in batches 25+27:** Y is ignored and position movement is throttled to one scan per 20 ticks; dimension/biome changes are immediate. |
 | B71 | **M** | `client/PlayerSoundEffectHandler.java:42-63` | Every tick allocated a map/list and re-ran regex matching per sound. **Fixed in batches 30+33:** weighted biome, player, and combined ambient lists are cached; `queueAmbientSounds` no longer mutates the caller list. Per-tick spot rolls remain by design. |
-| B72 | **M** | `client/hud/PotionHUD.java:30-100` | Null `thePlayer`; no state restore; re-formats strings/widths every frame; rendered on every `RenderGameOverlayEvent`. **Partially fixed in batch 4:** dispatcher filter, null guard and `glPushAttrib`/`glPopAttrib`; per-effect text caching remains (P9). |
+| B72 | **M** | `client/hud/PotionHUD.java:30-100` | Null player, no state restore, per-frame formatting. **Fixed in batches 4+44:** dispatcher filter, null guard, `glPushAttrib`/`glPopAttrib`, and `PotionTextCache`. |
 | B73 | **M** | `client/PotionParticleScrubHandler.java:8-11` | Wrote the potion liquid colour datawatcher every tick. **Fixed in batch 31:** removed; a client-only mixin cancels the local player `mobSpell` spawn when enabled. |
 | B74 | **M** | `client/fx/particle/EntityTextPopOffFX.java:59-89` | Immediate-mode font draw and depth-func state leak; see §2.5. **Fixed in batch 7:** render-less marker + post-world renderer with pushed attributes and an Iris `PARTICLES` phase. |
 | B75 | **L** | `client/hud/GuiHUDHandler.java:36-40` | The dispatcher forwards all overlay phases to all overlays; filter by `ElementType` in the dispatcher. |
-| B76 | **L** | `client/EnvironStateHandler.java:104-109` | `craftSoundThrottle` initial value makes the first craft test depend on the tick counter; use `Integer.MIN_VALUE` or a boolean. |
+| B76 | **L** | `client/EnvironStateHandler.java:104-109` | `craftSoundThrottle` made the first craft depend on the tick counter. **Fixed in batch 44:** initialized to `Integer.MIN_VALUE`. |
 
 ### 3.8 Footsteps / sound engine
 

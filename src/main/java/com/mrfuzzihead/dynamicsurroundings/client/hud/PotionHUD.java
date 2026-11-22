@@ -5,7 +5,6 @@ import java.util.Collection;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
@@ -75,17 +74,9 @@ public class PotionHUD extends Gui implements GuiHUDHandler.IGuiOverlay {
                             } catch (Exception var21) {}
 
                             if (potion.shouldRenderInvText(potioneffect)) {
-                                String s1 = I18n.format(potion.getName(), new Object[0]);
-                                if (potioneffect.getAmplifier() == 1) {
-                                    s1 = s1 + " " + I18n.format("enchantment.level.2", new Object[0]);
-                                } else if (potioneffect.getAmplifier() == 2) {
-                                    s1 = s1 + " " + I18n.format("enchantment.level.3", new Object[0]);
-                                } else if (potioneffect.getAmplifier() == 3) {
-                                    s1 = s1 + " " + I18n.format("enchantment.level.4", new Object[0]);
-                                }
-
+                                String s1 = PotionTextCache.name(potion, potioneffect);
                                 font.drawStringWithShadow(s1, 30, guiTop + 6, TEXT_POTION_NAME);
-                                String s = Potion.getDurationString(potioneffect);
+                                String s = PotionTextCache.duration(potioneffect);
                                 font.drawStringWithShadow(
                                     s,
                                     30,
