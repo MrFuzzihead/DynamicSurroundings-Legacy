@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 61 test suites / 263 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 61 test suites / 264 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -281,6 +281,11 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B33/P17:** `configureSound` queries the live `ALCdevice` when a context exists, otherwise opens/closes the device for `ALC_MONO_SOURCES` without creating a temporary AL context. Channel splitting is a pure tested helper.
 - **P8:** `SoundEffect` already has the matching `hashCode`; emitter dedupe and the removed `containsValue` scan complete the bookkeeping cleanup.
 - Added `SoundManagerChannelTest`.
+
+**Batch 40 — allocation-free block-effect sampling (264 tests green)**
+
+- **B67/P4:** `BlockEffectHandler` reuses a single `MutableBlockPos`, early-outs when the block registry has no effects/sounds, and caches the sample count per configured range. The weighted sound path was already allocation-free.
+- Added `checkCountForRange` coverage to `BlockEffectHandlerTest`.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
@@ -646,7 +651,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B64 | **H** | `client/ClientEffectHandler.java:78-86` | `world` was checked but `player` was not; a null player during respawn/dimension change reached every handler. **Fixed in batch 23:** `canProcess(world, player)` and a unit test. |
 | B65 | **H** | `client/fx/BlockEffectHandler.java:64-72` | Step sound sampled `playerPos.down(2)`, i.e. dirt under grass. **Fixed in batch 15:** `posY - 0.1`, with a position test. |
 | B66 | **H** | `client/fx/JetEffect.java:83-89` | `Dust.trigger` required `world.isAirBlock(x, y-1, z)`, so dust only spawned on floating blocks. **Fixed in batch 15:** it now requires air above, like fire/fountain; tested both directions. |
-| B67 | **H** | `client/fx/BlockEffectHandler.java:40-62` | ~1,000 `BlockPos` allocations + two block lookups per sample per tick (plus `new ArrayList` in `BlockRegistry.getRandomSound`) → GC pressure and client tick cost. Reuse a mutable pos, read block+metadata once, and avoid allocation in the weighted pick. |
+| B67 | **H** | `client/fx/BlockEffectHandler.java:40-62` | ~1,000 `BlockPos` allocations and repeated work per sample. **Fixed in batch 40:** one mutable position, cached sample count, registry early-out, and allocation-free weighted sound selection. |
 | B68 | **M** | `client/EnvironStateHandler.java:205-225` | 21 `CONDITION_TOKEN_*` constants and `CONDITION_SEPARATOR` were unused. **Fixed in batch 19:** removed; `getPlayerConditions` is the single literal source. |
 | B69 | **M** | `client/EnvironStateHandler.java:188-470` | `EnvironState` is a static mutable god-object. `getPlayer()` can return null, `getWorld()` dereferences it, `isPlayerMoving` dereferences the static `player` without a null check, and `tick` is not re-entrant. Replace with an immutable per-tick `EnvironmentSnapshot` passed to consumers. |
 | B70 | **M** | `client/BiomeSurveyHandler.java:57-70` | The dirty check included `playerY` and re-scanned per block moved. **Fixed in batches 25+27:** Y is ignored and position movement is throttled to one scan per 20 ticks; dimension/biome changes are immediate. |

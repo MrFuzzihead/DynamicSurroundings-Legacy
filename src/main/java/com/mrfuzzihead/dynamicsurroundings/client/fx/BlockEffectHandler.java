@@ -28,22 +28,37 @@ public class BlockEffectHandler implements IClientEffectHandler {
     private static final Random random = new XorShiftRandom();
     private static final LCGRandom lcg = new LCGRandom();
     private static final double RATIO = 0.0335671847202175;
+    private static int cachedRange = Integer.MIN_VALUE;
+    private static int cachedCheckCount;
 
     private static int randomRange(int range) {
         return lcg.nextInt(range) - lcg.nextInt(range);
     }
 
+    static int checkCountForRange(int range) {
+        if (range != cachedRange) {
+            cachedRange = range;
+            cachedCheckCount = (int) (Math.pow(range * 2 - 1, 3.0) * RATIO);
+        }
+
+        return cachedCheckCount;
+    }
+
     @Override
     public void process(World world, EntityPlayer player) {
         if (!Minecraft.getMinecraft()
-            .isGamePaused()) {
+            .isGamePaused() && BlockRegistry.hasEffectsOrSounds()) {
             BlockPos playerPos = new BlockPos(player);
+            BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
             String conditions = EnvironStateHandler.EnvironState.getConditions();
-            int RANGE = ModOptions.specialEffectRange;
-            int CHECK_COUNT = (int) (Math.pow(RANGE * 2 - 1, 3.0) * 0.0335671847202175);
+            int range = ModOptions.specialEffectRange;
+            int checkCount = checkCountForRange(range);
 
-            for (int i = 0; i < CHECK_COUNT; i++) {
-                BlockPos pos = playerPos.add(randomRange(RANGE), randomRange(RANGE), randomRange(RANGE));
+            for (int i = 0; i < checkCount; i++) {
+                pos.setPos(
+                    playerPos.getX() + randomRange(range),
+                    playerPos.getY() + randomRange(range),
+                    playerPos.getZ() + randomRange(range));
                 Block block = MCHelper.getBlock(world, pos);
                 if (block != Blocks.air) {
                     List<BlockEffect> chain = BlockRegistry.getEffects(block);
@@ -64,13 +79,13 @@ public class BlockEffectHandler implements IClientEffectHandler {
 
             if (EnvironStateHandler.EnvironState.isPlayerOnGround()
                 && EnvironStateHandler.EnvironState.isPlayerMoving()) {
-                BlockPos pos = stepBlockPos(player);
-                Block block = MCHelper.getBlock(world, pos);
+                BlockPos stepPos = stepBlockPos(player);
+                Block block = MCHelper.getBlock(world, stepPos);
                 if (block != Blocks.air && !block.getMaterial()
                     .isLiquid()) {
                     SoundEffect sound = BlockRegistry.getStepSound(block, random, conditions);
                     if (sound != null) {
-                        sound.doEffect(block, world, pos, random);
+                        sound.doEffect(block, world, stepPos, random);
                     }
                 }
             }

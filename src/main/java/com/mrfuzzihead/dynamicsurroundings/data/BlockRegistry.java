@@ -43,6 +43,16 @@ public final class BlockRegistry {
         }
     }
 
+    public static boolean hasEffectsOrSounds() {
+        for (BlockRegistry.Entry entry : registry.values()) {
+            if (!entry.effects.isEmpty() || !entry.sounds.isEmpty() || !entry.stepSounds.isEmpty()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static List<BlockEffect> getEffects(Block block) {
         BlockRegistry.Entry entry = registry.get(block);
         return entry != null ? entry.effectsView : null;

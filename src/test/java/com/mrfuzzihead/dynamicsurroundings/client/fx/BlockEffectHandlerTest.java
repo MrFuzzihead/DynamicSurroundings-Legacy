@@ -12,6 +12,12 @@ import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
 public class BlockEffectHandlerTest {
 
     @Test
+    public void sampleCountIsDerivedFromTheConfiguredRange() {
+        assertEquals(999, BlockEffectHandler.checkCountForRange(16));
+        assertEquals(113, BlockEffectHandler.checkCountForRange(8));
+    }
+
+    @Test
     public void stepSoundSamplesTheBlockUnderTheFeet() {
         EntityPlayer player = mock(EntityPlayer.class);
         player.posX = 0.5D;
