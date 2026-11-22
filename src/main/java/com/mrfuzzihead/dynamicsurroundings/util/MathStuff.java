@@ -141,7 +141,7 @@ public class MathStuff {
     }
 
     public static double sqrt(double value) {
-        return (float) Math.sqrt(value);
+        return Math.sqrt(value);
     }
 
     public static int floor(double value) {

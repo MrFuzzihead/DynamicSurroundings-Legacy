@@ -109,9 +109,9 @@ public class MathStuffTest {
     }
 
     @Test
-    public void sqrtReturnsAFloatPrecisionResult() {
+    public void sqrtPreservesDoublePrecision() {
         assertEquals(3.0F, MathStuff.sqrt(9.0F), EPSILON);
-        assertEquals(3.0F, (float) MathStuff.sqrt(9.0D), EPSILON);
+        assertEquals(Math.sqrt(2.0D), MathStuff.sqrt(2.0D), 1.0e-15);
     }
 
     @Test

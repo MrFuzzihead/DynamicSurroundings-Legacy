@@ -55,7 +55,7 @@ public final class ConfigProcessor {
                                 maxInt,
                                 comment));
                     } else if (defaultValue instanceof Float) {
-                        float minFloat = Float.MIN_VALUE;
+                        float minFloat = -Float.MAX_VALUE;
                         float maxFloat = Float.MAX_VALUE;
                         ConfigProcessor.MinMaxFloat mmf = field.getAnnotation(ConfigProcessor.MinMaxFloat.class);
                         if (mmf != null) {
@@ -119,7 +119,7 @@ public final class ConfigProcessor {
     @Target({ ElementType.FIELD })
     public @interface MinMaxFloat {
 
-        float min() default Float.MIN_VALUE;
+        float min() default -Float.MAX_VALUE;
 
         float max() default Float.MAX_VALUE;
     }

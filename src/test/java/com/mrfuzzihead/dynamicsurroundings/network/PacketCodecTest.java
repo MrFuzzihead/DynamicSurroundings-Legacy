@@ -39,8 +39,8 @@ public class PacketCodecTest {
         AuroraData aurora = new AuroraData(-1, 320, -640, 0x1122334455667788L, 3, 2);
         ByteBuf encoded = encode(new PacketAurora(aurora));
 
-        // int dimension, long seed, int x, int z, byte colour set, byte preset.
-        assertEquals(4 + 8 + 4 + 4 + 1 + 1, encoded.readableBytes());
+        // int dimension, long seed, int x, int z, int colour set, int preset.
+        assertEquals(4 + 8 + 4 + 4 + 4 + 4, encoded.readableBytes());
 
         assertBytes(encoded, reencode(copy(encoded), new PacketAurora()));
     }
