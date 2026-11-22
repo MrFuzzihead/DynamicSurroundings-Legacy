@@ -28,7 +28,6 @@ public final class DimensionEffectDataFile extends WorldSavedData {
             world.setItemData("dynamicsurroundings", data);
         }
 
-        data.markDirty();
         return data;
     }
 
@@ -38,7 +37,9 @@ public final class DimensionEffectDataFile extends WorldSavedData {
             return data;
         } else {
             data = new DimensionEffectData(dimensionId);
+            data.setDirtyCallback(this::markDirty);
             this.dataList.put(dimensionId, data);
+            data.markDirty();
             return data;
         }
     }
@@ -53,6 +54,7 @@ public final class DimensionEffectDataFile extends WorldSavedData {
         for (int i = 0; i < list.tagCount(); i++) {
             NBTTagCompound tag = list.getCompoundTagAt(i);
             DimensionEffectData data = new DimensionEffectData();
+            data.setDirtyCallback(this::markDirty);
             data.readFromNBT(tag);
             this.dataList.put(data.getDimensionId(), data);
         }

@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 46 test suites / 218 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 47 test suites / 220 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -132,7 +132,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B66:** `Dust.trigger` now requires air above the block, matching the fire/fountain behavior, so dust jets can appear on normal terrain.
 - Added `WorldHandlerTest`, `NetherSplashRendererTest`, `BlockEffectHandlerTest`, and `JetEffectDustTest`.
 
-**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B38, B40, B64, B73) and the optional per-effect HUD text cache (P9).
+**Batch 16 — server rain packet rate and saved-data dirty tracking (220 tests green)**
+
+- **B38:** `ServerEffectHandler` now sends `PacketRainIntensity` only when the intensity changes or on a 40-tick keepalive, instead of every `Phase.START` for every dimension. The decision is a pure, tested helper.
+- **B40:** `DimensionEffectDataFile` no longer marks the saved data dirty on every read. `DimensionEffectData` has a dirty callback; its setters and aurora add/clear mark the file, so unchanged data stays clean across autosaves.
+- Added `shouldSendRainIntensity` coverage to `ServerEffectHandlerTest` and a new `DimensionEffectDataFileTest` proving repeated reads stay clean while a real setter dirties.
+
+**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B64, B73) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
 
@@ -457,9 +463,9 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | ID | Sev | File:line | Finding |
 |---|---|---|---|
 | B37 | **C** | `network/PacketHealthChange.java`, `network/PacketAurora.java`, `network/PacketRainIntensity.java` | The handlers called `EffectRenderer.addEffect`, `AuroraEffectHandler`, and `Weather.setIntensity` directly on the Netty thread. **Fixed in batch 3:** all three use `ClientPacketHandler.schedule` (`Minecraft.func_152344_a`). |
-| B38 | **H** | `server/ServerEffectHandler.java:52` | Sends a `PacketRainIntensity` every `Phase.START` for every dimension (20 packets/s/dimension, even with no players), although the value changes only when rain starts/stops. Send on change, on player join, and at a low keep-alive rate at most. |
+| B38 | **H** | `server/ServerEffectHandler.java:52` | Sent `PacketRainIntensity` every `Phase.START` for every dimension. **Fixed in batch 16:** sent on change or a 40-tick keepalive, with a tested pure decision function. |
 | B39 | **H** | `server/WorldHandler.java:28-31` | The replacement for `World.updateWeatherBody` dropped vanilla's `!provider.hasNoSky` guard, so the state machine ran in the End and other no-sky dimensions. **Fixed in batch 15:** it skips no-sky worlds unless `DimensionRegistry.hasWeather` opts them in, so the Nether config still works. |
-| B40 | **M** | `data/DimensionEffectDataFile.java:31` | `getFile()` calls `markDirty()` on **every** access; `get()` is called from `ServerEffectHandler` every tick and `WorldHandler` every tick. The data is always dirty, so every autosave rewrites it even when nothing changed. Mark dirty in the setters (`setRainIntensity`, aurora add/remove) instead, and cache the `WorldSavedData` per world. |
+| B40 | **M** | `data/DimensionEffectDataFile.java:31` | `getFile()` marked the saved data dirty on every access, so every autosave rewrote it. **Fixed in batch 16:** dirty callbacks on the real setters and aurora add/clear; repeated reads stay clean. |
 | B41 | **M** | `data/DimensionEffectDataFile.java:23-33` | `world.loadItemData` on every tick for every world is an unnecessary map lookup; cache the file in a `WeakHashMap<World, DimensionEffectDataFile>` cleared on `WorldEvent.Unload`. |
 | B42 | **M** | `server/ServerEffectHandler.java:30,60` | `MIN_AURORA_DISTANCE_SQ`, `CHECK_INTERVAL`, `RESET` are unused; the literals `160000L`, `100`, `-10` are duplicated in `Network`/`DimensionEffectData`. |
 | B43 | **M** | `network/PacketAurora.java:41-47` | `colorSet`/`preset` were serialized as bytes but held as ints. **Fixed in batch 13:** both are written/read as `int`; the codec test pins the width. |

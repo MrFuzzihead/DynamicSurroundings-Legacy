@@ -29,4 +29,12 @@ public class ServerEffectHandlerTest {
     public void emptyAuroraSetIsOutOfRange() {
         assertFalse(ServerEffectHandler.isAuroraInRange(0, 0, 150, new HashSet<AuroraData>()));
     }
+
+    @Test
+    public void rainIntensityIsSentOnChangeAndOnTheKeepalive() {
+        assertTrue(ServerEffectHandler.shouldSendRainIntensity(0.5F, Float.NaN, 1));
+        assertFalse(ServerEffectHandler.shouldSendRainIntensity(0.5F, 0.5F, 1));
+        assertTrue(ServerEffectHandler.shouldSendRainIntensity(0.5F, 0.4F, 1));
+        assertTrue(ServerEffectHandler.shouldSendRainIntensity(0.5F, 0.5F, 40));
+    }
 }

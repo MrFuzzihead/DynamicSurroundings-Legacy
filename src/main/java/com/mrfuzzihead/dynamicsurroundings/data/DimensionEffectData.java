@@ -24,6 +24,7 @@ public final class DimensionEffectData implements INBTSerialization {
     private float minIntensity = ModOptions.defaultMinRainStrength;
     private float maxIntensity = ModOptions.defaultMaxRainStrength;
     private final Set<AuroraData> auroras = new HashSet<>();
+    private Runnable dirtyCallback = () -> {};
 
     public DimensionEffectData() {}
 
@@ -41,6 +42,15 @@ public final class DimensionEffectData implements INBTSerialization {
 
     public void setRainIntensity(float intensity) {
         this.intensity = MathHelper.clamp_float(intensity, 0.0F, 1.0F);
+        this.markDirty();
+    }
+
+    public void setDirtyCallback(Runnable callback) {
+        this.dirtyCallback = callback == null ? () -> {} : callback;
+    }
+
+    public void markDirty() {
+        this.dirtyCallback.run();
     }
 
     public float getMinRainIntensity() {
@@ -49,6 +59,7 @@ public final class DimensionEffectData implements INBTSerialization {
 
     public void setMinRainIntensity(float intensity) {
         this.minIntensity = MathHelper.clamp_float(intensity, 0.0F, this.maxIntensity);
+        this.markDirty();
     }
 
     public float getMaxRainIntensity() {
@@ -57,6 +68,7 @@ public final class DimensionEffectData implements INBTSerialization {
 
     public void setMaxRainIntensity(float intensity) {
         this.maxIntensity = MathHelper.clamp_float(intensity, this.minIntensity, 1.0F);
+        this.markDirty();
     }
 
     public Set<AuroraData> getAuroraList() {

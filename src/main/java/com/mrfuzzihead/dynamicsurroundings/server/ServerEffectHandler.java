@@ -22,6 +22,7 @@ import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 import cpw.mods.fml.common.gameevent.TickEvent.WorldTickEvent;
+import gnu.trove.map.hash.TIntFloatHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 
 public final class ServerEffectHandler {
@@ -29,7 +30,10 @@ public final class ServerEffectHandler {
     private static final float RESET = -10.0F;
     private static final long MIN_AURORA_DISTANCE_SQ = 160000L;
     private static final int CHECK_INTERVAL = 100;
+    private static final int RAIN_KEEPALIVE_TICKS = 40;
     private static TIntIntHashMap tickCounters = new TIntIntHashMap();
+    private static TIntIntHashMap rainTickCounters = new TIntIntHashMap();
+    private static TIntFloatHashMap lastRainIntensity = new TIntFloatHashMap();
 
     public static void initialize() {
         FMLCommonHandler.instance()
@@ -48,10 +52,22 @@ public final class ServerEffectHandler {
                 World world = event.world;
                 int dimensionId = world.provider.dimensionId;
                 float sendIntensity = DimensionRegistry.hasWeather(world) ? DimensionEffectData.get(world)
-                    .getRainIntensity() : -10.0F;
-                Network.sendRainIntensity(sendIntensity, dimensionId);
+                    .getRainIntensity() : RESET;
+                int tick = rainTickCounters.get(dimensionId) + 1;
+                rainTickCounters.put(dimensionId, tick);
+                if (shouldSendRainIntensity(
+                    sendIntensity,
+                    lastRainIntensity.containsKey(dimensionId) ? lastRainIntensity.get(dimensionId) : Float.NaN,
+                    tick)) {
+                    Network.sendRainIntensity(sendIntensity, dimensionId);
+                    lastRainIntensity.put(dimensionId, sendIntensity);
+                }
             }
         }
+    }
+
+    static boolean shouldSendRainIntensity(float current, float previous, int tick) {
+        return Float.isNaN(previous) || Float.compare(current, previous) != 0 || tick % RAIN_KEEPALIVE_TICKS == 0;
     }
 
     static boolean isAuroraInRange(int playerX, int playerZ, int spawnOffset, Set<AuroraData> data) {
@@ -78,10 +94,13 @@ public final class ServerEffectHandler {
     protected void processAuroras(WorldTickEvent event) {
         World world = event.world;
         if (world != null && DimensionRegistry.hasAuroras(world)) {
-            Set<AuroraData> data = DimensionEffectData.get(world)
-                .getAuroraList();
+            DimensionEffectData effectData = DimensionEffectData.get(world);
+            Set<AuroraData> data = effectData.getAuroraList();
             if (DiurnalUtils.isDaytime(world)) {
-                data.clear();
+                if (!data.isEmpty()) {
+                    data.clear();
+                    effectData.markDirty();
+                }
             } else {
                 int tickCount = tickCounters.get(world.provider.dimensionId) + 1;
                 tickCounters.put(world.provider.dimensionId, tickCount);
@@ -99,6 +118,7 @@ public final class ServerEffectHandler {
                                     colorSet,
                                     preset);
                                 if (data.add(aurora)) {
+                                    effectData.markDirty();
                                     ModLog.debug("Spawned new aurora: " + aurora.toString());
                                 }
                             }
