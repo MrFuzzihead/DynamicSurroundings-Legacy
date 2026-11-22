@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 47 test suites / 220 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 48 test suites / 222 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -137,6 +137,12 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B38:** `ServerEffectHandler` now sends `PacketRainIntensity` only when the intensity changes or on a 40-tick keepalive, instead of every `Phase.START` for every dimension. The decision is a pure, tested helper.
 - **B40:** `DimensionEffectDataFile` no longer marks the saved data dirty on every read. `DimensionEffectData` has a dirty callback; its setters and aurora add/clear mark the file, so unchanged data stays clean across autosaves.
 - Added `shouldSendRainIntensity` coverage to `ServerEffectHandlerTest` and a new `DimensionEffectDataFileTest` proving repeated reads stay clean while a real setter dirties.
+
+**Batch 17 — console command and legacy blockmap keys (222 tests green)**
+
+- **B45:** `/rain` now resolves the world through `ICommandSender.getEntityWorld()` and replies to the sender, so the server console/RCON can run `/rain status` and the other subcommands. A unit test drives the command through a mocked console sender.
+- **B81:** `LegacyCapableBlockMap` now accepts `id:meta` keys in addition to `id^meta` and `id.meta`; the separator choice is a tested helper.
+- **B89 (partial):** `MathStuff.abs` uses a proper `< 0` test for the integer/long overloads. The double trig/log approximations and `MIN_VALUE` overflow remain in the backlog.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B64, B73) and the optional per-effect HUD text cache (P9).
 
@@ -470,7 +476,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B42 | **M** | `server/ServerEffectHandler.java:30,60` | `MIN_AURORA_DISTANCE_SQ`, `CHECK_INTERVAL`, `RESET` are unused; the literals `160000L`, `100`, `-10` are duplicated in `Network`/`DimensionEffectData`. |
 | B43 | **M** | `network/PacketAurora.java:41-47` | `colorSet`/`preset` were serialized as bytes but held as ints. **Fixed in batch 13:** both are written/read as `int`; the codec test pins the width. |
 | B44 | **M** | `server/ServerEffectHandler.java:90-95` | A new aurora is created for a player whenever `!isAuroraInRange`; with the broken range check (B21) and no `hashCode` (B20) this can grow without bound. Cap per dimension/player and dedupe. |
-| B45 | **L** | `commands/CommandRain.java:60` | `getCommandSenderAsPlayer` means the server console cannot run `/rain status`. Use `sender.getEntityWorld()` (and `ICommandSender`) so it works from console/RCON. |
+| B45 | **L** | `commands/CommandRain.java:60` | `getCommandSenderAsPlayer` meant the server console could not run `/rain status`. **Fixed in batch 17:** `ICommandSender.getEntityWorld()` and sender replies; tested with a mocked console. |
 | B46 | **L** | `commands/CommandRain.java:81-86` | `/rain reload` calls `BiomeRegistry.initialize()` and `BlockRegistry.initialize()` from the server command. `BlockRegistry` (and its `MCHelper`/`JetEffect`/`SoundManager` dependencies) is effectively client-only, so this is both useless and a potential dedicated-server `NoClassDefFoundError`/`NoSuchMethodError`; the client also keeps its old biome/block/fog/sound data. Add a client reload packet and keep server/client reload paths separate. |
 | B47 | **H** | `data/DimensionEffectData.java:66-77` | `randomizeRain` ignored `minIntensity`: with `delta = max-min` and `mid = delta/2`, `rand*mid + rand*mid` produced `[0, delta]`, then clamped to `0.01`. **Fixed in batch 11:** `min + rand*(max-min)`, with tests for a non-zero minimum and the 1% floor. |
 
@@ -521,7 +527,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B78 | **M** | `client/footsteps/game/system/PFReaderQP.java:50-85` | `if (2 == 2)`, `if (2 == 1)`, `if (2 == 0)` are dead branches; `USE_FUNCTION`, `overallMultiplier`, `ndm` are unused. `PFReaderQP` is also never instantiated (the port always uses `PFReaderH`), so the whole class is dead unless a config is added. |
 | B79 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:126-135` | `newMinimum` was assigned every remaining sound instead of the minimum, and `randAB` sampled `[a, a+b]` instead of `[a, b]`. **Fixed in batch 14:** `Math.min` for the wake-up and a bounded `randomDelay`, with tests. |
 | B80 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:40-43` | `USING_LATENESS`, `USING_EARLYNESS`, `LATENESS_THRESHOLD_DIVIDER`, `EARLYNESS_THRESHOLD_POW` unused; the literals are repeated. |
-| B81 | **M** | `client/footsteps/mcpackage/implem/LegacyCapableBlockMap.java:15-35` | Only `^` (94) and `.` (46) are treated as legacy separators; `id:meta` keys (YouTube-era blockmaps) go to `super.register` with the numeric string and fail to resolve. Add `:` to the separator search and a test with `1:0`, `1^0`, `1.0`. |
+| B81 | **M** | `client/footsteps/mcpackage/implem/LegacyCapableBlockMap.java:15-35` | Only `^` and `.` were treated as legacy separators; `id:meta` keys failed. **Fixed in batch 17:** `:`, `^`, and `.` are accepted; `1:0`, `1^0`, `1.0`, and bare IDs are tested. |
 | B82 | **M** | `client/footsteps/mcpackage/implem/BasicBlockMap.java:97-120` | The regex `([^:]+:[^^+]+)\^?(\d+)?\+?(\w+)?` is fragile (`[^^+]` negates `^` and `+`, not what the comment intends); `BlockInfo.hashCode` NPEs on a null block and `equals` casts without `instanceof`; `getBlockMap` reuses a mutable key (not thread-safe). Add parser tests. |
 | B83 | **M** | `client/footsteps/game/system/Footsteps.java:74-166` | Each loader catches `IOException` but `Scanner.next()` on an empty stream throws `NoSuchElementException` (not caught) and `AcousticsJsonReader` swallows all parse errors, so a malformed pack silently disables all footsteps. Validate and log. |
 | B84 | **L** | `client/footsteps/game/system/Footsteps.java:180-195` | Setting `nextStepDistance = Integer.MAX_VALUE` every tick is a write per tick; do it once when the handler is enabled. |
@@ -534,7 +540,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 |---|---|---|---|
 | B87 | **H** | `compat/BlockPos.java:145-220` | No `equals`/`hashCode`; the box iterators compared with `equals` and never terminated; `MutableBlockPos.getImmutable()` copied the base class's private fields (always 0). **Fixed in batch 11:** coordinate `equals`/`hashCode`, getter-based copy construction, and tests for both box iterators and mutable immutability. |
 | B88 | **H** | `util/Color.java:222-250` | `ImmutableColor` overrode `scale`, `mix` and `adjust` but not `add`, `blend`, or `scale(r,g,b)`, so `Color.RED.add(...)` could mutate a shared static constant. `Color` had `equals` but no `hashCode`. **Fixed in batch 11:** every mutator is rejected and the hash contract is tested. |
-| B89 | **M** | `util/MathStuff.java:139-144` | `sqrt(double)` returned `(float) Math.sqrt(value)`; `sin/cos(double)` truncate to float; `log` is an approximation; `abs(MIN_VALUE)` overflows; several constants are unused. **Partially fixed in batch 13:** `sqrt(double)` now preserves double precision and is tested at 1e-15. The remaining trig/log/abs cases are still open. |
+| B89 | **M** | `util/MathStuff.java:139-144` | `sqrt(double)` returned `(float) Math.sqrt(value)`; `sin/cos(double)` truncate to float; `log` is an approximation; `abs(MIN_VALUE)` overflows; several constants are unused. **Partially fixed in batches 13+17:** `sqrt(double)` preserves double precision; integer/long `abs` use `< 0`. The double trig/log approximations and `MIN_VALUE` overflow remain open. |
 | B90 | **M** | `data/DimensionEffectData.java:30-32,88-95` | `NBT` inner classes in `DimensionEffectData`, `DimensionEffectDataFile` and `AuroraData` are unused; `MIN_INTENSITY`/`MAX_INTENSITY` unused; `FORMATTER` (static `DecimalFormat`) is not thread-safe. |
 | B91 | **M** | `data/AuroraData.java:59-67` | No `hashCode` (see B20). `equals` ignores seed/color/preset, so `HashSet` dedupe by column would drop updates; decide the intended identity and document it. |
 | B92 | **M** | `util/PlayerUtils.java:20-24,60-84` | `INSIDE_Y_ADJUST`, `RANGE`, `AREA` unused (literals 3/3/49); `isReallyInside` only counts ceilings within 2 blocks, so a 5-block-high room is "outside". Use `world.canBlockSeeTheSky`/heightmap or a configurable coverage test. Add unit tests with mocked worlds. |

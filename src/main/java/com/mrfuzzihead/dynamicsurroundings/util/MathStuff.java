@@ -129,11 +129,11 @@ public class MathStuff {
     }
 
     public static final long abs(long val) {
-        return val < 1L ? -val : val;
+        return val < 0L ? -val : val;
     }
 
     public static final int abs(int val) {
-        return val < 1 ? -val : val;
+        return val < 0 ? -val : val;
     }
 
     public static float sqrt(float value) {

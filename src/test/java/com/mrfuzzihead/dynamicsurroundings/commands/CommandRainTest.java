@@ -2,8 +2,11 @@ package com.mrfuzzihead.dynamicsurroundings.commands;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import net.minecraft.command.ICommandSender;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProvider;
 import net.minecraft.world.storage.WorldInfo;
@@ -12,6 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectData;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectDataFile;
 import com.mrfuzzihead.dynamicsurroundings.testutil.WorldTestSupport;
 
 /**
@@ -79,6 +83,23 @@ public class CommandRainTest {
         assertTrue(status, status.contains("[10,90]"));
         // 24000 / 20 / 60 = 20 minutes.
         assertTrue(status, status.contains("timer: 20.0 minutes"));
+    }
+
+    @Test
+    public void statusCanRunFromTheServerConsole() {
+        when(info.getRainTime()).thenReturn(1200);
+        when(world.isRaining()).thenReturn(true);
+        when(provider.isSurfaceWorld()).thenReturn(true);
+        when(world.getRainStrength(1.0F)).thenReturn(0.5F);
+        when(world.loadItemData(DimensionEffectDataFile.class, "dynamicsurroundings"))
+            .thenReturn(new DimensionEffectDataFile());
+
+        ICommandSender sender = mock(ICommandSender.class);
+        when(sender.getEntityWorld()).thenReturn(world);
+
+        new CommandRain().processCommand(sender, new String[] { "status" });
+
+        verify(sender).addChatMessage(org.mockito.ArgumentMatchers.any(ChatComponentText.class));
     }
 
     @Test

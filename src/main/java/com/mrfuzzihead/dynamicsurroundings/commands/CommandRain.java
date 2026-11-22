@@ -6,7 +6,6 @@ import java.util.List;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
@@ -58,23 +57,25 @@ public final class CommandRain extends CommandBase {
     }
 
     public void processCommand(ICommandSender sender, String[] parms) {
-        EntityPlayerMP player = getCommandSenderAsPlayer(sender);
-        World world = player.worldObj;
+        World world = sender.getEntityWorld();
+        if (world == null) {
+            throw new CommandException("No world available for /rain", new Object[0]);
+        }
         DimensionEffectData data = DimensionEffectData.get(world);
         if (parms.length == 1) {
             if ("status".compareToIgnoreCase(parms[0]) == 0) {
-                player.addChatMessage(new ChatComponentText(statusOutput(world, data)));
+                sender.addChatMessage(new ChatComponentText(statusOutput(world, data)));
             } else if ("reset".compareToIgnoreCase(parms[0]) == 0) {
                 world.provider.resetRainAndThunder();
-                player.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("msg.RainReset")));
+                sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("msg.RainReset")));
             } else if ("reload".compareToIgnoreCase(parms[0]) == 0) {
                 BiomeRegistry.initialize();
                 BlockRegistry.initialize();
-                player.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("msg.BiomeReload")));
+                sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("msg.BiomeReload")));
             } else {
                 double d = parseDoubleBounded(sender, parms[0], 0.0, 100.0) / 100.0;
                 data.setRainIntensity((float) d);
-                player.addChatMessage(
+                sender.addChatMessage(
                     new ChatComponentText(
                         StatCollector.translateToLocalFormatted(
                             "msg.RainIntensitySet",
@@ -84,7 +85,7 @@ public final class CommandRain extends CommandBase {
             if ("setmin".compareToIgnoreCase(parms[0]) == 0) {
                 double d = parseDoubleBounded(sender, parms[1], 0.0, 100.0) / 100.0;
                 data.setMinRainIntensity((float) d);
-                player.addChatMessage(
+                sender.addChatMessage(
                     new ChatComponentText(
                         StatCollector.translateToLocalFormatted(
                             "msg.MinRainIntensitySet",
@@ -96,14 +97,14 @@ public final class CommandRain extends CommandBase {
 
                 double d = parseDoubleBounded(sender, parms[1], 0.0, 100.0) / 100.0;
                 data.setMaxRainIntensity((float) d);
-                player.addChatMessage(
+                sender.addChatMessage(
                     new ChatComponentText(
                         StatCollector.translateToLocalFormatted(
                             "msg.MaxRainIntensitySet",
                             new Object[] { FORMATTER.format(data.getMaxRainIntensity() * 100.0F) })));
             }
         } else {
-            player.addChatMessage(new ChatComponentText(this.getCommandUsage(sender)));
+            sender.addChatMessage(new ChatComponentText(this.getCommandUsage(sender)));
         }
     }
 }
