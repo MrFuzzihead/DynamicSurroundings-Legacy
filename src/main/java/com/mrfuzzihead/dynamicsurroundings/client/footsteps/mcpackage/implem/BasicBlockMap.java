@@ -24,7 +24,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public class BasicBlockMap implements IBlockMap {
 
-    private static final Pattern pattern = Pattern.compile("([^:]+:[^^+]+)\\^?(\\d+)?\\+?(\\w+)?");
+    private static final Pattern pattern = Pattern.compile("^([^\\^+]+?)(?:\\^(\\d+))?(?:\\+(\\w+))?$");
     private final BlockInfo.BlockInfoMutable mutable = new BlockInfo.BlockInfoMutable();
     private final Map<BlockInfo, String> metaMap = new HashMap<>();
     private final Map<Substrate, Map<BlockInfo, String>> substrateMap = new EnumMap<>(Substrate.class);
@@ -89,25 +89,35 @@ public class BasicBlockMap implements IBlockMap {
         }
     }
 
+    static String[] parseKey(String key) {
+        Matcher matcher = pattern.matcher(key);
+        if (!matcher.matches()) {
+            return null;
+        }
+
+        return new String[] { matcher.group(1), matcher.group(2), matcher.group(3) };
+    }
+
     @Override
     public void register(String key, String value) {
-        Matcher matcher = pattern.matcher(key);
-        if (matcher.matches()) {
-            String blockName = matcher.group(1);
-            Block block = MCHelper.getBlockNameRaw(blockName);
-            if (block != null && block != Blocks.air) {
-                int meta = matcher.group(2) == null ? -1 : Integer.parseInt(matcher.group(2));
-                String substrate = matcher.group(3);
-                if (value.startsWith("#")) {
-                    this.expand(block, value);
-                } else {
-                    this.put(block, meta, substrate, value);
-                }
+        String[] parsed = parseKey(key);
+        if (parsed == null) {
+            ModLog.debug("Malformed key in blockmap '%s'", key);
+            return;
+        }
+
+        String blockName = parsed[0];
+        Block block = MCHelper.getBlockNameRaw(blockName);
+        if (block != null && block != Blocks.air) {
+            int meta = parsed[1] == null ? -1 : Integer.parseInt(parsed[1]);
+            String substrate = parsed[2];
+            if (value.startsWith("#")) {
+                this.expand(block, value);
             } else {
-                ModLog.debug("Unable to locate block for blockmap '%s'", blockName);
+                this.put(block, meta, substrate, value);
             }
         } else {
-            ModLog.debug("Malformed key in blockmap '%s'", key);
+            ModLog.debug("Unable to locate block for blockmap '%s'", blockName);
         }
     }
 

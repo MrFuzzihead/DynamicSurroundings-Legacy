@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 52 test suites / 235 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 53 test suites / 237 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -166,6 +166,11 @@ This document is the working backlog for the refactor branch. It is ordered by r
 **Batch 21 — JSON null/stream handling (235 tests green)**
 
 - **B94 (partial):** `JsonUtils.load(InputStream)` returns `null` for a null stream; `load(File)`/`load(String)` fall back to the class default when the JSON body is `null`, so registries no longer receive a null config. Tests cover a null stream and a literal `null` file. `clazz.newInstance()` remains deprecated.
+
+**Batch 22 — blockmap parser shape (237 tests green)**
+
+- **B82 (partial):** replaced the fragile basic-blockmap regex with an anchored `block^meta+substrate` parser and a dedicated `parseKey` helper. Tests cover name-only, meta-only, substrate-only, both, and malformed keys. The mutable lookup key remains.
+- Added `BasicBlockMapTest`.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B64, B73) and the optional per-effect HUD text cache (P9).
 
@@ -551,7 +556,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B79 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:126-135` | `newMinimum` was assigned every remaining sound instead of the minimum, and `randAB` sampled `[a, a+b]` instead of `[a, b]`. **Fixed in batch 14:** `Math.min` for the wake-up and a bounded `randomDelay`, with tests. |
 | B80 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:40-43` | `USING_LATENESS`, `USING_EARLYNESS`, `LATENESS_THRESHOLD_DIVIDER`, `EARLYNESS_THRESHOLD_POW` unused; the literals are repeated. |
 | B81 | **M** | `client/footsteps/mcpackage/implem/LegacyCapableBlockMap.java:15-35` | Only `^` and `.` were treated as legacy separators; `id:meta` keys failed. **Fixed in batch 17:** `:`, `^`, and `.` are accepted; `1:0`, `1^0`, `1.0`, and bare IDs are tested. |
-| B82 | **M** | `client/footsteps/mcpackage/implem/BasicBlockMap.java:97-120` | The regex is fragile; `BlockInfo.hashCode` NPE'd on a null block and `equals` cast without `instanceof`; `getBlockMap` reuses a mutable key. **Partially fixed in batch 18:** null-safe hash and `instanceof` equals are tested. The regex/mutable-key notes remain. |
+| B82 | **M** | `client/footsteps/mcpackage/implem/BasicBlockMap.java:97-120` | The regex is fragile; `BlockInfo.hashCode` NPE'd on a null block and `equals` cast without `instanceof`; `getBlockMap` reuses a mutable key. **Fixed in batches 18+22:** null-safe `BlockInfo` hash/`instanceof` equality and an anchored `parseKey` parser are tested. The reusable mutable lookup key remains. |
 | B83 | **M** | `client/footsteps/game/system/Footsteps.java:74-166` | Each loader catches `IOException` but `Scanner.next()` on an empty stream throws `NoSuchElementException` (not caught) and `AcousticsJsonReader` swallows all parse errors, so a malformed pack silently disables all footsteps. Validate and log. |
 | B84 | **L** | `client/footsteps/game/system/Footsteps.java:180-195` | Setting `nextStepDistance = Integer.MAX_VALUE` every tick is a write per tick; do it once when the handler is enabled. |
 | B85 | **L** | `client/footsteps/parsers/AcousticsJsonReader.java:45-100` | Missing fields/empty sound names/delayed bounds produced NPEs or IndexOutOfBounds. **Fixed in batch 18:** descriptive `JsonParseException`s and direct parser tests. |
