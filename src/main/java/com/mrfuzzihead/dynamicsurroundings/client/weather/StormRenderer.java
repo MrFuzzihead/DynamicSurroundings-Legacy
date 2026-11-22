@@ -244,12 +244,20 @@ public class StormRenderer implements IAtmosRenderer {
         }
     }
 
+    static float rainXAt(int i, int j) {
+        return RAIN_X_COORDS[i << 5 | j];
+    }
+
+    static float rainYAt(int i, int j) {
+        return RAIN_Y_COORDS[i << 5 | j];
+    }
+
     static {
         for (int i = 0; i < 32; i++) {
             for (int j = 0; j < 32; j++) {
                 float f2 = j - 16;
                 float f3 = i - 16;
-                float f4 = MathHelper.sqrt_float(f2 * f2 + f3 * f3);
+                float f4 = Math.max(1.0E-4F, MathHelper.sqrt_float(f2 * f2 + f3 * f3));
                 RAIN_X_COORDS[i << 5 | j] = -f3 / f4;
                 RAIN_Y_COORDS[i << 5 | j] = f2 / f4;
             }

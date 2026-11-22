@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 54 test suites / 238 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 55 test suites / 239 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -178,6 +178,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B83:** footstep loaders catch runtime parse failures, skip empty acoustic streams, and log malformed JSON through `ModLog` instead of a bare `printStackTrace`.
 - **B84:** the `nextStepDistance` force is written only when it actually changes.
 - Added `ClientEffectHandlerTest`.
+
+**Batch 24 — rain coordinates and MathStuff accuracy (239 tests green)**
+
+- **B11:** the rain/snow centre column no longer divides by zero; its coordinates are finite and unit-tested.
+- **B89 (partial):** double `sin`/`cos`/`tan` delegate to the JDK instead of truncating to the float table; `log` is the JDK implementation. Integer/long `abs` use `< 0`; the `MIN_VALUE` overflow case remains.
+- Removed the now-unused `RAD_TO_INDEX`/`DEG_*`/`COS_TO_SIN`/`RAD_TO_DEG`/`DEG_TO_RAD` constants.
+- Added `StormRendererCoordinatesTest`; `MathStuffTest` now pins exact double trig/log.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17, B64, B73) and the optional per-effect HUD text cache (P9).
 
@@ -457,7 +464,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B8 | **M** | `client/weather/Weather.java:25,111-131` | `intensity`/`intensityLevel`/texture statics were mutated from the packet handler (Netty) while the render thread read them. **Fixed in batch 3:** `PacketRainIntensity` schedules on the client thread. |
 | B9 | **M** | `client/weather/StormRenderer.java:90-100` | 441 columns × `getBiomeGenForCoords` + temperature + precipitation + light per frame; no cache. Share a 20-tick column cache with `StormSplashRenderer`. |
 | B10 | **M** | `client/weather/StormSplashRenderer.java:100-160` | Up to 100 attempts/frame, each with world lookups; no column cache; `new Color` per column. |
-| B11 | **L** | `client/weather/StormRenderer.java:247-257` | `RAIN_X_COORDS/RAIN_Y_COORDS` divide by zero at the centre column (i=j=16, NaN vertices). Vanilla has the same quirk, but the copied code could clamp to a minimum radius. |
+| B11 | **L** | `client/weather/StormRenderer.java:247-257` | `RAIN_X_COORDS/RAIN_Y_COORDS` divided by zero at the centre column (NaN vertices). **Fixed in batch 24:** minimum radius clamp and a finite-centre test. |
 
 ### 3.2 Fog
 
@@ -575,7 +582,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 |---|---|---|---|
 | B87 | **H** | `compat/BlockPos.java:145-220` | No `equals`/`hashCode`; the box iterators compared with `equals` and never terminated; `MutableBlockPos.getImmutable()` copied the base class's private fields (always 0). **Fixed in batch 11:** coordinate `equals`/`hashCode`, getter-based copy construction, and tests for both box iterators and mutable immutability. |
 | B88 | **H** | `util/Color.java:222-250` | `ImmutableColor` overrode `scale`, `mix` and `adjust` but not `add`, `blend`, or `scale(r,g,b)`, so `Color.RED.add(...)` could mutate a shared static constant. `Color` had `equals` but no `hashCode`. **Fixed in batch 11:** every mutator is rejected and the hash contract is tested. |
-| B89 | **M** | `util/MathStuff.java:139-144` | `sqrt(double)` returned `(float) Math.sqrt(value)`; `sin/cos(double)` truncate to float; `log` is an approximation; `abs(MIN_VALUE)` overflows; several constants are unused. **Partially fixed in batches 13+17:** `sqrt(double)` preserves double precision; integer/long `abs` use `< 0`. The double trig/log approximations and `MIN_VALUE` overflow remain open. |
+| B89 | **M** | `util/MathStuff.java:139-144` | `sqrt(double)` returned `(float) Math.sqrt(value)`; `sin/cos(double)` truncate to float; `log` is an approximation; `abs(MIN_VALUE)` overflows; several constants are unused. **Partially fixed in batches 13+17+24:** `sqrt(double)` preserves double precision, double trig/log use the JDK, and integer/long `abs` use `< 0`. The `MIN_VALUE` overflow remains. |
 | B90 | **M** | `data/DimensionEffectData.java:30-32,88-95` | `NBT` inner classes and `MIN_INTENSITY`/`MAX_INTENSITY` were unused; `FORMATTER` is not thread-safe. **Partially fixed in batch 19:** dead NBT/constants removed; the static formatter remains. |
 | B91 | **M** | `data/AuroraData.java:59-67` | No `hashCode` (see B20). `equals` ignores seed/color/preset, so `HashSet` dedupe by column would drop updates; decide the intended identity and document it. |
 | B92 | **M** | `util/PlayerUtils.java:20-24,60-84` | `INSIDE_Y_ADJUST`, `RANGE`, `AREA` were unused (literals 3/3/49); `isReallyInside` only counts ceilings within 2 blocks, so a 5-block-high room is "outside". **Partially fixed in batch 20:** constants are used and open-sky/low-ceiling behavior is tested. The 2-block limitation remains. |

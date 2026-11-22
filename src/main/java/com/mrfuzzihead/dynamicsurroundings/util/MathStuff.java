@@ -6,10 +6,6 @@ public class MathStuff {
     private static final int SIN_MASK = 4095;
     private static final int SIN_COUNT = 4096;
     private static final float RAD_FULL = (float) (Math.PI * 2);
-    private static final float RAD_TO_INDEX = 651.8986F;
-    private static final float DEG_FULL = 360.0F;
-    private static final float DEG_TO_INDEX = 11.377778F;
-    private static final float COS_TO_SIN = (float) (Math.PI / 2);
     private static final float[] SIN_TABLE = new float[4096];
     private static final int ATAN2_BITS = 7;
     private static final int ATAN2_BITS2 = 14;
@@ -18,8 +14,6 @@ public class MathStuff {
     private static final int ATAN2_DIM = (int) Math.sqrt(16384.0);
     private static final float ATAN2_DIM_MINUS_1 = ATAN2_DIM - 1;
     private static final float[] ATAN2_TABLE = new float[16384];
-    private static final float RAD_TO_DEG = (float) (180.0 / Math.PI);
-    private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
     public static final float PI_F = (float) Math.PI;
     public static final float E_F = (float) Math.E;
 
@@ -36,17 +30,15 @@ public class MathStuff {
     }
 
     public static final double sin(double rad) {
-        float tmp = (float) rad;
-        return SIN_TABLE[(int) (tmp * 651.8986F) & 4095];
+        return Math.sin(rad);
     }
 
     public static final double cos(double rad) {
-        float tmp = (float) rad;
-        return SIN_TABLE[(int) ((tmp + (float) (Math.PI / 2)) * 651.8986F) & 4095];
+        return Math.cos(rad);
     }
 
     public static final double tan(double rad) {
-        return tan((float) rad);
+        return Math.tan(rad);
     }
 
     public static final float atan2(float y, float x) {
@@ -155,7 +147,7 @@ public class MathStuff {
     }
 
     public static double log(double value) {
-        return value < 0.03 ? Math.log(value) : 6.0 * (value - 1.0) / (value + 1.0 + 4.0 * Math.sqrt(value));
+        return Math.log(value);
     }
 
     public static float clamp(float num, float min, float max) {

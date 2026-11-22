@@ -34,10 +34,11 @@ public class MathStuffTest {
     }
 
     @Test
-    public void doubleOverloadsMatchTheFloatOnes() {
-        float radians = 0.75F;
-        assertEquals(MathStuff.sin(radians), MathStuff.sin((double) radians), EPSILON);
-        assertEquals(MathStuff.cos(radians), MathStuff.cos((double) radians), EPSILON);
+    public void doubleOverloadsUseTheAccurateJdkFunctions() {
+        double radians = 0.75D;
+        assertEquals(Math.sin(radians), MathStuff.sin(radians), 0.0D);
+        assertEquals(Math.cos(radians), MathStuff.cos(radians), 0.0D);
+        assertEquals(Math.tan(radians), MathStuff.tan(radians), 0.0D);
     }
 
     @Test
@@ -115,12 +116,10 @@ public class MathStuffTest {
     }
 
     @Test
-    public void logUsesExactMathsOnlyForSmallInputs() {
-        // Below the 0.03 cut-over the JDK implementation is used, above it the polynomial approximation.
-        assertEquals(Math.log(0.01D), MathStuff.log(0.01D), 1.0e-6);
-        assertEquals(Math.log(2.0D), MathStuff.log(2.0D), 1.0e-3);
-        // The polynomial's relative error grows away from 1.0; it is ~0.8% at 10.
-        assertEquals(Math.log(10.0D), MathStuff.log(10.0D), 0.02);
+    public void logUsesTheJdkImplementation() {
+        assertEquals(Math.log(0.01D), MathStuff.log(0.01D), 0.0D);
+        assertEquals(Math.log(2.0D), MathStuff.log(2.0D), 0.0D);
+        assertEquals(Math.log(10.0D), MathStuff.log(10.0D), 0.0D);
     }
 
     @Test
