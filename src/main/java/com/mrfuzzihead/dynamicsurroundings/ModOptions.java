@@ -148,13 +148,21 @@ public final class ModOptions {
     public static final String CONFIG_MULTIPLE_BANDS = "Multiple Bands";
     public static final String CONFIG_AURORA_ANIMATE = "Animate";
     public static final String CONFIG_AURORA_SPAWN_OFFSET = "Spawn Offset";
+    public static final String CONFIG_AURORA_MAX_COUNT = "Max Auroras";
+    public static final String CONFIG_AURORA_SHADERS = "Render With Shaders";
+    public static final String CONFIG_AURORA_ONLY_NORTH = "Only When Looking North";
+    public static final String CONFIG_AURORA_DEBUG = "Debug Wireframe";
     private static final List<String> auroraSort = Arrays.asList(
         "Enabled",
         "Animate",
         "Multiple Bands",
         "Height Player Relative",
         "Player Fixed Height",
-        "Spawn Offset");
+        "Spawn Offset",
+        "Max Auroras",
+        "Render With Shaders",
+        "Only When Looking North",
+        "Debug Wireframe");
     @ConfigProcessor.Parameter(category = "aurora", property = "Enabled", defaultValue = "true")
     @ConfigProcessor.Comment("Whether to enable Aurora processing on server/client")
     @ConfigProcessor.RestartRequired
@@ -176,6 +184,19 @@ public final class ModOptions {
     @ConfigProcessor.MinMaxInt(min = 0, max = 200)
     @ConfigProcessor.Comment("Number of blocks north of player location to spawn an aurora")
     public static int auroraSpawnOffset = 150;
+    @ConfigProcessor.Parameter(category = "aurora", property = "Max Auroras", defaultValue = "32")
+    @ConfigProcessor.MinMaxInt(min = 1, max = 32)
+    @ConfigProcessor.Comment("Maximum simultaneous auroras per dimension")
+    public static int auroraMaxCount = 32;
+    @ConfigProcessor.Parameter(category = "aurora", property = "Render With Shaders", defaultValue = "true")
+    @ConfigProcessor.Comment("Render the aurora when an Iris shader pipeline is active")
+    public static boolean auroraRenderWithShaders = true;
+    @ConfigProcessor.Parameter(category = "aurora", property = "Only When Looking North", defaultValue = "false")
+    @ConfigProcessor.Comment("Only draw the aurora when the player is looking north")
+    public static boolean auroraOnlyWhenLookingNorth = false;
+    @ConfigProcessor.Parameter(category = "aurora", property = "Debug Wireframe", defaultValue = "false")
+    @ConfigProcessor.Comment("Draw the aurora as a debug wireframe")
+    public static boolean auroraDebugWireframe = false;
     public static final String CATEGORY_BIOMES = "biomes";
     public static final String CONFIG_BIOME_CONFIG_FILES = "Config Files";
     public static final String CONFIG_BIOME_ALIASES = "Biome Alias";

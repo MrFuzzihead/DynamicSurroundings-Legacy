@@ -9,6 +9,7 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.data.AuroraData;
 
 public class ServerEffectHandlerTest {
@@ -35,6 +36,18 @@ public class ServerEffectHandlerTest {
         assertTrue(ServerEffectHandler.canAddAurora(0));
         assertTrue(ServerEffectHandler.canAddAurora(31));
         assertFalse(ServerEffectHandler.canAddAurora(32));
+    }
+
+    @Test
+    public void auroraCapHonoursTheConfiguredLimit() {
+        int old = ModOptions.auroraMaxCount;
+        try {
+            ModOptions.auroraMaxCount = 2;
+            assertTrue(ServerEffectHandler.canAddAurora(1));
+            assertFalse(ServerEffectHandler.canAddAurora(2));
+        } finally {
+            ModOptions.auroraMaxCount = old;
+        }
     }
 
     @Test

@@ -14,5 +14,6 @@ public class IrisPhaseBridgeTest {
         assertFalse(IrisPhaseBridge.isAvailable());
         assertNull(IrisPhaseBridge.push("CLOUDS"));
         IrisPhaseBridge.pop(null);
+        assertFalse(IrisPhaseBridge.isShaderPipelineActive());
     }
 }

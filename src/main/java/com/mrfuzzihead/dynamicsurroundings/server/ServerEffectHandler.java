@@ -76,7 +76,7 @@ public final class ServerEffectHandler {
     }
 
     static boolean canAddAurora(int size) {
-        return size < MAX_AURORAS;
+        return size < Math.min(MAX_AURORAS, ModOptions.auroraMaxCount);
     }
 
     public static boolean shouldSendRainIntensity(float current, float previous, int tick) {

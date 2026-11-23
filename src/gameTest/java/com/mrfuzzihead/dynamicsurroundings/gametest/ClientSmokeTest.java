@@ -106,6 +106,7 @@ public final class ClientSmokeTest {
             this.mc.theWorld.getWorldInfo()
                 .setRainTime(20000);
             this.mc.theWorld.setWorldTime(18000L);
+            ModOptions.auroraDebugWireframe = true;
             if (ModOptions.auroraEnable) {
                 this.smokeAurora = new Aurora(0.0F, 0.0F, 1234L, 0, 0);
             }

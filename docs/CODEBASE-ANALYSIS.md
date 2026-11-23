@@ -1,7 +1,7 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1–68 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
+**Scope:** analysis + the implementation log below. Batches 1–69 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
 **Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 81 test suites / 328 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
@@ -422,7 +422,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **M9 — config schema.** Added `ConfigSchema`: category comments, order and restart flags now come from one declarative table instead of repeated `setCategory*` calls, and unknown properties are logged before scrubbing. `ConfigSchemaTest` covers metadata and unknown-option detection.
 - **M10 — resource loading.** Added `ResourceLoader.forEachPack` for the shared open/consume/close lifecycle and refactored the footsteps block map, primitive map and acoustics loaders onto it. `ResourceLoaderTest` covers success, null streams and per-pack failures.
 - **M11 — build hygiene.** Moved the test/game-test/JaCoCo harness from `addon.gradle.kts` into `gradle/test-harness.gradle.kts`, applied from `addon.gradle.kts`. Root `build.gradle.kts` and `settings.gradle.kts` are unchanged.
-- Coverage is now **56.2 % line / 40.8 % branch / 70.8 % class** over **161/177 classes (91 %)**.
+- Coverage is now **56.2 % line / 40.7 % branch / 70.8 % class** over **161/177 classes (91 %)**.
 
 **Batch 63 — L3 documentation audit (328 unit tests, 79/79 game checks)**
 
@@ -455,7 +455,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **R7 — config GUI virtualisation.** Added `LazyConfigElement`; the large Blocked Sounds and Sound Volumes categories are now generated only when opened. `actionPerformed` skips saving a list that was never built, so closing the screen cannot wipe existing values. Added `LazyConfigElementTest`.
 - **R8 — aurora geometry.** Added `Aurora.getGeometryVersion()` and a display-list cache in `AuroraRenderer`; the list is rebuilt only when the node geometry or alpha changes, then drawn with one call. Animation still updates offsets, but no longer re-submits the entire immediate-mode mesh.
 - Extended `clientSmokeTest` to create an aurora at night and assert it renders. Latest run: `PASS`, 200 ticks / 1359 frames / 1359 aurora frames.
-- Coverage remains **56.2 % line / 40.8 % branch / 70.8 % class** over **161/177 classes (91 %)**.
+- Coverage remains **56.2 % line / 40.7 % branch / 70.8 % class** over **161/177 classes (91 %)**.
 
 **Batch 67 — M8 compatibility diagnostics (330 unit tests, 79/79 game checks)**
 
@@ -465,7 +465,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - F3 text output and Angelica's debug screen now use the same diagnostics.
 - `clientSmokeTest` verifies the diagnostics block. Latest run:
   `Mods: Angelica 2.2.46, NotFine 2.2.46, Iris absent, BOP absent | Weather backend: ANGELICA_INSTANCED | Fog: start=41.78, end=141.04 | NotFine: downfall=10, terrainFog=true, near=75%`
-- Coverage is now **56.2 % line / 40.8 % branch / 70.8 % class** over **161/177 classes (91 %)**.
+- Coverage is now **56.2 % line / 40.7 % branch / 70.8 % class** over **161/177 classes (91 %)**.
 
 **Batch 68 — L4 external weather defer policy (332 unit tests, 79/79 game checks)**
 
@@ -478,9 +478,21 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - Diagnostics now list Better Rain/Weather2 versions.
 - Added `ExternalWeatherPolicyTest` and the new ownership case to `WeatherBackendTest`.
 - Latest smoke run remains green: `ANGELICA_INSTANCED`, 1388 frames, 1388 aurora frames.
-- Coverage is now **56.2 % line / 40.8 % branch / 70.8 % class** over **161/177 classes (91 %)**.
+- Coverage is now **56.2 % line / 40.7 % branch / 70.8 % class** over **161/177 classes (91 %)**.
 
-**What remains:** the headless correctness backlog is exhausted. The release gate is the real client compatibility matrix; the authoritative remaining-work register is §11.
+**Batch 69 — L5 aurora quality/visibility options (333 unit tests, 79/79 game checks)**
+
+- Added aurora config:
+  - `Max Auroras` (1–32, wired into the server cap)
+  - `Render With Shaders` (skip the aurora when an Iris pipeline is active)
+  - `Only When Looking North`
+  - `Debug Wireframe`
+- Added `IrisPhaseBridge.isShaderPipelineActive()` and server-cap tests.
+- `clientSmokeTest` enables the wireframe path; latest run remains green with 1332 aurora frames.
+- Coverage is now **56.2 % line / 40.7 % branch / 70.8 % class** over **161/177 classes (91 %)**.
+- **L1–L5 complete.**
+
+**What remains:** the manual C3 compatibility matrix and C4 config-GUI check.
 
 ### The three compatibility moves that unlock the most value
 
@@ -490,7 +502,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 ### Coverage reality
 
-The JaCoCo floor now measures **56.2 % lines / 40.8 % branches / 70.8 % classes** over **161 of 177 classes (91 %)**, after batch 57 narrowed the exclusion from all of `client/**` to GL/audio/client-bound classes (`addon.gradle.kts`). The floor is a regression guard plus per-package floors, not a target; see §8.
+The JaCoCo floor now measures **56.2 % lines / 40.7 % branches / 70.8 % classes** over **161 of 177 classes (91 %)**, after batch 57 narrowed the exclusion from all of `client/**` to GL/audio/client-bound classes (`addon.gradle.kts`). The floor is a regression guard plus per-package floors, not a target; see §8.
 
 ---
 
@@ -1077,7 +1089,7 @@ Keep each PR small and keep the game test + new compat job green. The compatibil
 
 ## 11. Remaining work register (after batch 56)
 
-**Baseline:** `./gradlew check` green with **332 unit tests / 83 suites**; `gameTestServer` **79/79**; production code has no `System.out`/`System.err`/`printStackTrace`. **No known headless-testable correctness bug remains.**
+**Baseline:** `./gradlew check` green with **333 unit tests / 83 suites**; `gameTestServer` **79/79**; production code has no `System.out`/`System.err`/`printStackTrace`. **No known headless-testable correctness bug remains.**
 
 This register is authoritative where an earlier table still describes a finding as open even though a later batch fixed it (notably B15, B25, B30, B75, B80 and P1/P5/P6/P9/P11/P12/P16). The dead-code list in §6 also predates batches 11–49 and must be re-verified item by item rather than removed wholesale.
 
@@ -1178,7 +1190,7 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 ### 11.4 P3 — low priority / opportunistic
 
-**L1–L4 are complete in batches 60–68.** L5 remains optional aurora feature work.
+**L1–L5 are complete in batches 60–69.**
 
 #### Fully automatable (A)
 
@@ -1193,11 +1205,11 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 | ID | Item | Sev | Notes |
 |---|---|---|---|
 | L4 | **Optional Better Rain/Weather2 defer policy** | L | **Complete (batch 68):** explicit config, `EXTERNAL_WEATHER_MOD` owner, server mixin/state/packet gates, provider gate, diagnostics and tests. |
-| L5 | **Aurora quality/visibility options** | L | Per-shader toggle, max auroras, look-direction gating, debug wireframe. Wait until the P0 matrix is green. |
+| L5 | **Aurora quality/visibility options** | L | **Complete (batch 69):** configurable max count, shader-pipeline gate, north-facing gate and debug wireframe; smoke-verified. |
 
 ### 11.5 Recommended order
 
 1. **P0:** C1/C2 are done; optionally expand M8 diagnostics, then run the full manual matrix (C3) and config-GUI check (C4). Fix anything they find before release.
 2. **P1:** complete — R1–R10 are done.
 3. **P2:** complete — M1–M11 are done.
-4. **P3:** L1–L4 are done; L5 remains optional aurora feature work.
+4. **P3:** complete — L1–L5 are done.

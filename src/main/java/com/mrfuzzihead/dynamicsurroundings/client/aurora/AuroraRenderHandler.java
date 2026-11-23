@@ -38,6 +38,14 @@ public final class AuroraRenderHandler {
             return;
         }
 
+        if (!ModOptions.auroraRenderWithShaders && IrisPhaseBridge.isShaderPipelineActive()) {
+            return;
+        }
+
+        if (ModOptions.auroraOnlyWhenLookingNorth && Minecraft.getMinecraft().thePlayer.getLookVec().zCoord > -0.5D) {
+            return;
+        }
+
         Aurora aurora = AuroraEffectHandler.currentAurora;
         if (aurora != null) {
             Object phase = IrisPhaseBridge.push("CLOUDS");

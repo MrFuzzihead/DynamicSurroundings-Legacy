@@ -37,6 +37,19 @@ public final class IrisPhaseBridge {
         }
     }
 
+    public static boolean isShaderPipelineActive() {
+        if (!isAvailable()) {
+            return false;
+        }
+
+        try {
+            return IrisPhaseHook.isShaderPipelineActive();
+        } catch (LinkageError | RuntimeException e) {
+            ModLog.debug("Iris pipeline probe unavailable: %s", e.toString());
+            return false;
+        }
+    }
+
     public static void pop(Object scope) {
         if (scope == null || !isAvailable()) {
             return;

@@ -97,6 +97,11 @@ public final class AuroraRenderer {
                 cachedAlphaBits = alphaBits;
             }
             GL11.glCallList(displayList);
+            if (ModOptions.auroraDebugWireframe) {
+                GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+                GL11.glCallList(displayList);
+                GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+            }
 
             GL11.glPopMatrix();
             GL11.glPopAttrib();

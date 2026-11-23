@@ -31,6 +31,11 @@ final class IrisPhaseHook {
         return new Scope(pipeline, previous);
     }
 
+    static boolean isShaderPipelineActive() {
+        return Iris.enabled && Iris.getPipelineManager()
+            .getPipelineNullable() != null;
+    }
+
     static void pop(Object scope) {
         if (!(scope instanceof Scope)) {
             return;
