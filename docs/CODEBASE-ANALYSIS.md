@@ -372,6 +372,10 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 - Extended `ConfigProcessorTest` with annotated integer/float clamping, restart/world-restart flags, hidden options, and comma-split `String[]` defaults. Covered in `ConfigProcessorTest` (7 tests total).
 
+**Batch 56 — shipped JSON validation (280 tests green)**
+
+- Added `ShippedJsonValidationTest`: every `.json` under `assets/dynamicsurroundings` is parsed with Gson, so a broken data/resource file fails the headless build.
+
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
