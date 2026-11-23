@@ -103,11 +103,11 @@ public final class ModOptions {
     @ConfigProcessor.Comment("Enable morning fog")
     public static boolean enableMorningFog = true;
     @ConfigProcessor.Parameter(category = "fog", property = "Morning Fog Chance", defaultValue = "1")
-    @ConfigProcessor.Comment("Enable morning fog")
+    @ConfigProcessor.Comment("One-in-N chance per day to enable morning fog")
     @ConfigProcessor.MinMaxInt(min = 1, max = 10)
     public static int morningFogChance = 1;
     @ConfigProcessor.Parameter(category = "fog", property = "Weather Fog", defaultValue = "true")
-    @ConfigProcessor.Comment("Enable morning fog")
+    @ConfigProcessor.Comment("Enable rain/thunder fog")
     public static boolean enableWeatherFog = true;
     @ConfigProcessor.Parameter(category = "fog", property = "Respect External Fog", defaultValue = "true")
     @ConfigProcessor.Comment("Apply DS fog relative to the fog produced by NotFine/other mods instead of overwriting it")

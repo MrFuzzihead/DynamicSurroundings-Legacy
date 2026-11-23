@@ -120,12 +120,14 @@ public class MathStuff {
         return val < 0.0 ? -val : val;
     }
 
+    /** Saturating absolute value: {@code MIN_VALUE} becomes {@code MAX_VALUE}. */
     public static final long abs(long val) {
-        return val < 0L ? -val : val;
+        return val == Long.MIN_VALUE ? Long.MAX_VALUE : (val < 0L ? -val : val);
     }
 
+    /** Saturating absolute value: {@code MIN_VALUE} becomes {@code MAX_VALUE}. */
     public static final int abs(int val) {
-        return val < 0 ? -val : val;
+        return val == Integer.MIN_VALUE ? Integer.MAX_VALUE : (val < 0 ? -val : val);
     }
 
     public static float sqrt(float value) {

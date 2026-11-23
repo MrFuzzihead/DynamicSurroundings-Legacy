@@ -14,12 +14,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public final class Aurora {
 
-    private static final float ANGLE1 = (float) (Math.PI / 16);
     private static final float ANGLE2 = MathStuff.toRadians(12.857142F);
-    private static final int FADE_LIMIT = 1280;
-    private static final float AURORA_SPEED = 0.75F;
-    private static final float AURORA_AMPLITUDE = 18.0F;
-    private static final float AURORA_WAVELENGTH = 8.0F;
     public float posX;
     public float posZ;
     private Node[][] bands;

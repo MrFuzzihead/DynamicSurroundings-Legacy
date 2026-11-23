@@ -43,6 +43,14 @@ public class AuroraDataTest {
     }
 
     @Test
+    public void sameColumnIgnoresMutableAuroraDetails() {
+        AuroraData a = new AuroraData(0, 10, 20, 1L, 0, 0);
+        AuroraData b = new AuroraData(0, 10, 20, 999L, 5, 5);
+        assertTrue(a.sameColumn(b));
+        assertFalse(a.sameColumn(new AuroraData(0, 11, 20, 1L, 0, 0)));
+    }
+
+    @Test
     public void equalColumnsHaveEqualHashCodes() {
         AuroraData a = new AuroraData(0, 10, 20, 1L, 0, 0);
         AuroraData b = new AuroraData(0, 10, 20, 999L, 5, 5);

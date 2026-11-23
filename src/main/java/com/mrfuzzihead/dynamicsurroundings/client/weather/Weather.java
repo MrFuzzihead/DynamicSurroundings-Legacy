@@ -115,10 +115,6 @@ public enum Weather {
             level = MathHelper.clamp_float(level, 0.0F, 1.0F);
             if (intensityLevel != level) {
                 intensityLevel = level;
-                if (level > 0.0F) {
-                    level = (float) (level + 0.01);
-                }
-
                 if (intensityLevel <= NONE.level) {
                     intensity = NONE;
                 } else if (intensityLevel < CALM.level) {

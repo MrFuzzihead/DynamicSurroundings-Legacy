@@ -22,10 +22,10 @@ public class PlayerUtilsTest {
         player.posY = 64.0;
         player.posZ = 0.0;
 
-        when(world.getTopSolidOrLiquidBlock(anyInt(), anyInt())).thenReturn(100);
-        assertTrue(PlayerUtils.isReallyInside(player));
-
-        when(world.getTopSolidOrLiquidBlock(anyInt(), anyInt())).thenReturn(64);
+        when(world.canBlockSeeTheSky(anyInt(), anyInt(), anyInt())).thenReturn(true);
         assertFalse(PlayerUtils.isReallyInside(player));
+
+        when(world.canBlockSeeTheSky(anyInt(), anyInt(), anyInt())).thenReturn(false);
+        assertTrue(PlayerUtils.isReallyInside(player));
     }
 }

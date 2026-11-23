@@ -89,6 +89,8 @@ public class MathStuffTest {
         assertEquals(4, MathStuff.abs(-4));
         assertEquals(0, MathStuff.abs(0));
         assertEquals(7, MathStuff.abs(7));
+        assertEquals(Integer.MAX_VALUE, MathStuff.abs(Integer.MIN_VALUE));
+        assertEquals(Long.MAX_VALUE, MathStuff.abs(Long.MIN_VALUE));
     }
 
     @Test

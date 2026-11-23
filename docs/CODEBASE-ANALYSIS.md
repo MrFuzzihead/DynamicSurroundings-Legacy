@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 64 test suites / 273 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 64 test suites / 274 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -336,6 +336,16 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **P15 (partial):** `DimensionRegistry.getConditions` caches the built condition string by dimension, day/night, rain and season; repeated ticks reuse it. Player-condition string caching/snapshot refactor remains.
 - Added a condition-cache equality test to `DimensionRegistryTest`.
 
+**Batch 49 — dead-code and identity cleanup (274 tests green)**
+
+- **B7:** removed the dead `level += 0.01F` adjustment in `Weather.setIntensity`.
+- **B24:** removed the unused Aurora constants/literals.
+- **B62:** removed the handler-less `Module` FML-bus registration; `Module.VERSION` remains the single version source.
+- **B63:** corrected the fog config comments.
+- **B89:** integer/long `abs(MIN_VALUE)` now saturates to `MAX_VALUE` instead of returning a negative value; tested.
+- **B91:** documented column-based `AuroraData` identity and added `sameColumn`; seed/color updates no longer obscure the intended identity.
+- **B92:** `isReallyInside` now uses `World.canBlockSeeTheSky` over the survey area, so a tall roofed room counts as inside; tests updated.
+
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
@@ -610,7 +620,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B4 | **H** | `client/weather/StormRenderer.java:77` | NotFine `DOWNFALL_DISTANCE` was ignored; weather radius was `fancyGraphics ? 10 : 5`, and splashes always used 10. **Fixed in batch 1:** one effective radius from `NotFineBridge` is used by storm quads and splashes; `0` disables downfall. |
 | B5 | **H** | `client/weather/StormSplashRenderer.java:43-51` | Dispatch used `EnvironState.getDimensionId()` (0 before the first tick) instead of `mc.theWorld.provider.dimensionId`; the wrong dimension renderer could be used on the first frame. **Fixed in batch 1.** |
 | B6 | **H** | `client/weather/StormSplashRenderer.java:90-91`, `NetherSplashRenderer.java:30` | The base `getPrecipitationHeight` ignores its `range` parameter; the nether override used `EnvironState.getPlayer()` instead of the passed view entity. **Fixed in batch 15 for the nether path:** it receives the view entity; the base remains a vanilla delegate. |
-| B7 | **M** | `client/weather/Weather.java:119` | `level = (float)(level + 0.01)` is dead — the parameter is never used afterwards. Remove or use it in the threshold comparisons. |
+| B7 | **M** | `client/weather/Weather.java:119` | Dead `level += 0.01` removed. **Fixed in batch 49.** |
 | B8 | **M** | `client/weather/Weather.java:25,111-131` | `intensity`/`intensityLevel`/texture statics were mutated from the packet handler (Netty) while the render thread read them. **Fixed in batch 3:** `PacketRainIntensity` schedules on the client thread. |
 | B9 | **M** | `client/weather/StormRenderer.java:90-100` | 441 columns × biome/temperature/precipitation per frame; no cache. **Fixed in batches 37+45:** shared 20-tick `WeatherColumnCache` with cached lightmap values. |
 | B10 | **M** | `client/weather/StormSplashRenderer.java:100-160` | Up to 100 attempts/frame with repeated world lookups. **Fixed in batches 37+45:** biome/height/temperature/light values come from the shared weather cache; non-nether column colors reuse immutable white. |
@@ -637,7 +647,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B21 | **H** | `server/ServerEffectHandler.java:60-61` | `isAuroraInRange` subtracted `-auroraSpawnOffset` from a `posZ` that already contains the offset → the Z delta was doubled (`-2 * spawnOffset`). **Fixed in batch 1:** it now measures against the actual spawn target (`playerZ - offset`) and uses `MIN_AURORA_DISTANCE_SQ`. |
 | B22 | **M** | `client/AuroraEffectHandler.java:27-75` | `currentAurora` was written outside the `synchronized (auroras)` block and read by the renderer; `addAurora` could run on the Netty thread. **Fixed in batches 1+3:** `currentAurora` is `volatile`, selection is locked, and `PacketAurora` is scheduled on the client thread. |
 | B23 | **M** | `client/aurora/AuroraRenderer.java:137` | `GL11.glScaled(3.5, 25.0, 3.5)` after `tess.draw()` was a leftover; `lowY`/`lowY2` were unused. **Fixed in batch 1.** |
-| B24 | **M** | `client/aurora/Aurora.java:17-22` | `ANGLE1`, `FADE_LIMIT`, `AURORA_SPEED`, `AURORA_AMPLITUDE`, `AURORA_WAVELENGTH` unused; `cycle += 0.75F` and `18.0F`/`8.0F` literals remain. Remove or wire them. |
+| B24 | **M** | `client/aurora/Aurora.java:17-22` | Unused constants removed. **Fixed in batch 49.** |
 | B25 | **M** | §2.4 | Aurora is drawn inside `RAIN_SNOW` and is disabled with weather. |
 | B26 | **L** | `client/aurora/AuroraRenderer.java:80-146` | Immediate-mode state was restored by enabling cull/lighting/texture unconditionally rather than restoring the previous state. **Fixed in batch 1:** `glPushAttrib(GL_ALL_ATTRIB_BITS)` / `glPopAttrib`. |
 
@@ -690,8 +700,8 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B59 | **M** | `data/BiomeRegistry.java:118-146` | A miss rescaled the whole registry under `synchronized (registry)`, and aliases were cleared after initialization. **Fixed in batch 43:** copy-on-write snapshot, volatile reads, miss default entries after first init, and persistent aliases. |
 | B60 | **M** | `data/BlockRegistry.java:28-35` | `getEffects` returned the internal mutable list and `getRandomSound` allocated a candidate list per call. **Fixed in batch 25:** cached unmodifiable view and `WeightedRandom.pick` without the candidate list. |
 | B61 | **M** | `VersionCheck.java:24,30-34,40-46` | The check used a literal URL, no timeouts, a non-daemon thread, duplicated retry constants, and was enabled by default. **Fixed in batches 29+34+35:** GitHub Releases API, git-describe version source, JSON/legacy parsing, timeouts, daemon thread, named constants, configurable URL, and opt-in default. |
-| B62 | **L** | `Module.java:24-34` | `version = "1.0.6.4"`, `VERSION`, `mcmod.info` `${modVersion}`, and `VersionCheck.modVersion` are four independent version sources. Use `Tags.VERSION` once. `Module` registers itself on the FML bus but has no `@SubscribeEvent` methods. |
-| B63 | **L** | `ModOptions.java:86,89,93` | Copy-pasted comments ("Enable morning fog" for `enableWeatherFog`). Cosmetic but confusing in the GUI. |
+| B62 | **L** | `Module.java:24-34` | Version sources consolidated through `Module.VERSION`/`Tags.VERSION`; handler-less FML-bus registration removed. **Fixed in batch 49.** |
+| B63 | **L** | `ModOptions.java:86,89,93` | Copy-pasted comments corrected. **Fixed in batch 49.** |
 
 ### 3.7 Client effects, environment and HUD
 
@@ -732,10 +742,10 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 |---|---|---|---|
 | B87 | **H** | `compat/BlockPos.java:145-220` | No `equals`/`hashCode`; the box iterators compared with `equals` and never terminated; `MutableBlockPos.getImmutable()` copied the base class's private fields (always 0). **Fixed in batch 11:** coordinate `equals`/`hashCode`, getter-based copy construction, and tests for both box iterators and mutable immutability. |
 | B88 | **H** | `util/Color.java:222-250` | `ImmutableColor` overrode `scale`, `mix` and `adjust` but not `add`, `blend`, or `scale(r,g,b)`, so `Color.RED.add(...)` could mutate a shared static constant. `Color` had `equals` but no `hashCode`. **Fixed in batch 11:** every mutator is rejected and the hash contract is tested. |
-| B89 | **M** | `util/MathStuff.java:139-144` | `sqrt(double)` returned `(float) Math.sqrt(value)`; `sin/cos(double)` truncate to float; `log` is an approximation; `abs(MIN_VALUE)` overflows; several constants are unused. **Partially fixed in batches 13+17+24:** `sqrt(double)` preserves double precision, double trig/log use the JDK, and integer/long `abs` use `< 0`. The `MIN_VALUE` overflow remains. |
+| B89 | **M** | `util/MathStuff.java:139-144` | Precision and `MIN_VALUE` issues. **Fixed in batches 13+17+24+49:** sqrt/double trig/log use the JDK and `abs(MIN_VALUE)` saturates to `MAX_VALUE`. |
 | B90 | **M** | `data/DimensionEffectData.java:30-32,88-95` | `NBT` inner classes and `MIN_INTENSITY`/`MAX_INTENSITY` were unused; `FORMATTER` was not thread-safe. **Fixed in batches 19+32:** dead data removed and formatting uses `String.format`. |
-| B91 | **M** | `data/AuroraData.java:59-67` | No `hashCode` (see B20). `equals` ignores seed/color/preset, so `HashSet` dedupe by column would drop updates; decide the intended identity and document it. |
-| B92 | **M** | `util/PlayerUtils.java:20-24,60-84` | `INSIDE_Y_ADJUST`, `RANGE`, `AREA` were unused (literals 3/3/49); `isReallyInside` only counts ceilings within 2 blocks, so a 5-block-high room is "outside". **Partially fixed in batch 20:** constants are used and open-sky/low-ceiling behavior is tested. The 2-block limitation remains. |
+| B91 | **M** | `data/AuroraData.java:59-67` | Identity semantics were undocumented. **Fixed in batch 49:** column identity is documented, `hashCode` matches, and `sameColumn` is tested. |
+| B92 | **M** | `util/PlayerUtils.java:20-24,60-84` | `isReallyInside` used a 2-block ceiling heuristic. **Fixed in batches 20+49:** uses `World.canBlockSeeTheSky` over the survey area; tall roofed rooms count as inside. |
 | B93 | **M** | `VersionCheck.java:157-210` | `assert` validation was disabled in production and `compareTo` ignored alpha/beta. **Fixed in batch 29:** explicit `IllegalArgumentException`s, alpha < beta < release ordering, and parse/compare tests. |
 | B94 | **L** | `util/JsonUtils.java:40-75` | `load(InputStream)` could return `null`; `clazz.newInstance()` was deprecated. **Fixed in batches 21+32:** null stream/JSON null fallbacks and `getDeclaredConstructor().newInstance()`; tested. |
 | B95 | **L** | `ModLog.java` | `error` printed a second stack trace and did not pass the throwable to Log4j; `catching` printed twice. **Fixed in batch 19:** both delegate to Log4j with the throwable. |

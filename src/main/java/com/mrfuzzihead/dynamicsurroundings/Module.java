@@ -8,7 +8,6 @@ import org.apache.logging.log4j.LogManager;
 
 import com.mrfuzzihead.dynamicsurroundings.proxy.Proxy;
 
-import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.Mod.Instance;
@@ -62,9 +61,6 @@ public class Module {
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
-        FMLCommonHandler.instance()
-            .bus()
-            .register(this);
         dataDirectory = new File(event.getModConfigurationDirectory(), "dynamicsurroundings");
         dataDirectory.mkdirs();
         config = new Configuration(new File(dataDirectory, "dynamicsurroundings.cfg"));
