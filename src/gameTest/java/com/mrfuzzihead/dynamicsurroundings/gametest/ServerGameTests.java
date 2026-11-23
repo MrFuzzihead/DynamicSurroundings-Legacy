@@ -2,13 +2,16 @@ package com.mrfuzzihead.dynamicsurroundings.gametest;
 
 import java.lang.reflect.Method;
 
+import net.minecraft.block.Block;
 import net.minecraft.command.ICommandManager;
+import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.storage.WorldInfo;
+import net.minecraftforge.common.DimensionManager;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.Module;
@@ -16,11 +19,16 @@ import com.mrfuzzihead.dynamicsurroundings.commands.CommandRain;
 import com.mrfuzzihead.dynamicsurroundings.data.AuroraData;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectData;
+import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectDataFile;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
+import com.mrfuzzihead.dynamicsurroundings.data.config.BlockConfig;
+import com.mrfuzzihead.dynamicsurroundings.data.config.DimensionConfig;
 import com.mrfuzzihead.dynamicsurroundings.network.Network;
+import com.mrfuzzihead.dynamicsurroundings.server.ServerEffectHandler;
 import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
 
 import cpw.mods.fml.common.network.NetworkRegistry;
+import cpw.mods.fml.common.registry.GameData;
 import cpw.mods.fml.relauncher.Side;
 
 /**
@@ -54,6 +62,8 @@ public final class ServerGameTests {
         checkModIsLoaded();
         checkConfigIsLoaded();
         checkDimensionRegistry();
+        checkShippedDimensionEntries();
+        checkShippedBlockIdsResolve();
         checkBiomeRegistry();
         checkDiurnalCycle();
         checkWeatherMixinIsLive();
@@ -61,6 +71,8 @@ public final class ServerGameTests {
         checkDimensionDataIsPerWorldSavedData();
         checkRainCommand();
         checkNetworkChannel();
+        checkRainPacketDecision();
+        checkDimensionDataPersistence();
         checkAuroraNbtRoundTrip();
 
         return failures;
@@ -174,6 +186,68 @@ public final class ServerGameTests {
         check("conditions include the day/night token", conditions.contains("#day#") || conditions.contains("#night#"));
         check("conditions include the dimension name", conditions.contains("#Overworld#"));
         check("conditions include the season slot", conditions.contains("#noseason#"));
+    }
+
+    // ---------------------------------------------------------------------------------------------------------
+    // Shipped data files
+    // ---------------------------------------------------------------------------------------------------------
+
+    private static void checkShippedDimensionEntries() {
+        try {
+            DimensionConfig config = DimensionConfig.load("dimensions");
+            check("dimensions.json has entries", config != null && !config.entries.isEmpty());
+            if (config == null) return;
+
+            java.util.Set<Integer> ids = new java.util.HashSet<>();
+            int missingIdentity = 0;
+            int duplicateIds = 0;
+            int unregisteredIds = 0;
+            for (DimensionConfig.Entry entry : config.entries) {
+                if (entry.dimensionId == null && entry.name == null) {
+                    missingIdentity++;
+                }
+                if (entry.dimensionId != null) {
+                    if (!ids.add(entry.dimensionId)) {
+                        duplicateIds++;
+                    }
+                    if (!DimensionManager.isDimensionRegistered(entry.dimensionId)) {
+                        unregisteredIds++;
+                    }
+                }
+            }
+
+            check("every dimension entry has an id or name", missingIdentity == 0);
+            check("dimension ids are unique", duplicateIds == 0);
+            check("configured dimension ids are registered", unregisteredIds == 0);
+        } catch (Exception e) {
+            check("dimensions.json can be loaded: " + e, false);
+        }
+    }
+
+    private static void checkShippedBlockIdsResolve() {
+        try {
+            BlockConfig config = BlockConfig.load("blocks");
+            check("blocks.json has entries", config != null && !config.entries.isEmpty());
+            if (config == null) return;
+
+            int resolved = 0;
+            int unresolved = 0;
+            for (BlockConfig.Entry entry : config.entries) {
+                for (String blockName : entry.blocks) {
+                    Block block = (Block) GameData.getBlockRegistry()
+                        .getObject(blockName);
+                    if (block == null || block == Blocks.air) {
+                        unresolved++;
+                    } else {
+                        resolved++;
+                    }
+                }
+            }
+
+            check("every blocks.json id resolves (" + resolved + " resolved)", unresolved == 0);
+        } catch (Exception e) {
+            check("blocks.json can be loaded: " + e, false);
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -319,6 +393,17 @@ public final class ServerGameTests {
     }
 
     // ---------------------------------------------------------------------------------------------------------
+    // Rain packet decisions
+    // ---------------------------------------------------------------------------------------------------------
+
+    private static void checkRainPacketDecision() {
+        check("the first rain packet is sent", ServerEffectHandler.shouldSendRainIntensity(0.5F, Float.NaN, 1));
+        check("a changed rain intensity is sent", ServerEffectHandler.shouldSendRainIntensity(0.5F, 0.4F, 1));
+        check("an unchanged rain intensity is suppressed", !ServerEffectHandler.shouldSendRainIntensity(0.5F, 0.5F, 1));
+        check("the rain keepalive is sent", ServerEffectHandler.shouldSendRainIntensity(0.5F, 0.5F, 40));
+    }
+
+    // ---------------------------------------------------------------------------------------------------------
     // Saved data
     // ---------------------------------------------------------------------------------------------------------
 
@@ -337,6 +422,41 @@ public final class ServerGameTests {
             DimensionEffectData netherData = DimensionEffectData.get(nether);
             check("the nether has its own data", netherData != first);
             check("the nether data has the nether id", netherData.getDimensionId() == -1);
+        }
+    }
+
+    private static void checkDimensionDataPersistence() {
+        WorldServer world = overworld();
+        if (world == null) return;
+
+        DimensionEffectData data = DimensionEffectData.get(world);
+        float oldIntensity = data.getRainIntensity();
+        float oldMin = data.getMinRainIntensity();
+        float oldMax = data.getMaxRainIntensity();
+
+        try {
+            data.setMinRainIntensity(0.2F);
+            data.setMaxRainIntensity(0.8F);
+            data.setRainIntensity(0.42F);
+
+            DimensionEffectDataFile file = (DimensionEffectDataFile) world
+                .loadItemData(DimensionEffectDataFile.class, "dynamicsurroundings");
+            check("the saved data file is attached to the world", file != null);
+            if (file == null) return;
+
+            NBTTagCompound nbt = new NBTTagCompound();
+            file.writeToNBT(nbt);
+            DimensionEffectDataFile restoredFile = new DimensionEffectDataFile();
+            restoredFile.readFromNBT(nbt);
+            DimensionEffectData restored = restoredFile.getData(0);
+
+            check("the rain intensity survives save/reload", restored.getRainIntensity() == 0.42F);
+            check("the rain window survives save/reload", restored.getMinRainIntensity() == 0.2F);
+            check("the rain ceiling survives save/reload", restored.getMaxRainIntensity() == 0.8F);
+        } finally {
+            data.setMinRainIntensity(oldMin);
+            data.setMaxRainIntensity(oldMax);
+            data.setRainIntensity(oldIntensity);
         }
     }
 

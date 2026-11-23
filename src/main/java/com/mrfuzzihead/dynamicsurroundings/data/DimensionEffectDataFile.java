@@ -46,7 +46,7 @@ public final class DimensionEffectDataFile extends WorldSavedData {
         WORLD_CACHE.remove(world);
     }
 
-    private DimensionEffectData getData(int dimensionId) {
+    public DimensionEffectData getData(int dimensionId) {
         DimensionEffectData data = (DimensionEffectData) this.dataList.get(dimensionId);
         if (data != null) {
             return data;

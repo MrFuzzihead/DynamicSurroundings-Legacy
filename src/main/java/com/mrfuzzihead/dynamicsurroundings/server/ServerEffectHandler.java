@@ -78,7 +78,7 @@ public final class ServerEffectHandler {
         return size < MAX_AURORAS;
     }
 
-    static boolean shouldSendRainIntensity(float current, float previous, int tick) {
+    public static boolean shouldSendRainIntensity(float current, float previous, int tick) {
         return Float.isNaN(previous) || Float.compare(current, previous) != 0 || tick % RAIN_KEEPALIVE_TICKS == 0;
     }
 
