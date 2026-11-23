@@ -368,6 +368,10 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **P15 (partial):** `EnvironState.getPlayerConditions` now builds a bitmask of all player conditions and caches the resulting string by mask + temperature category. Repeated ticks avoid rebuilding the string.
 - The broader `EnvironmentSnapshot` refactor remains.
 
+**Batch 55 — config processor coverage (279 tests green)**
+
+- Extended `ConfigProcessorTest` with annotated integer/float clamping, restart/world-restart flags, hidden options, and comma-split `String[]` defaults. Covered in `ConfigProcessorTest` (7 tests total).
+
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
