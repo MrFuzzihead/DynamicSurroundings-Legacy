@@ -100,6 +100,7 @@ public class ClientEffectHandler {
     }
 
     public static void reloadRuntime() {
+        com.mrfuzzihead.dynamicsurroundings.compat.ExternalWeatherPolicy.invalidate();
         com.mrfuzzihead.dynamicsurroundings.data.RegistryManager.reloadAll();
 
         for (IClientEffectHandler handler : effectHandlers) {

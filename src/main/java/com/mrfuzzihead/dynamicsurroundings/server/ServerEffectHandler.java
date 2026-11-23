@@ -9,6 +9,7 @@ import net.minecraftforge.event.world.WorldEvent.Unload;
 
 import com.mrfuzzihead.dynamicsurroundings.ModLog;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.compat.ExternalWeatherPolicy;
 import com.mrfuzzihead.dynamicsurroundings.data.AuroraData;
 import com.mrfuzzihead.dynamicsurroundings.data.AuroraPreset;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
@@ -56,7 +57,7 @@ public final class ServerEffectHandler {
                 this.processAuroras(event);
             }
         } else {
-            if (!ModOptions.disableWeatherEffects) {
+            if (!ModOptions.disableWeatherEffects && !ExternalWeatherPolicy.isDeferred()) {
                 World world = event.world;
                 int dimensionId = world.provider.dimensionId;
                 float sendIntensity = DimensionRegistry.hasWeather(world) ? DimensionEffectData.get(world)

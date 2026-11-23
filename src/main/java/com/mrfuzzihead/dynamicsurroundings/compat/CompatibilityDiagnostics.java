@@ -31,7 +31,11 @@ public final class CompatibilityDiagnostics {
             + ", Iris "
             + iris
             + ", BOP "
-            + Compat.version(Compat.BIOMES_O_PLENTY);
+            + Compat.version(Compat.BIOMES_O_PLENTY)
+            + ", BetterRain "
+            + Compat.version(Compat.BETTER_RAIN)
+            + ", Weather2 "
+            + Compat.version(Compat.WEATHER2);
     }
 
     public static String fogSummary() {

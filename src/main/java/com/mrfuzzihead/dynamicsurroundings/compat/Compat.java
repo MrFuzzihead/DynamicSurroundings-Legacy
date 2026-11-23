@@ -15,6 +15,8 @@ public final class Compat {
     public static final String IRIS = "iris";
     public static final String OCULUS = "oculus";
     public static final String BIOMES_O_PLENTY = "BiomesOPlenty";
+    public static final String BETTER_RAIN = "betterrain";
+    public static final String WEATHER2 = "weather2";
 
     private static volatile Boolean angelicaBopFogActive;
 
@@ -34,6 +36,14 @@ public final class Compat {
 
     public static boolean isBiomesOPlentyLoaded() {
         return isLoaded(BIOMES_O_PLENTY);
+    }
+
+    public static boolean isBetterRainLoaded() {
+        return isLoaded(BETTER_RAIN);
+    }
+
+    public static boolean isWeather2Loaded() {
+        return isLoaded(WEATHER2);
     }
 
     /** Version of a loaded mod, or {@code "absent"} when it is not present. */

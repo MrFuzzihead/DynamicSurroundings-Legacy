@@ -11,6 +11,7 @@ import com.mrfuzzihead.dynamicsurroundings.ModLog;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.weather.WeatherBackend;
 import com.mrfuzzihead.dynamicsurroundings.compat.Compat;
+import com.mrfuzzihead.dynamicsurroundings.compat.ExternalWeatherPolicy;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 
 import cpw.mods.fml.relauncher.Side;
@@ -34,7 +35,9 @@ public final class AngelicaWeatherProvider {
     private AngelicaWeatherProvider() {}
 
     public static void install(World world) {
-        if (!(world instanceof WorldClient) || !Compat.isAngelicaLoaded() || ModOptions.disableWeatherEffects) {
+        if (!(world instanceof WorldClient) || !Compat.isAngelicaLoaded()
+            || ModOptions.disableWeatherEffects
+            || ExternalWeatherPolicy.isDeferred()) {
             return;
         }
         if (!DimensionRegistry.hasWeather(world) || WeatherBackend.downfallDistance() <= 0) {

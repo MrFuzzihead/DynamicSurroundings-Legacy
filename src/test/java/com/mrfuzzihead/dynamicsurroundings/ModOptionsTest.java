@@ -99,7 +99,8 @@ public class ModOptionsTest {
     public void initTimeOptionsDeclareRestartRequired() throws Exception {
         String[] restartBound = { "auroraEnable", "enableBiomeSounds", "enableFootstepSounds", "enableJumpSound",
             "enableSwingSound", "enableCraftingSound", "enableBowPullSound", "culledSounds", "blockedSounds",
-            "potionHudEnabled", "disableWeatherEffects", "suppressPotionParticles" };
+            "potionHudEnabled", "disableWeatherEffects", "suppressPotionParticles", "deferToBetterRain",
+            "deferToWeather2" };
         for (String name : restartBound) {
             assertNotNull(
                 name + " must declare RestartRequired",

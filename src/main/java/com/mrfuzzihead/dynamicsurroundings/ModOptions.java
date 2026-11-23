@@ -20,6 +20,17 @@ import com.mrfuzzihead.dynamicsurroundings.util.ConfigSchema;
 
 public final class ModOptions {
 
+    public static final String CATEGORY_COMPATIBILITY = "compatibility";
+    public static final String CONFIG_DEFER_BETTER_RAIN = "Defer To Better Rain";
+    public static final String CONFIG_DEFER_WEATHER2 = "Defer To Weather2";
+    @ConfigProcessor.Parameter(category = "compatibility", property = "Defer To Better Rain", defaultValue = "false")
+    @ConfigProcessor.Comment("Let Better Rain own weather rendering/state instead of Dynamic Surroundings")
+    @ConfigProcessor.RestartRequired
+    public static boolean deferToBetterRain = false;
+    @ConfigProcessor.Parameter(category = "compatibility", property = "Defer To Weather2", defaultValue = "false")
+    @ConfigProcessor.Comment("Let Weather2 own weather rendering/state instead of Dynamic Surroundings")
+    @ConfigProcessor.RestartRequired
+    public static boolean deferToWeather2 = false;
     public static final String CATEGORY_LOGGING_CONTROL = "logging";
     public static final String CONFIG_ENABLE_DEBUG_LOGGING = "Enable Debug Logging";
     public static final String CONFIG_ENABLE_ONLINE_VERSION_CHECK = "Enable Online Version Check";
@@ -344,6 +355,7 @@ public final class ModOptions {
     public static float potionHudScale = 0.5F;
 
     private static final ConfigSchema SCHEMA = new ConfigSchema()
+        .category("compatibility", "Options for deferring weather ownership to another weather mod")
         .category("logging", "Defines how Dynamic Surroundings logging will behave", loggingSort.toArray(new String[0]))
         .category("rain", "Options that control rain effects in the client", rainSort.toArray(new String[0]))
         .category("general", "Miscellaneous settings", generalSort.toArray(new String[0]))

@@ -7,6 +7,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.storage.WorldInfo;
 
 import com.mrfuzzihead.dynamicsurroundings.ModLog;
+import com.mrfuzzihead.dynamicsurroundings.compat.ExternalWeatherPolicy;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectData;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectDataFile;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
@@ -34,6 +35,9 @@ public class WorldHandler {
     }
 
     public static void updateWeatherBody(World world) {
+        if (ExternalWeatherPolicy.isDeferred()) {
+            return;
+        }
         if (!world.isRemote && (!world.provider.hasNoSky || DimensionRegistry.hasWeather(world))) {
             int dimensionId = world.provider.dimensionId;
             DimensionEffectData data = DimensionEffectDataFile.get(world);

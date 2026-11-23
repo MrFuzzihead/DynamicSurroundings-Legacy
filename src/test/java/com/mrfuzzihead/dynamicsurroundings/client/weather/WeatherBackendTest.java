@@ -26,6 +26,13 @@ public class WeatherBackendTest {
     }
 
     @Test
+    public void externalWeatherModsOwnTheFrameUnlessAngelicaIsInstanced() {
+        assertEquals(Owner.EXTERNAL_WEATHER_MOD, WeatherBackend.resolve(true, true, false, false, 10, true));
+        assertEquals(Owner.EXTERNAL_WEATHER_MOD, WeatherBackend.resolve(false, false, false, false, 0, true));
+        assertEquals(Owner.ANGELICA_INSTANCED, WeatherBackend.resolve(true, true, true, false, 10, true));
+    }
+
+    @Test
     public void dynamicSurroundingsOwnsTheFrameWhenItIsTheOnlyCandidate() {
         assertEquals(Owner.DYNAMIC_SURROUNDINGS, WeatherBackend.resolve(true, true, false, false, 10));
         assertEquals(Owner.DYNAMIC_SURROUNDINGS, WeatherBackend.resolve(true, true, false, false, 15));

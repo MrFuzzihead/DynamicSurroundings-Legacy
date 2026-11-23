@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.compat.ExternalWeatherPolicy;
 import com.mrfuzzihead.dynamicsurroundings.compat.angelica.AngelicaBridge;
 import com.mrfuzzihead.dynamicsurroundings.compat.angelica.AngelicaWeatherProvider;
 import com.mrfuzzihead.dynamicsurroundings.compat.notfine.NotFineBridge;
@@ -30,6 +31,8 @@ public final class WeatherBackend {
         EXTERNAL_PROVIDER,
         /** Angelica's instanced weather renderer owns the frame. */
         ANGELICA_INSTANCED,
+        /** Better Rain or Weather2 owns the weather state and render path. */
+        EXTERNAL_WEATHER_MOD,
         /** Dynamic Surroundings' legacy renderer owns the frame. */
         DYNAMIC_SURROUNDINGS,
         /** Nothing replaced the vanilla path. */
@@ -49,8 +52,16 @@ public final class WeatherBackend {
      */
     public static Owner resolve(boolean dsEnabled, boolean hasWeather, boolean angelicaInstanced,
         boolean externalProvider, int downfallDistance) {
+        return resolve(dsEnabled, hasWeather, angelicaInstanced, externalProvider, downfallDistance, false);
+    }
+
+    public static Owner resolve(boolean dsEnabled, boolean hasWeather, boolean angelicaInstanced,
+        boolean externalProvider, int downfallDistance, boolean externalWeatherDeferred) {
         if (angelicaInstanced) {
             return Owner.ANGELICA_INSTANCED;
+        }
+        if (externalWeatherDeferred) {
+            return Owner.EXTERNAL_WEATHER_MOD;
         }
         if (externalProvider) {
             return Owner.EXTERNAL_PROVIDER;
@@ -73,7 +84,8 @@ public final class WeatherBackend {
             DimensionRegistry.hasWeather(world),
             AngelicaBridge.isInstancedWeatherEnabled(),
             externalProvider,
-            downfallDistance());
+            downfallDistance(),
+            ExternalWeatherPolicy.isDeferred());
     }
 
     public static boolean isDsOwner(WorldClient world) {
