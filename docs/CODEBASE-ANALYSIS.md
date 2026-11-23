@@ -1,8 +1,8 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 66 test suites / 276 unit tests, plus a non-shipped in-game test mod.
+**Scope:** analysis + the implementation log below. Batches 1–56 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 67 test suites / 280 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -376,7 +376,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 - Added `ShippedJsonValidationTest`: every `.json` under `assets/dynamicsurroundings` is parsed with Gson, so a broken data/resource file fails the headless build.
 
-**What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
+**What remains:** the headless correctness backlog is exhausted. The release gate is the real client compatibility matrix; the authoritative remaining-work register is §11.
 
 ### The three compatibility moves that unlock the most value
 
@@ -981,3 +981,126 @@ Keep each PR small and keep the game test + new compat job green. The compatibil
 - Angelica issue #2304 “Dynamic Surroundings disables fog settings”.
 - Forge 1.7.10 decompiled sources (`build/rfg/minecraft-src/...`): `EntityRenderer.renderRainSnow/setupFog/updateFogColor`, `World.updateWeatherBody`, `WorldProvider.resetRainAndThunder`, `EntityViewRenderEvent`.
 - This repository’s `addon.gradle.kts`, `.github/workflows/game-test.yml`, `src/test`, `src/gameTest`, and `git show HEAD~2:.../asm/PatchEntityRenderer.java` for the transformer semantics.
+
+---
+
+## 11. Remaining work register (after batch 56)
+
+**Baseline:** `./gradlew check` green with **280 unit tests / 67 suites**; `gameTestServer` **65/65**; production code has no `System.out`/`System.err`/`printStackTrace`. **No known headless-testable correctness bug remains.**
+
+This register is authoritative where an earlier table still describes a finding as open even though a later batch fixed it (notably B15, B25, B30, B75, B80 and P1/P5/P6/P9/P11/P12/P16). The dead-code list in §6 also predates batches 11–49 and must be re-verified item by item rather than removed wholesale.
+
+**Priority:** **P0** = release blocker; **P1** = should land before release if possible; **P2** = schedule after release; **P3** = opportunistic/cleanup.
+**Severity:** **C**ritical / **H**igh / **M**edium / **L**ow, as defined in §3.
+**Automation:**
+- **A — headless:** unit/static/golden/bytecode tests or a normal `check` run; no game launch.
+- **B — scriptable client/game harness:** needs a client or dedicated server launch, but assertions are mechanical (log, GL error, owner, packet, saved data).
+- **C — manual/visual:** needs a human to inspect fog, aurora, shaders, or UI feel; screenshots/logs can support but not replace it.
+- **D — design/refactor:** no direct behavioural oracle; acceptance is review, compile, existing tests, and targeted benchmarks.
+
+### 11.1 P0 — release blockers
+
+No P0 item is fully headless: the remaining release risk is integration behaviour, not a known unit-level defect.
+
+#### Needs a client/game harness (B)
+
+| ID | Item | Sev | Notes |
+|---|---|---|---|
+| C1 | **Client smoke harness** | H | Launch a flat world, force rain/night, run ~200 frames, assert no `glGetError`, no exception/Mixin error in `latest.log`, and the expected `WeatherBackend.Owner`. This is the automation half of the matrix and should be a separate CI job. |
+| C2 | **Automate the ownership/fog assertions** | H | In the smoke harness, assert DS is not cancelling when Angelica owns weather, and read effective `GL_FOG_START/END` when NotFine near=1 % / `TERRAIN_FOG=false`. |
+
+#### Manual/visual (C)
+
+| ID | Item | Sev | Notes |
+|---|---|---|---|
+| C3 | **Real compatibility matrix** | H | The only remaining release gate: Angelica instanced weather **on/off**, NotFine near fog **1 %** and terrain fog off, an Iris shader pack (aurora + rain + text pop-offs), BOP + Angelica fog, and both mixin orders. Compare against vanilla/Angelica screenshots and logs. |
+| C4 | **Config GUI behaviour after save** | M | Verify B54's runtime reload actually refreshes biome/block/dimension/sound/fog without a world reload, and that restart-bound options are clearly marked. Static-final sound tables and handler registration still require a restart. |
+
+### 11.2 P1 — high priority
+
+#### Fully automatable (A)
+
+| ID | Item | Sev | Notes |
+|---|---|---|---|
+| R1 | **Fix the coverage metric** | M | §8.1: narrow the `client/**` exclusion to GL/audio-bound classes, or move pure logic to `logic/`; add per-package floors. Current floor covers only ~36 % of classes. |
+| R2 | **Guard the game-test report** | M | §8.1: fail `check` when `gameTest.exec` exists but the JaCoCo XML has no counters. Prevents a silently empty in-game coverage report. |
+| R3 | **Remaining pure/client-logic tests** | M | `Aurora`/`Node` geometry (node count/length/symmetry/fade), `Weather` state machine (thresholds/`VANILLA`/texture/volume), `PFReaderH` cadence, `PlayerSound`/`SpotSound`, and `ProbabilityWeightsAcoustic` distribution. Extract math where needed. |
+| R4 | **ForgeDictionary cache (P18)** | L | Cache discovered `IResourcePack`s and reload on demand instead of up to 300 probes per reload. Can be tested with fake resource packs. |
+| R5 | **P15 residual regex work** | L | Conditions are now cached (batch 54), but biome matching still runs regexes per biome. Precompute per-biome match sets or tokenize once. |
+
+#### Needs a client/game harness (B)
+
+| ID | Item | Sev | Notes |
+|---|---|---|---|
+| R6 | **Game-test additions** | M | `blocks.json` block IDs resolve at runtime, `dimensions.json` keys are valid, packet send-on-change/join, and persistence across save/reload. Some overlap with existing tests; add only the missing runtime checks. |
+
+#### Manual/visual (C)
+
+| ID | Item | Sev | Notes |
+|---|---|---|---|
+| R7 | **Config GUI virtualisation (P10)** | M | Opening the GUI still builds ~570 Boolean + ~570 Integer properties. Lazy-load sound lists or move per-sound volume to a searchable sub-screen. Needs UI/perf judgement. |
+| R8 | **Aurora template + VBO (P13/P14)** | M | Precompute the band template per seed, animate only offsets, and replace immediate-mode draws with a small rebuilt-on-change buffer. Verify visually under Iris and with `auroraAnimate` off. |
+
+#### Design/refactor (D)
+
+| ID | Item | Sev | Notes |
+|---|---|---|---|
+| R9 | **`EnvironmentSnapshot` refactor (B69)** | M | Replace the static mutable `EnvironState` with one immutable per-tick snapshot passed to fog/weather/sound/block effects. The pure snapshot can be unit-tested; integration needs a client pass. |
+| R10 | **Finish B54's runtime contract** | M | Either make the remaining restart-bound options reloadable (static-final sound tables, handler registration) or surface an explicit restart-required message/test. Current state is documented but inconsistent for users. |
+
+### 11.3 P2 — medium priority
+
+#### Fully automatable (A)
+
+| ID | Item | Sev | Notes |
+|---|---|---|---|
+| M1 | **Mixin hardening (§2.9/#10)** | L | Move `Mixins`/`EarlyMixinsLoader` out of the `mixins` package or add a test that every non-`@Mixin` class there is in `@TransformerExclusions`; audit injected fields for `@Unique`. Weather `order=900` is already in place. |
+| M2 | **Rename clashing classes (#6)** | L | `client.sound.SoundManager` vs Minecraft's, `util.Color` vs `java.awt.Color`. Mechanical but wide; compile + tests are sufficient. |
+| M3 | **P4 optional rolling block sampling** | L | Sample 1/2 or 1/4 of the volume per tick on a rolling schedule if profiling still shows block-effect cost. Pure scheduling logic is testable. |
+| M4 | **Dead-code/assets sweep (§6)** | L | Re-verify the stale §6 list; remove the unreferenced ogg files, the empty `variator.json` loader path, duplicate `Color` constants, `WailaHandler`'s implicit singleton, and `RenderWeather.register`'s public static-init-only path. |
+| M5 | **Golden/schema data tests** | L | Add duplicate-key checks for shipped JSON and a runtime block-ID resolution test. JSON syntax and sound-reference checks already exist. |
+| M6 | **Property-based loops** | L | Add seeded loops for `MathStuff` vs `Math`, `Color` round trips, `BlockPos` serialization, and `SoftwareVersion` ordering. Existing example-based tests are already strong. |
+
+#### Needs a client/game harness (B)
+
+| ID | Item | Sev | Notes |
+|---|---|---|---|
+| M7 | **Registry lifecycle abstraction (#7)** | M | A shared `Reloadable`/`RegistryManager` for biome/block/sound/dimension. `reloadRuntime()` and `PacketReload` already cover the behaviour; this is the structure that removes the four copies. |
+
+#### Manual/visual (C)
+
+| ID | Item | Sev | Notes |
+|---|---|---|---|
+| M8 | **Compatibility diagnostics expansion** | L | Show detected mod versions, effective fog start/end, NotFine settings, and backend owner in one place (debug screen already has the owner/dimension/biome/weather subset). Useful for future reports, not a blocker. |
+
+#### Design/refactor (D)
+
+| ID | Item | Sev | Notes |
+|---|---|---|---|
+| M9 | **Config schema (#8)** | M | Replace the 422-line `ModOptions` with an annotated schema per module, generated categories/flags, and an unknown-option report. `ConfigProcessor` remains the compatibility bridge. |
+| M10 | **ResourceLoader consolidation (#9)** | M | One strict JSON/resource loader with aggregated errors and a reload lifecycle; the footsteps engine still has four near-identical try/catch/close blocks. |
+| M11 | **Build hygiene (#14)** | L | Move the test/game-test/JaCoCo setup out of `addon.gradle.kts` into a small convention plugin, mainly to simplify the compat CI job. |
+
+### 11.4 P3 — low priority / opportunistic
+
+#### Fully automatable (A)
+
+| ID | Item | Sev | Notes |
+|---|---|---|---|
+| L1 | **Unused asset cleanup** | L | Delete or wire the six unreferenced ogg files (`ambient/steve/bowpull2-4`, `ambient/underground/rockfall1-3`) and decide whether `variator.json` should exist. |
+| L2 | **Small dead-code removals** | L | Duplicate `Color` constants, `RenderWeather.register` visibility, `WailaHandler` singleton registration, and any §6 entries that survive re-verification. |
+| L3 | **Comment/doc drift** | L | Several §3/§4/§6 rows are historical; mark fixed rows consistently so the next audit does not re-open closed work. |
+
+#### Design/refactor (D)
+
+| ID | Item | Sev | Notes |
+|---|---|---|---|
+| L4 | **Optional Better Rain/Weather2 defer policy** | L | `WeatherBackend` makes a "defer to another weather mod" owner feasible, but this is a feature, not a stability fix. |
+| L5 | **Aurora quality/visibility options** | L | Per-shader toggle, max auroras, look-direction gating, debug wireframe. Wait until the P0 matrix is green. |
+
+### 11.5 Recommended order
+
+1. **P0:** build the client smoke harness (C1/C2), then run the full manual matrix (C3). Fix anything it finds before release.
+2. **P1:** land the coverage-metric guard and remaining pure tests (R1–R3), then the GUI/aurora performance work (R7/R8) and `EnvironmentSnapshot` (R9).
+3. **P2:** registry/config/resource-loader structure (M7/M9/M10), then dead-code and golden-data cleanup (M4/M5).
+4. **P3:** opportunistic cleanup and feature work (L1–L5).
