@@ -5,12 +5,18 @@
 
 import java.math.BigDecimal
 
+import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.JavaExec
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
@@ -66,6 +72,29 @@ abstract class JacocoAgentArgumentProvider : CommandLineArgumentProvider {
     }
 }
 
+/** Fails a game-test run when the JaCoCo execution data produced an empty report. */
+abstract class VerifyGameTestReport : DefaultTask() {
+
+    @get:InputFile
+    @get:Optional
+    abstract val executionData: RegularFileProperty
+
+    @get:InputFile
+    @get:Optional
+    abstract val reportXml: RegularFileProperty
+
+    @TaskAction
+    fun verify() {
+        if (!executionData.get().asFile.exists()) {
+            return
+        }
+        val xml = reportXml.get().asFile
+        if (!xml.exists() || !xml.readText().contains("<counter")) {
+            throw GradleException("gameTest.exec exists but jacocoGameTestReport.xml has no counters")
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------------------------------------
 // Unit tests + coverage
 // ---------------------------------------------------------------------------------------------------------
@@ -110,11 +139,32 @@ configurations.named("testRuntimeClasspath") {
 val jacocoExecFiles = project.files(project.layout.buildDirectory.file("jacoco/test.exec"))
 
 fun jacocoClassDirs() = project.files(mainSourceSet.output.classesDirs).asFileTree.matching {
-    // The generated version holder and the client-side rendering/audio code are not meaningfully unit-testable
-    // headless; measuring them would only dilute the number.
+    // Exclude only the classes that need a GL context, an audio device, or a running client. Pure client-side
+    // logic (fog math, weather state, aurora geometry, sound values, footstep maps) stays in the denominator.
     exclude(
         "com/mrfuzzihead/dynamicsurroundings/Tags.class",
-        "com/mrfuzzihead/dynamicsurroundings/client/**"
+        "com/mrfuzzihead/dynamicsurroundings/client/**/*Renderer*",
+        "com/mrfuzzihead/dynamicsurroundings/client/**/*Handler*",
+        "com/mrfuzzihead/dynamicsurroundings/client/gui/**",
+        "com/mrfuzzihead/dynamicsurroundings/client/hud/**",
+        "com/mrfuzzihead/dynamicsurroundings/client/waila/**",
+        "com/mrfuzzihead/dynamicsurroundings/client/fx/particle/**",
+        "com/mrfuzzihead/dynamicsurroundings/client/sound/cache/**",
+        "com/mrfuzzihead/dynamicsurroundings/client/sound/SoundManager*",
+        "com/mrfuzzihead/dynamicsurroundings/client/fog/BiomeFogRangeCalculator*",
+        "com/mrfuzzihead/dynamicsurroundings/client/fog/BiomeFogColorCalculator*",
+        "com/mrfuzzihead/dynamicsurroundings/client/footsteps/Footsteps*",
+        "com/mrfuzzihead/dynamicsurroundings/client/footsteps/game/system/PFResourcePackDealer*",
+        "com/mrfuzzihead/dynamicsurroundings/client/footsteps/game/system/PFIsolator*",
+        "com/mrfuzzihead/dynamicsurroundings/client/footsteps/game/system/Association*",
+        "com/mrfuzzihead/dynamicsurroundings/client/footsteps/game/system/UserConfigSoundPlayerWrapper*",
+        "com/mrfuzzihead/dynamicsurroundings/client/footsteps/game/user/**",
+        "com/mrfuzzihead/dynamicsurroundings/client/footsteps/engine/implem/AcousticsLibrary*",
+        "com/mrfuzzihead/dynamicsurroundings/client/footsteps/engine/implem/BasicAcoustic*",
+        "com/mrfuzzihead/dynamicsurroundings/client/footsteps/engine/implem/ConfigOptions*",
+        "com/mrfuzzihead/dynamicsurroundings/client/footsteps/engine/implem/DelayedAcoustic*",
+        "com/mrfuzzihead/dynamicsurroundings/client/footsteps/engine/implem/EventSelectorAcoustics*",
+        "com/mrfuzzihead/dynamicsurroundings/client/footsteps/engine/implem/SimultaneousAcoustic*"
     )
 }
 
@@ -148,15 +198,156 @@ tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
             limit {
                 counter = "LINE"
                 value = "COVEREDRATIO"
-                // A regression guard at the current baseline, not a target. The suite currently covers ~44.7% of
-                // the measurable lines and ~27.7% of the branches; the client-side rendering and audio code is
-                // excluded above because it needs a GL context to be meaningful.
-                minimum = BigDecimal("0.40")
+                // Global regression guard. The denominator now includes the testable client logic; only GL/audio
+                // bound renderers, handlers, the config GUI and the biome grid scans are excluded above.
+                minimum = BigDecimal("0.50")
             }
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
-                minimum = BigDecimal("0.24")
+                minimum = BigDecimal("0.35")
+            }
+        }
+
+        // Per-package floors stop a well-covered package from hiding a regression in another one.
+        rule {
+            element = "PACKAGE"
+            includes = listOf("com.mrfuzzihead.dynamicsurroundings.util.*")
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.85")
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.70")
+            }
+        }
+        rule {
+            element = "PACKAGE"
+            includes = listOf("com.mrfuzzihead.dynamicsurroundings.data.*")
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.50")
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.28")
+            }
+        }
+        rule {
+            element = "PACKAGE"
+            includes = listOf("com.mrfuzzihead.dynamicsurroundings.client.weather.*")
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.70")
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.55")
+            }
+        }
+        rule {
+            element = "PACKAGE"
+            includes = listOf("com.mrfuzzihead.dynamicsurroundings.client.aurora.*")
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.90")
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.80")
+            }
+        }
+        rule {
+            element = "PACKAGE"
+            includes = listOf("com.mrfuzzihead.dynamicsurroundings.client.sound.*")
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.65")
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.45")
+            }
+        }
+        rule {
+            element = "PACKAGE"
+            includes = listOf("com.mrfuzzihead.dynamicsurroundings.client.fog.*")
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.65")
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.48")
+            }
+        }
+        rule {
+            element = "PACKAGE"
+            includes = listOf("com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system.*")
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.20")
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.15")
+            }
+        }
+        rule {
+            element = "PACKAGE"
+            includes = listOf("com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem.*")
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.25")
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.15")
+            }
+        }
+        rule {
+            element = "PACKAGE"
+            includes = listOf("com.mrfuzzihead.dynamicsurroundings.client.footsteps.parsers.*")
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.45")
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.40")
+            }
+        }
+        rule {
+            element = "PACKAGE"
+            includes = listOf("com.mrfuzzihead.dynamicsurroundings.client.footsteps.util.property.simple.*")
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.90")
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal("0.90")
             }
         }
     }
@@ -222,19 +413,13 @@ tasks.named("check").configure {
 // ---------------------------------------------------------------------------------------------------------
 // In-game coverage report
 // ---------------------------------------------------------------------------------------------------------
-// `gameTestServer` runs with the JaCoCo agent attached and writes build/jacoco/gameTest.exec. That data cannot be
-// merged into jacocoTestReport: the Forge LaunchClassLoader round-trips every class through ASM, so the on-disk class
-// files have different JaCoCo ids.
-//
-// The GTNH boot layer (RFB) already dumps each defined class under <run dir>/RFB_CLASS_DUMP/<loader>/, and those are
-// the bytes JaCoCo saw. Reporting against them gives the in-game number.
-val inGameDump = project.file(
-    "${findProperty("runServerWorkingDirectory") ?: "run/server"}/RFB_CLASS_DUMP/Launch"
-)
+// `gameTestServer` runs with the JaCoCo agent attached and writes build/jacoco/gameTest.exec. The classes in
+// build/classes/java/main are the ones the game test loaded (our own classes are not ASM-transformed by FML), so
+// they can be used directly for the report. This also avoids depending on an RFB class dump being present.
 
 tasks.register<JacocoReport>("jacocoGameTestReport") {
     group = "verification"
-    description = "Reports coverage from the in-game game test run, using the post-transform classes FML loaded"
+    description = "Reports coverage from the in-game game test run, using the compiled classes"
     val execFile = project.layout.buildDirectory.file("jacoco/gameTest.exec").get().asFile
     // No `onlyIf`: a script closure cannot be stored in the configuration cache. An empty execution-data collection
     // makes JaCoCo skip the task instead, which is the same outcome.
@@ -250,9 +435,8 @@ tasks.register<JacocoReport>("jacocoGameTestReport") {
         html.outputLocation.set(project.layout.buildDirectory.dir("reports/jacoco/gameTest/html"))
     }
 
-    // The dump carries every loader's classes; only the game's own are ours.
     classDirectories.setFrom(
-        project.files(inGameDump).asFileTree.matching {
+        project.files(mainSourceSet.output.classesDirs).asFileTree.matching {
             include("com/mrfuzzihead/dynamicsurroundings/**")
             exclude(
                 "com/mrfuzzihead/dynamicsurroundings/Tags.class",
@@ -264,9 +448,21 @@ tasks.register<JacocoReport>("jacocoGameTestReport") {
     sourceDirectories.setFrom(mainSourceSet.allJava.srcDirs)
 }
 
+val verifyGameTestReport = tasks.register<VerifyGameTestReport>("verifyGameTestReport") {
+    group = "verification"
+    description = "Fails when a game test run produced an empty JaCoCo report"
+    dependsOn(tasks.named("jacocoGameTestReport"))
+    executionData.set(project.layout.buildDirectory.file("jacoco/gameTest.exec"))
+    reportXml.set(project.layout.buildDirectory.file("reports/jacoco/gameTest/jacocoGameTestReport.xml"))
+}
+
 tasks.register("gameTestServer") {
     group = "verification"
     description = "Boots a dedicated server, runs the in-game game test mod, and exits with its result"
     dependsOn(tasks.named("runServer"))
-    finalizedBy(tasks.named("jacocoGameTestReport"))
+    finalizedBy(verifyGameTestReport)
+}
+
+tasks.named("check").configure {
+    dependsOn(verifyGameTestReport)
 }

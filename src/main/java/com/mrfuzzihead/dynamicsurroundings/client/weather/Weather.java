@@ -113,7 +113,7 @@ public enum Weather {
             setTextures();
         } else {
             level = MathHelper.clamp_float(level, 0.0F, 1.0F);
-            if (intensityLevel != level) {
+            if (intensityLevel != level || intensity == VANILLA) {
                 intensityLevel = level;
                 if (intensityLevel <= NONE.level) {
                     intensity = NONE;

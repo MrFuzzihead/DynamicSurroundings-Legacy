@@ -1,6 +1,7 @@
 package com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -68,8 +69,18 @@ public final class ForgeDictionary {
         "blockChalcedony", "blockTeslaite", "blockJade", "blockPsiGem" };
     private static final String[] marbleBlocks = new String[] { "blockQuartz", "marble", "stoneMarble", "blockMarble" };
     private static final Map<String, String[]> dictionaryMaps = new HashMap<>();
+    private static final OreLookupCache oreCache = new OreLookupCache();
 
     private ForgeDictionary() {}
+
+    /** Clears the per-ore lookup cache; call after the ore dictionary changes. */
+    public static void invalidate() {
+        oreCache.clear();
+    }
+
+    private static List<ItemStack> getOres(String oreName) {
+        return oreCache.get(oreName, name -> OreDictionary.getOres(name, false));
+    }
 
     public static void dumpOreNames() {
         ModLog.debug("**** FORGE ORE DICTIONARY NAMES ****");
@@ -86,7 +97,7 @@ public final class ForgeDictionary {
             String value = entry.getKey();
 
             for (String oreName : entry.getValue()) {
-                for (ItemStack stack : OreDictionary.getOres(oreName, false)) {
+                for (ItemStack stack : getOres(oreName)) {
                     Block block = Block.getBlockFromItem(stack.getItem());
                     if (block != null) {
                         String blockName = MCHelper.nameOf(block);

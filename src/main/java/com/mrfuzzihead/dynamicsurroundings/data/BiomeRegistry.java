@@ -214,18 +214,26 @@ public final class BiomeRegistry {
     }
 
     static final boolean isBiomeMatch(BiomeConfig.Entry entry, String biomeName) {
-        if (Pattern.matches(entry.biomeName, biomeName)) {
+        return isBiomeMatch(Pattern.compile(entry.biomeName), biomeName);
+    }
+
+    static final boolean isBiomeMatch(Pattern pattern, String biomeName) {
+        if (pattern.matcher(biomeName)
+            .matches()) {
             return true;
         } else {
             String alias = biomeAliases.get(biomeName);
-            return alias == null ? false : Pattern.matches(entry.biomeName, alias);
+            return alias == null ? false
+                : pattern.matcher(alias)
+                    .matches();
         }
     }
 
     private static void process(BiomeConfig config, TIntObjectHashMap<BiomeRegistry.Entry> map) {
         for (BiomeConfig.Entry entry : config.entries) {
+            Pattern pattern = Pattern.compile(entry.biomeName);
             for (BiomeRegistry.Entry biomeEntry : map.valueCollection()) {
-                if (isBiomeMatch(entry, resolveName(biomeEntry.biome))) {
+                if (isBiomeMatch(pattern, resolveName(biomeEntry.biome))) {
                     if (entry.hasPrecipitation != null) {
                         biomeEntry.hasPrecipitation = entry.hasPrecipitation;
                     }
