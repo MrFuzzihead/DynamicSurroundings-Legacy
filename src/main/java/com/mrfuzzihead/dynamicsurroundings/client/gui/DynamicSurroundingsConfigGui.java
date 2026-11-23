@@ -18,6 +18,7 @@ import net.minecraftforge.common.config.Property.Type;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.Module;
+import com.mrfuzzihead.dynamicsurroundings.client.ClientEffectHandler;
 import com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.SoundHandlerAccessor;
 import com.mrfuzzihead.dynamicsurroundings.util.ConfigProcessor;
@@ -92,7 +93,7 @@ public class DynamicSurroundingsConfigGui extends GuiConfig {
             this.saveSoundVolumeList();
             this.config.save();
             ConfigProcessor.process(this.config, ModOptions.class);
-            SoundRegistry.initialize();
+            ClientEffectHandler.reloadRuntime();
         }
 
         super.actionPerformed(button);

@@ -3,6 +3,7 @@ package com.mrfuzzihead.dynamicsurroundings.client;
 import javax.annotation.Nonnull;
 
 import net.minecraft.block.material.Material;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.EntityViewRenderEvent.FogColors;
@@ -126,6 +127,13 @@ public class FogEffectHandler implements IClientEffectHandler {
     public void onWorldLoad(@Nonnull Load event) {
         if (event.world.isRemote) {
             this.setupTheme(event.world);
+        }
+    }
+
+    public void reloadTheme() {
+        World world = Minecraft.getMinecraft().theWorld;
+        if (world != null) {
+            this.setupTheme(world);
         }
     }
 

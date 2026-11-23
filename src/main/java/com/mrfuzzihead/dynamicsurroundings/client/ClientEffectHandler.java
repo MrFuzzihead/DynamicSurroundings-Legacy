@@ -97,6 +97,19 @@ public class ClientEffectHandler {
         }
     }
 
+    public static void reloadRuntime() {
+        com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry.initialize();
+        com.mrfuzzihead.dynamicsurroundings.data.BlockRegistry.initialize();
+        com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry.initialize();
+        com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry.initialize();
+
+        for (IClientEffectHandler handler : effectHandlers) {
+            if (handler instanceof FogEffectHandler) {
+                ((FogEffectHandler) handler).reloadTheme();
+            }
+        }
+    }
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onWorldLoad(Load e) {
         if (e.world.isRemote) {
