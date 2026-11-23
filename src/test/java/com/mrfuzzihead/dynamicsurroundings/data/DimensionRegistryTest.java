@@ -27,4 +27,22 @@ public class DimensionRegistryTest {
 
         assertEquals(0, DimensionRegistry.getSeaLevel(world));
     }
+
+    @Test
+    public void conditionsAreCachedUntilTheContextChanges() {
+        World world = mock(World.class);
+        WorldProvider provider = mock(WorldProvider.class);
+        provider.dimensionId = 7;
+        WorldTestSupport.setProvider(world, provider);
+        when(world.getWorldInfo()).thenReturn(mock(WorldInfo.class));
+        when(provider.getDimensionName()).thenReturn("Test");
+        when(provider.getSunBrightnessFactor(1.0F)).thenReturn(0.9F);
+        when(world.getRainStrength(1.0F)).thenReturn(0.0F);
+        when(world.getWorldTime()).thenReturn(6000L);
+
+        String first = DimensionRegistry.getConditions(world);
+        String second = DimensionRegistry.getConditions(world);
+
+        assertEquals(first, second);
+    }
 }

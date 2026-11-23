@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 64 test suites / 272 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 64 test suites / 273 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -330,6 +330,11 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 - **P3:** fog caches now use a cheap centre-plus-cardinal biome signature. They reuse the cached scan while the signature is unchanged, even if the player moves within the same biome mix; the 20-tick missing-chunk cooldown remains.
 - Added `FogBiomeSignatureTest` for stable and changing mixes.
+
+**Batch 48 — dimension condition cache (273 tests green)**
+
+- **P15 (partial):** `DimensionRegistry.getConditions` caches the built condition string by dimension, day/night, rain and season; repeated ticks reuse it. Player-condition string caching/snapshot refactor remains.
+- Added a condition-cache equality test to `DimensionRegistryTest`.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 

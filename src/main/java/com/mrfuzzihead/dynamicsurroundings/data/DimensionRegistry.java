@@ -52,6 +52,11 @@ public final class DimensionRegistry {
     private static final String CONDITION_TOKEN_DAY = "day";
     private static final String CONDITION_TOKEN_NIGHT = "night";
     private static final char CONDITION_SEPARATOR = '#';
+    private static String cachedConditions;
+    private static int cachedConditionDimension = Integer.MIN_VALUE;
+    private static boolean cachedConditionDay;
+    private static boolean cachedConditionRain;
+    private static String cachedConditionSeason;
 
     public static void initialize() {
         try {
@@ -327,25 +332,35 @@ public final class DimensionRegistry {
     }
 
     public static String getConditions(World world) {
-        StringBuilder builder = new StringBuilder();
-        builder.append('#');
-        if (DiurnalUtils.isDaytime(world)) {
-            builder.append("day");
-        } else {
-            builder.append("night");
+        int dimension = world.provider.dimensionId;
+        boolean day = DiurnalUtils.isDaytime(world);
+        boolean raining = world.getRainStrength(1.0F) > 0.0F;
+        String season = getSeason(world);
+        if (dimension == cachedConditionDimension && day == cachedConditionDay
+            && raining == cachedConditionRain
+            && season.equals(cachedConditionSeason)) {
+            return cachedConditions;
         }
 
+        StringBuilder builder = new StringBuilder();
+        builder.append('#')
+            .append(day ? "day" : "night");
         builder.append('#')
             .append(world.provider.getDimensionName());
-        if (world.getRainStrength(1.0F) > 0.0F) {
+        if (raining) {
             builder.append('#')
                 .append("raining");
         }
 
         builder.append('#')
-            .append(getSeason(world));
+            .append(season);
         builder.append('#');
-        return builder.toString();
+        cachedConditionDimension = dimension;
+        cachedConditionDay = day;
+        cachedConditionRain = raining;
+        cachedConditionSeason = season;
+        cachedConditions = builder.toString();
+        return cachedConditions;
     }
 
     @Override
