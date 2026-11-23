@@ -205,92 +205,133 @@ public class EnvironStateHandler implements IClientEffectHandler {
         private static boolean inside;
         private static int tickCounter;
 
+        private static int cachedConditionMask = -1;
+        private static String cachedConditionTemperature;
+        private static String cachedPlayerConditions;
+
         private static String getPlayerConditions(EntityPlayer player) {
-            StringBuilder builder = new StringBuilder();
+            int mask = 0;
             if (isPlayerHurt()) {
-                builder.append('#')
-                    .append("hurt");
+                mask |= 1;
             }
-
             if (isPlayerHungry()) {
-                builder.append('#')
-                    .append("hungry");
+                mask |= 1 << 1;
             }
-
             if (isPlayerBurning()) {
-                builder.append('#')
-                    .append("burning");
+                mask |= 1 << 2;
             }
-
             if (isPlayerSuffocating()) {
-                builder.append('#')
-                    .append("noair");
+                mask |= 1 << 3;
             }
-
             if (isPlayerFlying()) {
-                builder.append('#')
-                    .append("flying");
+                mask |= 1 << 4;
             }
-
             if (isPlayerSprinting()) {
-                builder.append('#')
-                    .append("sprinting");
+                mask |= 1 << 5;
             }
-
             if (isPlayerInLava()) {
-                builder.append('#')
-                    .append("inlava");
+                mask |= 1 << 6;
             }
-
             if (isPlayerInvisible()) {
-                builder.append('#')
-                    .append("invisible");
+                mask |= 1 << 7;
             }
-
             if (isPlayerBlind()) {
-                builder.append('#')
-                    .append("blind");
+                mask |= 1 << 8;
             }
-
             if (isPlayerInWater()) {
-                builder.append('#')
-                    .append("inwater");
+                mask |= 1 << 9;
             }
-
             if (isFreezing()) {
-                builder.append('#')
-                    .append("freezing");
+                mask |= 1 << 10;
             }
-
             if (isFoggy()) {
-                builder.append('#')
-                    .append("fog");
+                mask |= 1 << 11;
             }
-
             if (isHumid()) {
-                builder.append('#')
-                    .append("humid");
+                mask |= 1 << 12;
             }
-
             if (isDry()) {
-                builder.append('#')
-                    .append("dry");
+                mask |= 1 << 13;
             }
-
             if (isPlayerInside()) {
-                builder.append('#')
-                    .append("inside");
+                mask |= 1 << 14;
             }
 
+            int ride = 0;
             if (isPlayerRiding()) {
-                builder.append('#');
                 if (player.ridingEntity instanceof EntityMinecart) {
-                    builder.append("ridingminecart");
+                    ride = 1;
                 } else if (player.ridingEntity instanceof EntityHorse) {
-                    builder.append("ridinghorse");
+                    ride = 2;
                 } else if (player.ridingEntity instanceof EntityBoat) {
-                    builder.append("ridingboat");
+                    ride = 3;
                 } else if (player.ridingEntity instanceof EntityPig) {
+                    ride = 4;
+                } else {
+                    ride = 5;
+                }
+            }
+
+            mask |= ride << 15;
+            if (mask == cachedConditionMask && temperatureCategory.equals(cachedConditionTemperature)) {
+                return cachedPlayerConditions;
+            }
+
+            StringBuilder builder = new StringBuilder();
+            if ((mask & 1) != 0) {
+                builder.append("#hurt");
+            }
+            if ((mask & 1 << 1) != 0) {
+                builder.append("#hungry");
+            }
+            if ((mask & 1 << 2) != 0) {
+                builder.append("#burning");
+            }
+            if ((mask & 1 << 3) != 0) {
+                builder.append("#noair");
+            }
+            if ((mask & 1 << 4) != 0) {
+                builder.append("#flying");
+            }
+            if ((mask & 1 << 5) != 0) {
+                builder.append("#sprinting");
+            }
+            if ((mask & 1 << 6) != 0) {
+                builder.append("#inlava");
+            }
+            if ((mask & 1 << 7) != 0) {
+                builder.append("#invisible");
+            }
+            if ((mask & 1 << 8) != 0) {
+                builder.append("#blind");
+            }
+            if ((mask & 1 << 9) != 0) {
+                builder.append("#inwater");
+            }
+            if ((mask & 1 << 10) != 0) {
+                builder.append("#freezing");
+            }
+            if ((mask & 1 << 11) != 0) {
+                builder.append("#fog");
+            }
+            if ((mask & 1 << 12) != 0) {
+                builder.append("#humid");
+            }
+            if ((mask & 1 << 13) != 0) {
+                builder.append("#dry");
+            }
+            if ((mask & 1 << 14) != 0) {
+                builder.append("#inside");
+            }
+            if (ride != 0) {
+                builder.append('#');
+                if (ride == 1) {
+                    builder.append("ridingminecart");
+                } else if (ride == 2) {
+                    builder.append("ridinghorse");
+                } else if (ride == 3) {
+                    builder.append("ridingboat");
+                } else if (ride == 4) {
                     builder.append("ridingpig");
                 } else {
                     builder.append("riding");
@@ -300,7 +341,10 @@ public class EnvironStateHandler implements IClientEffectHandler {
             builder.append('#')
                 .append(temperatureCategory);
             builder.append('#');
-            return builder.toString();
+            cachedConditionMask = mask;
+            cachedConditionTemperature = temperatureCategory;
+            cachedPlayerConditions = builder.toString();
+            return cachedPlayerConditions;
         }
 
         private static void tick(World world, EntityPlayer player) {

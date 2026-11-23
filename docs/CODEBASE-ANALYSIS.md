@@ -363,6 +363,11 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 - **B54 (partial):** after saving the config GUI, `ClientEffectHandler.reloadRuntime()` now rebuilds biome/block/dimension/sound registries and refreshes the fog theme. The save still happens before `super.actionPerformed`. Options that are inherently restart-bound (static final sound tables, handler registration) still need a restart.
 
+**Batch 54 — player condition cache (276 tests green)**
+
+- **P15 (partial):** `EnvironState.getPlayerConditions` now builds a bitmask of all player conditions and caches the resulting string by mask + temperature category. Repeated ticks avoid rebuilding the string.
+- The broader `EnvironmentSnapshot` refactor remains.
+
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
