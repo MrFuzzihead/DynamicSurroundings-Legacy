@@ -1060,7 +1060,7 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 ### 11.2 P1 — high priority
 
-**R1–R10 are complete in batches 57–59.** No P1 items remain.
+**R1–R6, R9 and R10 are complete in batches 57–59.** R7 and R8 remain.
 
 #### Fully automatable (A)
 
@@ -1094,7 +1094,7 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 ### 11.3 P2 — medium priority
 
-**M1–M11 are complete in batches 60–62.** No P2 items remain.
+**M1–M7 and M9–M11 are complete in batches 60–62.** M8 remains.
 
 #### Fully automatable (A)
 
@@ -1149,6 +1149,6 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 ### 11.5 Recommended order
 
 1. **P0:** build the client smoke harness (C1/C2), then run the full manual matrix (C3). Fix anything it finds before release.
-2. **P1:** complete — R1–R10 are done.
-3. **P2:** M1–M11 are done; only the optional diagnostics expansion (M8) remains.
+2. **P1:** R1–R6, R9 and R10 are done; R7 (config GUI virtualisation) and R8 (aurora template/VBO) remain.
+3. **P2:** M1–M7 and M9–M11 are done; only the optional diagnostics expansion (M8) remains.
 4. **P3:** L1–L3 are done; L4/L5 remain optional feature work.
