@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 64 test suites / 274 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 65 test suites / 275 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -349,6 +349,11 @@ This document is the working backlog for the refactor branch. It is ordered by r
 **Batch 50 — config save ordering (274 tests green)**
 
 - **B54 (partial):** the config GUI now saves the synthetic sound lists and config before calling `super.actionPerformed`, so a closing screen cannot save stale values. The broader runtime-reload/no-restart behavior remains.
+
+**Batch 51 — sound asset validation (275 tests green)**
+
+- Added `SoundAssetValidationTest`, which parses `sounds.json` and asserts every bundled `dynamicsurroundings:` variant has a matching `.ogg` resource. This catches missing/renamed audio assets headlessly.
+- This begins the golden-data portion of the §8.2 harness backlog.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
