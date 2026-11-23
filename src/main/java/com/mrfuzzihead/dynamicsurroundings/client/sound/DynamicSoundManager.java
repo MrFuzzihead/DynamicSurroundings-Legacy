@@ -37,7 +37,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 import paulscode.sound.SoundSystemConfig;
 
 @SideOnly(Side.CLIENT)
-public class SoundManager {
+public class DynamicSoundManager {
 
     private static final int AGE_THRESHOLD_TICKS = 5;
     private static final int SOUND_QUEUE_SLACK = 6;

@@ -5,8 +5,8 @@ import net.minecraft.client.particle.EntityFlameFX;
 import net.minecraft.client.particle.EntityLavaFX;
 import net.minecraft.world.World;
 
+import com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
-import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
 import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.EntityFlameFXAccessor;
 
@@ -25,7 +25,7 @@ public class EntityFireJetFX extends EntityJetFX {
 
     @Override
     public void playSound() {
-        SoundManager.playSoundAt(new BlockPos(this), FIRE, 0);
+        DynamicSoundManager.playSoundAt(new BlockPos(this), FIRE, 0);
     }
 
     @Override

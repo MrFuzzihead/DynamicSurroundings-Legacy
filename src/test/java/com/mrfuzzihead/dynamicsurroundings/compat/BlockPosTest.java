@@ -7,6 +7,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 import net.minecraft.util.EnumFacing;
@@ -46,6 +47,18 @@ public class BlockPosTest {
             assertEquals("x of " + pos.toLong(), pos.getX(), restored.getX());
             assertEquals("y of " + pos.toLong(), pos.getY(), restored.getY());
             assertEquals("z of " + pos.toLong(), pos.getZ(), restored.getZ());
+        }
+    }
+
+    @Test
+    public void longSerializationRoundTripsForRandomPositions() {
+        Random random = new Random(0xB10C9051L);
+        for (int i = 0; i < 1000; i++) {
+            BlockPos pos = new BlockPos(
+                random.nextInt(2000001) - 1000000,
+                random.nextInt(513) - 256,
+                random.nextInt(2000001) - 1000000);
+            assertEquals(pos, BlockPos.fromLong(pos.toLong()));
         }
     }
 

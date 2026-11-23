@@ -30,8 +30,8 @@ import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerUseItemEvent.Start;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
-import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
 import com.mrfuzzihead.dynamicsurroundings.client.weather.Weather;
 import com.mrfuzzihead.dynamicsurroundings.client.weather.WeatherBackend;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
@@ -81,7 +81,7 @@ public class EnvironStateHandler implements IClientEffectHandler {
     public void onJump(LivingJumpEvent event) {
         if (JUMP != null && event.entity != null && event.entity.worldObj != null) {
             if (event.entity.worldObj.isRemote && EnvironStateHandler.EnvironState.isPlayer(event.entity)) {
-                SoundManager.playSoundAtPlayer(JUMP);
+                DynamicSoundManager.playSoundAtPlayer(JUMP);
             }
         }
     }
@@ -101,7 +101,7 @@ public class EnvironStateHandler implements IClientEffectHandler {
                     }
 
                     if (sound != null) {
-                        SoundManager.playSoundAtPlayer(sound);
+                        DynamicSoundManager.playSoundAtPlayer(sound);
                     }
                 }
             }
@@ -114,7 +114,7 @@ public class EnvironStateHandler implements IClientEffectHandler {
             if (event.player.worldObj.isRemote && EnvironStateHandler.EnvironState.isPlayer(event.player)
                 && this.craftSoundThrottle < EnvironStateHandler.EnvironState.getTickCounter() - 30) {
                 this.craftSoundThrottle = EnvironStateHandler.EnvironState.getTickCounter();
-                SoundManager.playSoundAtPlayer(CRAFTING);
+                DynamicSoundManager.playSoundAtPlayer(CRAFTING);
             }
         }
     }
@@ -126,7 +126,7 @@ public class EnvironStateHandler implements IClientEffectHandler {
             && event.item != null
             && event.item.getItem() != null) {
             if (event.entityPlayer.worldObj.isRemote && event.item.getItem() instanceof ItemBow) {
-                SoundManager.playSoundAtPlayer(BOW_PULL);
+                DynamicSoundManager.playSoundAtPlayer(BOW_PULL);
             }
         }
     }

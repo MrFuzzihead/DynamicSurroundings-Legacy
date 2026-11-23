@@ -17,7 +17,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.IAtmosRenderer;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.EntityRendererAccessor;
-import com.mrfuzzihead.dynamicsurroundings.util.Color;
+import com.mrfuzzihead.dynamicsurroundings.util.RgbColor;
 import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 import cpw.mods.fml.relauncher.Side;
@@ -185,11 +185,11 @@ public class StormRenderer implements IAtmosRenderer {
                                     double deltaZ = locZ + 0.5F - entity.posZ;
                                     float dist = MathHelper.sqrt_double(deltaX * deltaX + deltaZ * deltaZ) / radius;
                                     tessellator.setBrightness((column.lightAt(world, j2) * 3 + 15728880) / 4);
-                                    Color color = Color.WHITE;
+                                    RgbColor color = RgbColor.WHITE;
                                     if (world.provider.dimensionId == -1) {
-                                        Color c = BiomeRegistry.getDustColor(biome);
+                                        RgbColor c = BiomeRegistry.getDustColor(biome);
                                         if (c != null) {
-                                            color = new Color(Color.WHITE);
+                                            color = new RgbColor(RgbColor.WHITE);
                                             color.mix(c);
                                         }
                                     }

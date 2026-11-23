@@ -23,8 +23,8 @@ import com.mrfuzzihead.dynamicsurroundings.data.compat.IBOPFog;
 import com.mrfuzzihead.dynamicsurroundings.data.config.BiomeConfig;
 import com.mrfuzzihead.dynamicsurroundings.data.config.SoundConfig;
 import com.mrfuzzihead.dynamicsurroundings.event.RegistryReloadEvent;
-import com.mrfuzzihead.dynamicsurroundings.util.Color;
 import com.mrfuzzihead.dynamicsurroundings.util.MyUtils;
+import com.mrfuzzihead.dynamicsurroundings.util.RgbColor;
 import com.mrfuzzihead.dynamicsurroundings.util.WeightedRandom;
 
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -156,11 +156,11 @@ public final class BiomeRegistry {
         return get(biome).hasFog;
     }
 
-    public static Color getDustColor(BiomeGenBase biome) {
+    public static RgbColor getDustColor(BiomeGenBase biome) {
         return get(biome).dustColor;
     }
 
-    public static Color getFogColor(BiomeGenBase biome) {
+    public static RgbColor getFogColor(BiomeGenBase biome) {
         return get(biome).fogColor;
     }
 
@@ -257,14 +257,14 @@ public final class BiomeRegistry {
                     if (entry.fogColor != null) {
                         int[] rgb = MyUtils.splitToInts(entry.fogColor, ',');
                         if (rgb.length == 3) {
-                            biomeEntry.fogColor = new Color(rgb[0], rgb[1], rgb[2]);
+                            biomeEntry.fogColor = new RgbColor(rgb[0], rgb[1], rgb[2]);
                         }
                     }
 
                     if (entry.dustColor != null) {
                         int[] rgb = MyUtils.splitToInts(entry.dustColor, ',');
                         if (rgb.length == 3) {
-                            biomeEntry.dustColor = new Color(rgb[0], rgb[1], rgb[2]);
+                            biomeEntry.dustColor = new RgbColor(rgb[0], rgb[1], rgb[2]);
                         }
                     }
 
@@ -299,8 +299,8 @@ public final class BiomeRegistry {
         public boolean hasDust;
         public boolean hasAurora;
         public boolean hasFog;
-        public Color dustColor;
-        public Color fogColor;
+        public RgbColor dustColor;
+        public RgbColor fogColor;
         public float fogDensity;
         public List<SoundEffect> sounds;
         public int spotSoundChance;
@@ -321,7 +321,7 @@ public final class BiomeRegistry {
                     int color = bopFog.getFogColor(biome);
                     if (color > 0) {
                         this.hasFog = true;
-                        this.fogColor = new Color(color);
+                        this.fogColor = new RgbColor(color);
                         this.fogDensity = bopFog.getFogDensity(biome);
                     }
                 }

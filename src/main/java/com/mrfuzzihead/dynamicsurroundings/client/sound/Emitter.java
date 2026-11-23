@@ -25,12 +25,12 @@ class Emitter {
         if (!(SoundSystemConfig.getMasterGain() <= 0.0F)) {
             if (this.activeSound == null) {
                 this.activeSound = new PlayerSound(this.effect);
-            } else if (SoundManager.isSoundPlaying(this.activeSound)) {
+            } else if (DynamicSoundManager.isSoundPlaying(this.activeSound)) {
                 return;
             }
 
             try {
-                SoundManager.playSound(this.activeSound);
+                DynamicSoundManager.playSound(this.activeSound);
             } catch (Throwable var2) {
                 ModLog.error("Unable to play sound", var2);
             }

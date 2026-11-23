@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.EntityRenderer;
 
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -26,6 +27,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.weather.WeatherBackend;
 @Mixin(EntityRenderer.class)
 public abstract class EntityRendererMixin {
 
+    @Unique
     private static final int DS_WEATHER_INJECTOR_ORDER = 900;
 
     @Inject(

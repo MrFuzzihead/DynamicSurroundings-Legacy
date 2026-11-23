@@ -3,6 +3,8 @@ package com.mrfuzzihead.dynamicsurroundings;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Random;
+
 import org.junit.Test;
 
 public class VersionCheckTest {
@@ -38,6 +40,22 @@ public class VersionCheckTest {
         assertTrue(alpha.compareTo(beta) < 0);
         assertTrue(beta.compareTo(release) < 0);
         assertTrue(release.compareTo(alpha) > 0);
+    }
+
+    @Test
+    public void numericOrderingMatchesTheVersionFields() {
+        Random random = new Random(0x5EED5EEDL);
+        for (int i = 0; i < 200; i++) {
+            int major = random.nextInt(5);
+            int minor = random.nextInt(20);
+            int revision = random.nextInt(50);
+            VersionCheck.SoftwareVersion left = new VersionCheck.SoftwareVersion(major + "." + minor + "." + revision);
+            VersionCheck.SoftwareVersion right = new VersionCheck.SoftwareVersion(
+                major + "." + (minor + 1) + "." + revision);
+            assertTrue(left.compareTo(right) < 0);
+            assertTrue(right.compareTo(left) > 0);
+            assertEquals(0, left.compareTo(new VersionCheck.SoftwareVersion(major + "." + minor + "." + revision)));
+        }
     }
 
     @Test

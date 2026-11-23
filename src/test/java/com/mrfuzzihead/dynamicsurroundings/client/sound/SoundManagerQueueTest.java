@@ -14,16 +14,16 @@ public class SoundManagerQueueTest {
 
     @After
     public void cleanup() {
-        SoundManager.clearSounds();
+        DynamicSoundManager.clearSounds();
     }
 
     @Test
     public void queueDoesNotMutateTheCallersList() {
         SoundEffect effect = new SoundEffect("dynamicsurroundings:test");
-        SoundManager.queueAmbientSounds(Collections.unmodifiableList(Arrays.asList(effect)));
+        DynamicSoundManager.queueAmbientSounds(Collections.unmodifiableList(Arrays.asList(effect)));
         assertEquals(
             1,
-            SoundManager.getSounds()
+            DynamicSoundManager.getSounds()
                 .size());
     }
 
@@ -32,17 +32,17 @@ public class SoundManagerQueueTest {
         SoundEffect quiet = new SoundEffect("dynamicsurroundings:duplicate", 0.2F, 1.0F);
         SoundEffect loud = new SoundEffect("dynamicsurroundings:duplicate", 0.8F, 1.0F);
 
-        SoundManager.queueAmbientSounds(Arrays.asList(quiet, loud));
+        DynamicSoundManager.queueAmbientSounds(Arrays.asList(quiet, loud));
 
         assertEquals(
             1,
-            SoundManager.getSounds()
+            DynamicSoundManager.getSounds()
                 .size());
     }
 
     @Test
     public void channelCapacityCountsStreamingChannels() {
-        assertTrue(SoundManager.canFitSound(24, 28, 4));
-        assertFalse(SoundManager.canFitSound(26, 28, 4));
+        assertTrue(DynamicSoundManager.canFitSound(24, 28, 4));
+        assertFalse(DynamicSoundManager.canFitSound(26, 28, 4));
     }
 }

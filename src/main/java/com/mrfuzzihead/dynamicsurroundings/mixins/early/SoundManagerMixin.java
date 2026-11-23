@@ -56,14 +56,14 @@ public abstract class SoundManagerMixin {
     private void dynamicsurroundings$getNormalizedPitch(ISound sound, SoundPoolEntry poolEntry,
         CallbackInfoReturnable<Float> cir) {
         cir.setReturnValue(
-            com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager.getNormalizedPitch(sound, poolEntry));
+            com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager.getNormalizedPitch(sound, poolEntry));
     }
 
     @Inject(method = "getNormalizedVolume", at = @At("HEAD"), cancellable = true, require = 1)
     private void dynamicsurroundings$getNormalizedVolume(ISound sound, SoundPoolEntry poolEntry, SoundCategory category,
         CallbackInfoReturnable<Float> cir) {
         cir.setReturnValue(
-            com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager
+            com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager
                 .getNormalizedVolume(sound, poolEntry, category));
     }
 

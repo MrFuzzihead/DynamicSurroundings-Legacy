@@ -29,7 +29,6 @@ public class PFResourcePackDealer {
     private final ResourceLocation acoustics = new ResourceLocation("footsteps", "acoustics.json");
     private final ResourceLocation blockmap = new ResourceLocation("footsteps", "blockmap.json");
     private final ResourceLocation primitivemap = new ResourceLocation("footsteps", "primitivemap.json");
-    private final ResourceLocation variator = new ResourceLocation("footsteps", "variator.json");
 
     public List<IResourcePack> findResourcePacks() {
         List<Entry> repo = Minecraft.getMinecraft()
@@ -73,10 +72,6 @@ public class PFResourcePackDealer {
 
     public InputStream openPrimitiveMap(IResourcePack pack) throws IOException {
         return pack.getInputStream(this.primitivemap);
-    }
-
-    public InputStream openVariator(IResourcePack pack) throws IOException {
-        return pack.getInputStream(this.variator);
     }
 
     private static class DefaultPack implements IResourcePack {

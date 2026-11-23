@@ -13,7 +13,7 @@ import net.minecraftforge.event.world.WorldEvent.Unload;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.Footsteps;
 import com.mrfuzzihead.dynamicsurroundings.client.fx.BlockEffectHandler;
-import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager;
 import com.mrfuzzihead.dynamicsurroundings.compat.angelica.AngelicaWeatherProvider;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 
@@ -93,7 +93,7 @@ public class ClientEffectHandler {
 
                     // The ambience handler is conditional, but the sound queue also receives block/step sounds from
                     // always-registered handlers. Drive it unconditionally so those sounds play with biome sounds off.
-                    SoundManager.update();
+                    DynamicSoundManager.update();
                 }
             }
         }

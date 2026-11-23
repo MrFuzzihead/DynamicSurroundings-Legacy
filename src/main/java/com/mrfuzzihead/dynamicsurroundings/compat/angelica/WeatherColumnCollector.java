@@ -12,7 +12,7 @@ import com.gtnewhorizons.angelica.api.weather.WeatherColumnSink;
 import com.mrfuzzihead.dynamicsurroundings.client.WeatherUtils;
 import com.mrfuzzihead.dynamicsurroundings.client.weather.StormRenderer;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
-import com.mrfuzzihead.dynamicsurroundings.util.Color;
+import com.mrfuzzihead.dynamicsurroundings.util.RgbColor;
 import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 import cpw.mods.fml.relauncher.Side;
@@ -104,9 +104,9 @@ final class WeatherColumnCollector {
                 float vDrift = rain ? 0.0F : RANDOM.nextFloat();
                 int scrollOffset = rain ? (x * x * 3121 + x * 45238971 ^ z * z * 418711 + z * 13761) : 0;
                 float scrollScale = rain ? 3.0F + RANDOM.nextFloat() : 1.0F;
-                Color color = new Color(1.0F, 1.0F, 1.0F);
+                RgbColor color = new RgbColor(1.0F, 1.0F, 1.0F);
                 if (world.provider.dimensionId == -1) {
-                    Color dustColor = BiomeRegistry.getDustColor(biome);
+                    RgbColor dustColor = BiomeRegistry.getDustColor(biome);
                     if (dustColor != null) {
                         color.mix(dustColor);
                     }

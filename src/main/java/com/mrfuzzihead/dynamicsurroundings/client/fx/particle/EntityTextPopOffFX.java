@@ -13,7 +13,7 @@ import net.minecraft.world.World;
 
 import org.lwjgl.opengl.GL11;
 
-import com.mrfuzzihead.dynamicsurroundings.util.Color;
+import com.mrfuzzihead.dynamicsurroundings.util.RgbColor;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -35,13 +35,13 @@ public class EntityTextPopOffFX extends EntityFX {
     protected static final float SIZE = 3.0F;
     protected static final int LIFESPAN = 12;
     private static final List<EntityTextPopOffFX> ACTIVE = new CopyOnWriteArrayList<>();
-    protected Color renderColor = Color.WHITE;
+    protected RgbColor renderColor = RgbColor.WHITE;
     protected String text;
     protected boolean shouldOnTop = false;
     protected boolean grow = true;
     protected float scale = 1.0F;
 
-    public EntityTextPopOffFX(World world, String text, Color color, float scale, double x, double y, double z,
+    public EntityTextPopOffFX(World world, String text, RgbColor color, float scale, double x, double y, double z,
         double dX, double dY, double dZ) {
         super(world, x, y, z, dX, dY, dZ);
         this.text = text;

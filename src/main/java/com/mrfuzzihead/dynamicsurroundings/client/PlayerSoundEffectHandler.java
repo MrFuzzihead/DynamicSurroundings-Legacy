@@ -18,8 +18,8 @@ import net.minecraftforge.event.entity.EntityEvent.EntityConstructing;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
-import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
 import com.mrfuzzihead.dynamicsurroundings.client.weather.Weather;
 import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
@@ -111,7 +111,7 @@ public class PlayerSoundEffectHandler implements IClientEffectHandler {
     }
 
     private static void resetSounds() {
-        SoundManager.clearSounds();
+        DynamicSoundManager.clearSounds();
         drops.clear();
         cachedConditions = null;
         cachedPlayerConditions = null;
@@ -129,19 +129,19 @@ public class PlayerSoundEffectHandler implements IClientEffectHandler {
             EnvironmentSnapshot snapshot = EnvironStateHandler.EnvironState.getSnapshot();
             BiomeGenBase playerBiome = snapshot.getPlayerBiome();
             String conditions = snapshot.getConditions();
-            SoundManager.queueAmbientSounds(getAmbientSounds(conditions, doBiomeSounds()));
+            DynamicSoundManager.queueAmbientSounds(getAmbientSounds(conditions, doBiomeSounds()));
             if (doBiomeSounds()) {
                 SoundEffect sound = BiomeRegistry
                     .getSpotSound(playerBiome, conditions, EnvironStateHandler.EnvironState.RANDOM);
                 if (sound != null) {
-                    SoundManager.playSoundAtPlayer(player, sound);
+                    DynamicSoundManager.playSoundAtPlayer(player, sound);
                 }
             }
 
             SoundEffect sound = BiomeRegistry
                 .getSpotSound(BiomeRegistry.PLAYER, conditions, EnvironStateHandler.EnvironState.RANDOM);
             if (sound != null) {
-                SoundManager.playSoundAtPlayer(player, sound);
+                DynamicSoundManager.playSoundAtPlayer(player, sound);
             }
 
             this.processWaterDrops(snapshot.getWorld());
@@ -169,12 +169,12 @@ public class PlayerSoundEffectHandler implements IClientEffectHandler {
     public void diagnostics(DiagnosticEvent.Gather event) {
         StringBuilder builder = new StringBuilder();
         builder.append("SoundSystem: ")
-            .append(SoundManager.currentSoundCount())
+            .append(DynamicSoundManager.currentSoundCount())
             .append('/')
-            .append(SoundManager.maxSoundCount());
+            .append(DynamicSoundManager.maxSoundCount());
         event.output.add(builder.toString());
 
-        for (String sound : SoundManager.getSounds()) {
+        for (String sound : DynamicSoundManager.getSounds()) {
             event.output.add(sound);
         }
     }
@@ -204,7 +204,7 @@ public class PlayerSoundEffectHandler implements IClientEffectHandler {
                         if (soundY > 0 && block.getMaterial()
                             .isSolid()) {
                             int distance = y - soundY;
-                            SoundManager.playSoundAt(
+                            DynamicSoundManager.playSoundAt(
                                 new BlockPos(x, soundY + 1, z),
                                 BiomeRegistry.WATER_DRIP,
                                 40 + distance * 2);

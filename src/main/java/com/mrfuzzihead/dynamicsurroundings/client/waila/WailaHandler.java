@@ -70,14 +70,15 @@ public final class WailaHandler implements IWailaDataProvider {
         }
     }
 
+    private static final WailaHandler INSTANCE = new WailaHandler();
+
     @Method(modid = "Waila")
     public static void callbackRegister(IWailaRegistrar register) {
         ModLog.info("Registering Waila handler...");
-        WailaHandler instance = new WailaHandler();
-        register.registerTailProvider(instance, Block.class);
+        register.registerTailProvider(INSTANCE, Block.class);
     }
 
-    public WailaHandler() {
+    private WailaHandler() {
         MinecraftForge.EVENT_BUS.register(this);
     }
 

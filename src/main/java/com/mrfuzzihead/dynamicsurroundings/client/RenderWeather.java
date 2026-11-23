@@ -16,10 +16,6 @@ public final class RenderWeather {
 
     private static final List<IAtmosRenderer> renderList = new ArrayList<>();
 
-    public static void register(IAtmosRenderer renderer) {
-        renderList.add(renderer);
-    }
-
     public static void addRainParticles(EntityRenderer theThis) {
         StormSplashRenderer.renderStormSplashes(theThis);
     }
@@ -31,6 +27,6 @@ public final class RenderWeather {
     }
 
     static {
-        register(new StormRenderer());
+        renderList.add(new StormRenderer());
     }
 }

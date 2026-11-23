@@ -3,6 +3,8 @@ package com.mrfuzzihead.dynamicsurroundings.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Random;
+
 import org.junit.Test;
 
 /**
@@ -30,6 +32,16 @@ public class MathStuffTest {
             double radians = Math.toRadians(degrees);
             assertEquals("sin(" + degrees + ")", Math.sin(radians), MathStuff.sin((float) radians), 5.0e-3);
             assertEquals("cos(" + degrees + ")", Math.cos(radians), MathStuff.cos((float) radians), 5.0e-3);
+        }
+    }
+
+    @Test
+    public void floatTrigStaysWithinToleranceForRandomAngles() {
+        Random random = new Random(0x51A7AB1EL);
+        for (int i = 0; i < 1000; i++) {
+            double radians = (random.nextDouble() - 0.5D) * Math.PI * 8.0D;
+            assertEquals(Math.sin(radians), MathStuff.sin((float) radians), 5.0e-3);
+            assertEquals(Math.cos(radians), MathStuff.cos((float) radians), 5.0e-3);
         }
     }
 

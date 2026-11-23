@@ -24,10 +24,8 @@ import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system.UserConf
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem.AcousticsManager;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem.BasicPrimitiveMap;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem.LegacyCapableBlockMap;
-import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem.NormalVariator;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IBlockMap;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IPrimitiveMap;
-import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IVariator;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.parsers.AcousticsJsonReader;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.parsers.Register;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.util.property.simple.ConfigProperty;
@@ -58,33 +56,7 @@ public class Footsteps implements IResourceManagerReloadListener, IClientEffectH
         this.reloadPrimitiveMap(repo);
         this.reloadAcoustics(repo);
         this.isolator.setSolver(new PFSolver(this.isolator));
-        this.reloadVariator(repo);
         this.isolator.setGenerator(new PFReaderH(this.isolator));
-    }
-
-    private void reloadVariator(List<IResourcePack> repo) {
-        IVariator var = new NormalVariator();
-
-        for (IResourcePack pack : repo) {
-            InputStream stream = null;
-
-            try {
-                stream = this.dealer.openVariator(pack);
-                if (stream != null) {
-                    var.loadConfig(ConfigProperty.fromStream(stream));
-                }
-            } catch (Exception var15) {
-                ModLog.debug("Unable to load variator data from pack %s", pack.getPackName());
-            } finally {
-                if (stream != null) {
-                    try {
-                        stream.close();
-                    } catch (IOException var14) {}
-                }
-            }
-        }
-
-        this.isolator.setVariator(var);
     }
 
     private void reloadBlockMap(List<IResourcePack> repo) {

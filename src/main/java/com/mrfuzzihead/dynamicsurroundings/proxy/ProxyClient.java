@@ -17,7 +17,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system.ForgeDic
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.user.GenerateBlockReport;
 import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.TextPopOffRenderer;
 import com.mrfuzzihead.dynamicsurroundings.client.hud.GuiHUDHandler;
-import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.cache.SoundCacheReloadListener;
 import com.mrfuzzihead.dynamicsurroundings.client.waila.WailaHandler;
 import com.mrfuzzihead.dynamicsurroundings.compat.angelica.AngelicaDebugEntries;
@@ -54,7 +54,7 @@ public class ProxyClient extends Proxy {
         AngelicaDebugEntries.register();
         GuiHUDHandler.initialize();
         SoundRegistry.initialize();
-        SoundManager.configureSound();
+        DynamicSoundManager.configureSound();
         ((IReloadableResourceManager) Minecraft.getMinecraft()
             .getResourceManager()).registerReloadListener(new SoundCacheReloadListener());
     }

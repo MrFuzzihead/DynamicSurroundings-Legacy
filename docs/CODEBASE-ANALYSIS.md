@@ -1,8 +1,8 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1–59 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 77 test suites / 316 unit tests, plus a non-shipped in-game test mod.
+**Scope:** analysis + the implementation log below. Batches 1–60 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 78 test suites / 322 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -378,7 +378,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 **Batch 57 — P1 fully-automatable backlog (313 tests green)**
 
-- **R1 — coverage metric fixed.** `jacocoClassDirs()` now excludes only GL/audio/client-bound classes (renderers, handlers, config GUI, HUD, WAILA, particle instancing, sound cache/manager, biome-grid fog scans) instead of all of `client/**`. The measured subset is now **154/177 classes (87 %)**, with **57.1 % line / 40.8 % branch / 70.1 % class** coverage. Global floors rose to **50 % line / 35 % branch**, plus per-package floors for `util`, `data`, `client.weather`, `client.aurora`, `client.sound`, `client.fog`, footsteps, and config properties.
+- **R1 — coverage metric fixed.** `jacocoClassDirs()` now excludes only GL/audio/client-bound classes (renderers, handlers, config GUI, HUD, WAILA, particle instancing, sound cache/manager, biome-grid fog scans) instead of all of `client/**`. The measured subset is now **155/177 classes (88 %)**, with **56.4 % line / 40.6 % branch / 70.3 % class** coverage. Global floors rose to **50 % line / 35 % branch**, plus per-package floors for `util`, `data`, `client.weather`, `client.aurora`, `client.sound`, `client.fog`, footsteps, and config properties.
 - **R2 — game-test report guard.** `jacocoGameTestReport` now reports against `build/classes/java/main` (the classes the game test actually loaded) instead of a missing RFB dump. New `verifyGameTestReport` fails `check`/`gameTestServer` when `gameTest.exec` exists but the XML has no counters.
 - **R3 — remaining pure/client-logic tests.** Added `AuroraTest`, `NodeTest`, `WeatherTest`, `PFReaderHTest`, `PlayerSoundTest`, `SpotSoundTest`, `ProbabilityWeightsAcousticTest`, and `MorningAndHazeFogTest`. The Weather test exposed **B96**: `setIntensity(0)` was a no-op while the state was `VANILLA`, so `NONE` was unreachable from a fresh state; fixed.
 - **R4 — ForgeDictionary cache.** Extracted `OreLookupCache`; repeated `ForgeDictionary.initialize` calls reuse per-ore `ItemStack` lists, with `invalidate()` for ore-dictionary changes.
@@ -398,7 +398,17 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 - **R9 — `EnvironmentSnapshot`.** Added an immutable per-tick snapshot (`EnvironmentSnapshot`) with the player/world, biome, dimension, conditions, temperature, inside/freezing/humid/dry flags, tick, ground/moving state. `ClientEffectHandler` builds it once before dispatching handlers; `EnvironState` getters now delegate to the published snapshot. Fog, block effects, ambient/player sounds, biome survey, aurora, damage effects, footsteps and Angelica diagnostics read the snapshot instead of a set of mutable static fields. Added `EnvironmentSnapshotTest`.
 - **R10 — restart contract.** Added `@RestartRequired` to `blockedSounds` (the last init-time option without it) and a `ModOptionsTest` that pins every handler/static-table option to the annotation. The config UI now consistently tells users that these options need a restart; runtime reload still handles the registry/fog options.
-- Coverage is now **57.1 % line / 40.8 % branch / 70.1 % class** over **154/177 classes**.
+- Coverage is now **56.4 % line / 40.6 % branch / 70.3 % class** over **155/177 classes**.
+
+**Batch 60 — P2 fully-automatable cleanup (322 unit tests, 79/79 game checks)**
+
+- **M1 — mixin hardening.** Added `MixinClassAuditTest`: every class in the `mixins` package must be `@Mixin` or listed in `@TransformerExclusions`, and every mixin field must be `@Unique` or `@Shadow`. Annotated the weather-injector constant `@Unique`.
+- **M2 — clashing class names.** Renamed `util.Color` → `RgbColor` (and `ImmutableColor` → `ImmutableRgbColor`), and `client.sound.SoundManager` → `DynamicSoundManager`. References, tests and mixin hooks updated; no Minecraft or `java.awt` name collision remains.
+- **M3 — rolling block samples.** `BlockEffectHandler` now samples half the configured volume per tick (`sampleCountForRange`), with a tested minimum of one sample.
+- **M4 — dead code/assets.** Removed six unreferenced ogg files, the empty `variator.json` and its loader path, duplicate `MC_BLACK`/`MC_WHITE`, the public `RenderWeather.register` entry point, and made `WailaHandler` an explicit singleton.
+- **M5 — golden/schema data tests.** Added strict duplicate-key detection for every shipped JSON file; runtime block-id resolution remains covered by R6.
+- **M6 — property loops.** Added seeded loops for `RgbColor` integer round trips, `BlockPos` long serialization, `MathStuff` trig accuracy, and `SoftwareVersion` ordering.
+- Coverage is now **56.4 % line / 40.6 % branch / 70.3 % class** over **155/177 classes (88 %)**.
 
 **What remains:** the headless correctness backlog is exhausted. The release gate is the real client compatibility matrix; the authoritative remaining-work register is §11.
 
@@ -410,7 +420,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 ### Coverage reality
 
-The JaCoCo floor now measures **57.1 % lines / 40.8 % branches / 70.1 % classes** over **154 of 177 classes (87 %)**, after batch 57 narrowed the exclusion from all of `client/**` to GL/audio/client-bound classes (`addon.gradle.kts`). The floor is a regression guard plus per-package floors, not a target; see §8.
+The JaCoCo floor now measures **56.4 % lines / 40.6 % branches / 70.3 % classes** over **155 of 177 classes (88 %)**, after batch 57 narrowed the exclusion from all of `client/**` to GL/audio/client-bound classes (`addon.gradle.kts`). The floor is a regression guard plus per-package floors, not a target; see §8.
 
 ---
 
@@ -854,16 +864,16 @@ Ordered by expected win. Each item is independent and testable.
 
 ## 5. Refactors (structure, testability, maintainability)
 
-1. **Split the per-tick environment state.** `EnvironState` is 20 static fields + 20 static predicates. Create an immutable `EnvironmentSnapshot` (dimension, biome, conditions, inside/freezing/humid/dry, riding, player refs) built once per tick and passed to fog/weather/sound/block effects. This removes hidden temporal coupling (handler registration order) and makes all consumers unit-testable.
+1. **Split the per-tick environment state.** **Done in batch 59:** immutable `EnvironmentSnapshot` built once per tick; `EnvironState` delegates to it and the fog/weather/sound/block/footstep consumers read it.
 2. **One weather backend.** `WeatherBackend` owns provider/angelica/DS/vanilla selection and exposes `renderOverlay`, `spawnSplashes`, `ownsWeather`. `RenderWeather` becomes an ordered list of DS renderers used only by the DS backend. See §2.2.
 3. **One fog result type with a mode.** `FogResult { mode: ABSOLUTE | SCALE, start, end, density }`; calculators return SCALE by default. This is the enabler for NotFine/Angelica compatibility and for tests.
 4. **One weighted random helper.** `WeightedRandom.pick(List<T>, ToIntFunction<T>, Random)` used by all three call sites; statistical tests with a fixed seed.
 5. **Side-safe proxies.** `Proxy` should not import `client.*`. Move `DamageEffectHandler.initialize`, `WailaHandler.register` and `SoundRegistry` client bits into `ProxyClient`; create a `ServerPacketSender` for the health/rain packets. `DamageEffectHandler` should be split into `client/…/DamageEffectClient` and `server/…/DamageEffectServer`.
-6. **Rename the clashing classes.** `client.sound.SoundManager` vs `net.minecraft.client.audio.SoundManager`; `util.Color` vs `java.awt.Color`; `network.Network` is fine. `DynamicSoundManager` / `RgbColor` reduce import noise and grep ambiguity.
+6. **Rename the clashing classes.** **Done in batch 60:** `DynamicSoundManager` and `RgbColor`; no Minecraft or `java.awt` name collision remains.
 7. **Registry lifecycle.** `BiomeRegistry`, `BlockRegistry`, `SoundRegistry`, `DimensionRegistry` share a `Reloadable` interface + a `RegistryManager` that handles init/reload/publish. Server reload broadcasts a client packet; client reload rebuilds fog/sound. This also fixes `/rain reload` (B46).
 8. **Config schema.** Replace the 422-line `ModOptions` with an annotated schema per module and generated category/sort/flags; add a validation pass that reports unknown options instead of silently dropping them. Keep the current `ConfigProcessor` for compatibility but fix `Float.MIN_VALUE`.
 9. **Resource loading.** One `ResourceLoader`/`JsonConfigLoader` with strict parsing, error aggregation and a `reload` lifecycle; the footsteps engine currently has four near-identical try/catch/close blocks.
-10. **Mixins.** Move `Mixins`/`EarlyMixinsLoader` out of the `mixins` package (or add an exclusion test); add `priority` to compat-sensitive mixins; add a `WeatherOwnership` check to both weather mixins; add `@Unique` to every injected field (pauls code already uses the duck interface).
+10. **Mixins.** **Done in batches 1+60:** weather ownership/order checks, an exclusion test for the mixin package, and a `@Unique`/`@Shadow` field audit.
 11. **Immutable value types.** `Color`, `AuroraData` (or document identity), `FogResult`, `AuroraPreset` (already immutable), `SoundEffect` (make `pattern` non-null).
 12. **Deterministic time/random.** Inject a `Clock`/`Random` into `AcousticsManager`, `WorldHandler`, `AuroraEffectHandler`, `EnvironState` so tests can run without sleeping or seeding global random state.
 13. **Logging.** Use `ModLog`/Log4j parameterized calls and pass throwables; replace `printStackTrace` (10 occurrences) and empty `catch` blocks in resource loaders with `ModLog.warn(..., e)`.
@@ -890,12 +900,12 @@ Confirmed unused (or production-dead) items to remove after the refactors land:
 - **`ModOptions`**: many `CONFIG_*` constants are only used by the GUI; prune or keep as the schema. `SOUND_QUEUE_SLACK`/`AGE_THRESHOLD_TICKS` are used as literals.
 - **`StormSplashRenderer`**: `PARTICLE_SOUND_CHANCE` (literal 20), `RANGE` (literal 10); `GENERATOR` is used.
 - **`BiomeFogRangeCalculator`**: `DUST_FOG_IMPACT` (literal 0.9F).
-- **`Color`**: duplicate `MC_BLACK`==`BLACK`, several unused named colours; `transitionTo` (check), `add`, `blend`, `adjust` may be unused.
-- **Assets**: 6 unreferenced ogg files (`ambient/steve/bowpull2-4`, `ambient/underground/rockfall1-3`). Keep or add to a pack; remove to shrink the jar.
-- **`variator.json` is empty** — the variator loader is effectively a no-op; either populate it or remove the loader path.
-- **`RenderWeather.register`** is only called from its own static initializer; make it private or an instance list.
-- **`Namespace`**: `WailaHandler` constructor registers to the event bus every time it is instantiated; the class is only instantiated in `callbackRegister`, so it is effectively a singleton. Make it explicit.
-- **`Module`** self-registration on the FML bus (no handlers).
+- **`RgbColor`**: duplicate `MC_BLACK`/`MC_WHITE` removed in batch 60; verify any remaining unused palette constants before pruning.
+- **Assets**: the six unreferenced ogg files were removed in batch 60.
+- **`variator.json` / variator loader**: removed in batch 60; `NormalVariator` defaults remain.
+- **`RenderWeather.register`**: removed in batch 60; the static list is populated directly.
+- **`WailaHandler`**: made an explicit singleton in batch 60.
+- **`Module`**: self-registration on the FML bus removed in batch 49.
 
 ---
 
@@ -918,7 +928,7 @@ Confirmed unused (or production-dead) items to remove after the refactors land:
 
 ### 8.1 Fix the metric first
 
-**Implemented in batch 57.** The floor now covers 154/177 classes (87 %) instead of excluding all client code: renderers, handlers, GUI/HUD, audio-cache and biome-grid scans are the only exclusions. Global floors are 50 % line / 35 % branch, with per-package floors for the logic-heavy packages. The original plan was:
+**Implemented in batch 57.** The floor now covers 155/177 classes (88 %) instead of excluding all client code: renderers, handlers, GUI/HUD, audio-cache and biome-grid scans are the only exclusions. Global floors are 50 % line / 35 % branch, with per-package floors for the logic-heavy packages. The original plan was:
 
 1. **Narrow the JaCoCo exclusion** from `client/**` to the actual GL/audio-bound classes, e.g. `client/**Renderer*`, `client/**Handler*` (only those that touch `GL11`/`Tessellator`), `client/gui/**`, `client/hud/**`, `client/fx/particle/**`, `client/waila/**`, `client/sound/cache/**` (or leave the cache testable with mocks). Include pure classes such as `FogResult`, `Aurora`/`Node` geometry, `Weather` (after splitting the state from Minecraft), `SoundEffect`, `ConfigProperty`, `AuroraPreset`, `ColorPair`, `MathStuff`, `PlayerUtils` (after extracting a world-access interface), `BiomeRegistry`/`BlockRegistry` weighted pick (after extraction).
 2. **Better: move pure logic to a `core/`/`logic/` package** (no `client` in the name) so the coverage configuration stays simple and the code is obviously side-neutral. E.g. `logic/fog/FogResult`, `logic/aurora/AuroraGeometry`, `logic/weather/WeatherState`, `logic/sound/WeightedRandom`.
@@ -1011,7 +1021,7 @@ Keep each PR small and keep the game test + new compat job green. The compatibil
 
 ## 11. Remaining work register (after batch 56)
 
-**Baseline:** `./gradlew check` green with **316 unit tests / 77 suites**; `gameTestServer` **79/79**; production code has no `System.out`/`System.err`/`printStackTrace`. **No known headless-testable correctness bug remains.**
+**Baseline:** `./gradlew check` green with **322 unit tests / 78 suites**; `gameTestServer` **79/79**; production code has no `System.out`/`System.err`/`printStackTrace`. **No known headless-testable correctness bug remains.**
 
 This register is authoritative where an earlier table still describes a finding as open even though a later batch fixed it (notably B15, B25, B30, B75, B80 and P1/P5/P6/P9/P11/P12/P16). The dead-code list in §6 also predates batches 11–49 and must be re-verified item by item rather than removed wholesale.
 
@@ -1077,16 +1087,18 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 ### 11.3 P2 — medium priority
 
+**M1–M6 are complete in batch 60.** The remaining P2 items are M7–M11.
+
 #### Fully automatable (A)
 
 | ID | Item | Sev | Notes |
 |---|---|---|---|
-| M1 | **Mixin hardening (§2.9/#10)** | L | Move `Mixins`/`EarlyMixinsLoader` out of the `mixins` package or add a test that every non-`@Mixin` class there is in `@TransformerExclusions`; audit injected fields for `@Unique`. Weather `order=900` is already in place. |
-| M2 | **Rename clashing classes (#6)** | L | `client.sound.SoundManager` vs Minecraft's, `util.Color` vs `java.awt.Color`. Mechanical but wide; compile + tests are sufficient. |
-| M3 | **P4 optional rolling block sampling** | L | Sample 1/2 or 1/4 of the volume per tick on a rolling schedule if profiling still shows block-effect cost. Pure scheduling logic is testable. |
-| M4 | **Dead-code/assets sweep (§6)** | L | Re-verify the stale §6 list; remove the unreferenced ogg files, the empty `variator.json` loader path, duplicate `Color` constants, `WailaHandler`'s implicit singleton, and `RenderWeather.register`'s public static-init-only path. |
-| M5 | **Golden/schema data tests** | L | Add duplicate-key checks for shipped JSON and a runtime block-ID resolution test. JSON syntax and sound-reference checks already exist. |
-| M6 | **Property-based loops** | L | Add seeded loops for `MathStuff` vs `Math`, `Color` round trips, `BlockPos` serialization, and `SoftwareVersion` ordering. Existing example-based tests are already strong. |
+| M1 | **Mixin hardening (§2.9/#10)** | L | **Complete (batch 60):** `MixinClassAuditTest` enforces `@Mixin`/`@TransformerExclusions` and `@Unique`/`@Shadow` fields; weather `order=900` remains. |
+| M2 | **Rename clashing classes (#6)** | L | **Complete (batch 60):** `util.Color` → `RgbColor`, `client.sound.SoundManager` → `DynamicSoundManager`; all references and tests updated. |
+| M3 | **P4 optional rolling block sampling** | L | **Complete (batch 60):** block effects sample half the volume per tick via a tested count helper, with a minimum of one sample. |
+| M4 | **Dead-code/assets sweep (§6)** | L | **Complete (batch 60):** removed unused oggs/variator path, duplicate color constants, public `RenderWeather.register`, and made `WailaHandler` an explicit singleton. |
+| M5 | **Golden/schema data tests** | L | **Complete (batch 60):** strict duplicate-key validation for all shipped JSON; runtime block-id resolution is covered by R6. |
+| M6 | **Property-based loops** | L | **Complete (batch 60):** seeded loops for `RgbColor`, `BlockPos`, `MathStuff` trig, and `SoftwareVersion` ordering. |
 
 #### Needs a client/game harness (B)
 
@@ -1129,5 +1141,5 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 1. **P0:** build the client smoke harness (C1/C2), then run the full manual matrix (C3). Fix anything it finds before release.
 2. **P1:** complete — R1–R10 are done.
-3. **P2:** registry/config/resource-loader structure (M7/M9/M10), then dead-code and golden-data cleanup (M4/M5).
+3. **P2:** M1–M6 are done; next are registry/config/resource-loader structure (M7/M9/M10) and diagnostics (M8).
 4. **P3:** opportunistic cleanup and feature work (L1–L5).

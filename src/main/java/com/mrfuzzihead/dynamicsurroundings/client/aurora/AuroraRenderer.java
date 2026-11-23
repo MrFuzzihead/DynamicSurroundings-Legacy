@@ -11,8 +11,8 @@ import org.lwjgl.opengl.GL14;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.compat.notfine.NotFineBridge;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
-import com.mrfuzzihead.dynamicsurroundings.util.Color;
 import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
+import com.mrfuzzihead.dynamicsurroundings.util.RgbColor;
 
 import cpw.mods.fml.client.FMLClientHandler;
 import cpw.mods.fml.relauncher.Side;
@@ -21,7 +21,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public final class AuroraRenderer {
 
-    private static void setColor(Color color, float alpha) {
+    private static void setColor(RgbColor color, float alpha) {
         Tessellator.instance.setColorRGBA_F(color.red, color.green, color.blue, alpha);
     }
 
@@ -64,8 +64,8 @@ public final class AuroraRenderer {
                 aurora.translate(partialTick);
             }
 
-            Color base = aurora.getBaseColor();
-            Color fade = aurora.getFadeColor();
+            RgbColor base = aurora.getBaseColor();
+            RgbColor fade = aurora.getFadeColor();
             GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
             GL11.glPushMatrix();
             GL11.glTranslatef((float) tranX, tranY, (float) tranZ);

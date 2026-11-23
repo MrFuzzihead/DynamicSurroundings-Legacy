@@ -25,7 +25,7 @@ public class SoundManagerMathTest {
 
         assertEquals(
             2.0F,
-            com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager.getNormalizedPitch(sound, entry),
+            com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager.getNormalizedPitch(sound, entry),
             0.0F);
     }
 
@@ -36,7 +36,7 @@ public class SoundManagerMathTest {
 
         assertEquals(
             0.5F,
-            com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager.getNormalizedPitch(sound, entry),
+            com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager.getNormalizedPitch(sound, entry),
             0.0F);
     }
 
@@ -47,7 +47,7 @@ public class SoundManagerMathTest {
 
         assertEquals(
             1.0F,
-            com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager.getNormalizedPitch(sound, entry),
+            com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager.getNormalizedPitch(sound, entry),
             0.0001F);
     }
 
@@ -56,11 +56,11 @@ public class SoundManagerMathTest {
         SoundPoolEntry entry = poolEntry(1.0, 1.0);
         assertEquals(
             0.0F,
-            com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager.getNormalizedPitch(null, entry),
+            com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager.getNormalizedPitch(null, entry),
             0.0F);
         assertEquals(
             0.0F,
-            com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager
+            com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager
                 .getNormalizedPitch(sound(1.0F, 1.0F, "minecraft:test"), null),
             0.0F);
     }
@@ -70,17 +70,17 @@ public class SoundManagerMathTest {
         SoundPoolEntry entry = poolEntry(1.0, 1.0);
         assertEquals(
             0.0F,
-            com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager
+            com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager
                 .getNormalizedVolume(null, entry, SoundCategory.MASTER),
             0.0F);
         assertEquals(
             0.0F,
-            com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager
+            com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager
                 .getNormalizedVolume(sound(1.0F, 1.0F, "minecraft:test"), null, SoundCategory.MASTER),
             0.0F);
         assertEquals(
             0.0F,
-            com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager
+            com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager
                 .getNormalizedVolume(sound(1.0F, 1.0F, "minecraft:test"), entry, null),
             0.0F);
     }

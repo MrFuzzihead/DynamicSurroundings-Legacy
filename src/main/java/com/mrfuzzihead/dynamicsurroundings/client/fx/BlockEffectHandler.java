@@ -31,6 +31,7 @@ public class BlockEffectHandler implements IClientEffectHandler {
     private static final double RATIO = 0.0335671847202175;
     private static int cachedRange = Integer.MIN_VALUE;
     private static int cachedCheckCount;
+    private static final int SAMPLE_SLICES = 2;
 
     private static int randomRange(int range) {
         return lcg.nextInt(range) - lcg.nextInt(range);
@@ -45,6 +46,10 @@ public class BlockEffectHandler implements IClientEffectHandler {
         return cachedCheckCount;
     }
 
+    static int sampleCountForRange(int range) {
+        return Math.max(1, checkCountForRange(range) / SAMPLE_SLICES);
+    }
+
     @Override
     public void process(World world, EntityPlayer player) {
         if (!Minecraft.getMinecraft()
@@ -54,7 +59,7 @@ public class BlockEffectHandler implements IClientEffectHandler {
             EnvironmentSnapshot snapshot = EnvironStateHandler.EnvironState.getSnapshot();
             String conditions = snapshot.getConditions();
             int range = ModOptions.specialEffectRange;
-            int checkCount = checkCountForRange(range);
+            int checkCount = sampleCountForRange(range);
 
             for (int i = 0; i < checkCount; i++) {
                 pos.setPos(

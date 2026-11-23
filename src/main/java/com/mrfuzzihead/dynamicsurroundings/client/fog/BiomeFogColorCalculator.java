@@ -17,8 +17,8 @@ import com.mrfuzzihead.dynamicsurroundings.client.weather.Weather;
 import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
 import com.mrfuzzihead.dynamicsurroundings.compat.notfine.NotFineBridge;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
-import com.mrfuzzihead.dynamicsurroundings.util.Color;
 import com.mrfuzzihead.dynamicsurroundings.util.MathStuff;
+import com.mrfuzzihead.dynamicsurroundings.util.RgbColor;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -33,12 +33,12 @@ public class BiomeFogColorCalculator extends VanillaFogColorCalculator {
     protected int lastScanTick = Integer.MIN_VALUE;
     protected int signature;
     protected double weightBiomeFog;
-    protected Color biomeFogColor;
+    protected RgbColor biomeFogColor;
     protected boolean doScan = true;
 
     @Nonnull
     @Override
-    public Color calculate(@Nonnull FogColors event) {
+    public RgbColor calculate(@Nonnull FogColors event) {
         EnvironmentSnapshot snapshot = EnvironStateHandler.EnvironState.getSnapshot();
         EntityLivingBase player = snapshot.getPlayer();
         World world = snapshot.getWorld();
@@ -62,7 +62,7 @@ public class BiomeFogColorCalculator extends VanillaFogColorCalculator {
             this.posX = scanX;
             this.posZ = scanZ;
             this.lastScanTick = tick;
-            this.biomeFogColor = new Color(0, 0, 0);
+            this.biomeFogColor = new RgbColor(0, 0, 0);
             this.weightBiomeFog = 0.0;
 
             for (int x = -distance; x <= distance; x++) {
@@ -70,7 +70,7 @@ public class BiomeFogColorCalculator extends VanillaFogColorCalculator {
                     pos.setPos(playerX + x, 0, playerZ + z);
                     this.doScan = this.doScan | !world.blockExists(pos.getX(), pos.getY(), pos.getZ());
                     BiomeGenBase biome = world.getBiomeGenForCoords(pos.getX(), pos.getZ());
-                    Color color;
+                    RgbColor color;
                     if (BiomeRegistry.hasDust(biome)) {
                         color = BiomeRegistry.getDustColor(biome);
                     } else if (BiomeRegistry.hasFog(biome)) {
@@ -109,15 +109,15 @@ public class BiomeFogColorCalculator extends VanillaFogColorCalculator {
                 bScale *= 1.0F - thunderStrength * 0.5F;
             }
 
-            Color fogColor = new Color(this.biomeFogColor);
+            RgbColor fogColor = new RgbColor(this.biomeFogColor);
             fogColor.scale(
                 (float) (rScale / this.weightBiomeFog),
                 (float) (gScale / this.weightBiomeFog),
                 (float) (bScale / this.weightBiomeFog));
-            Color processedColor = this.applyPlayerEffects(world, player, fogColor, partialTicks);
+            RgbColor processedColor = this.applyPlayerEffects(world, player, fogColor, partialTicks);
             double weightMixed = (distance * 2 + 1) * (distance * 2 + 1);
             double weightDefault = weightMixed - this.weightBiomeFog;
-            Color vanillaColor = super.calculate(event);
+            RgbColor vanillaColor = super.calculate(event);
             processedColor.scale((float) this.weightBiomeFog);
             vanillaColor.scale((float) weightDefault);
             return processedColor.add(vanillaColor)
@@ -127,8 +127,8 @@ public class BiomeFogColorCalculator extends VanillaFogColorCalculator {
         }
     }
 
-    protected Color applyPlayerEffects(@Nonnull World world, @Nonnull EntityLivingBase player, @Nonnull Color fogColor,
-        float renderPartialTicks) {
+    protected RgbColor applyPlayerEffects(@Nonnull World world, @Nonnull EntityLivingBase player,
+        @Nonnull RgbColor fogColor, float renderPartialTicks) {
         float darkScale = 1.0F;
         if (NotFineBridge.isVoidFogEnabled()) {
             darkScale = (float) ((player.lastTickPosY + (player.posY - player.lastTickPosY) * renderPartialTicks)

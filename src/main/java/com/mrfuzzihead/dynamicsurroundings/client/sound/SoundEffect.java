@@ -105,7 +105,7 @@ public final class SoundEffect {
     }
 
     public void doEffect(Block block, World world, BlockPos pos, Random random) {
-        SoundManager.playSoundAt(pos, this, 0);
+        DynamicSoundManager.playSoundAt(pos, this, 0);
     }
 
     @Override

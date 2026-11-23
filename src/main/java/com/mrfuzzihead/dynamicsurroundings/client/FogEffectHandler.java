@@ -22,7 +22,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.fog.HolisticFogRangeCalculator
 import com.mrfuzzihead.dynamicsurroundings.client.fog.MorningFogRangeCalculator;
 import com.mrfuzzihead.dynamicsurroundings.client.fog.WeatherFogRangeCalculator;
 import com.mrfuzzihead.dynamicsurroundings.event.DiagnosticEvent;
-import com.mrfuzzihead.dynamicsurroundings.util.Color;
+import com.mrfuzzihead.dynamicsurroundings.util.RgbColor;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -60,7 +60,7 @@ public class FogEffectHandler implements IClientEffectHandler {
         if (this.doFog()) {
             Material material = event.block.getMaterial();
             if (material != Material.lava && material != Material.water) {
-                Color color = this.fogColor.calculate(event);
+                RgbColor color = this.fogColor.calculate(event);
                 if (color != null) {
                     event.red = color.red;
                     event.green = color.green;
@@ -117,7 +117,7 @@ public class FogEffectHandler implements IClientEffectHandler {
     public void diagnostics(DiagnosticEvent.Gather event) {
         if (this.doFog()) {
             event.output.add("Fog Range: " + this.fogRange.toString());
-            event.output.add("Fog Color: " + this.fogColor.toString());
+            event.output.add("Fog RgbColor: " + this.fogColor.toString());
         } else {
             event.output.add("FOG: IGNORED");
         }

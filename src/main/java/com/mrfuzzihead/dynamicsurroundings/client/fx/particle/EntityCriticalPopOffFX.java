@@ -2,7 +2,7 @@ package com.mrfuzzihead.dynamicsurroundings.client.fx.particle;
 
 import net.minecraft.world.World;
 
-import com.mrfuzzihead.dynamicsurroundings.util.Color;
+import com.mrfuzzihead.dynamicsurroundings.util.RgbColor;
 import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 import cpw.mods.fml.relauncher.Side;
@@ -20,7 +20,7 @@ public class EntityCriticalPopOffFX extends EntityTextPopOffFX {
     }
 
     public EntityCriticalPopOffFX(World world, double x, double y, double z) {
-        super(world, getPowerWord(), Color.ORANGE, 1.0F, x, y, z, 0.001, 0.07500000000000001, 0.001);
+        super(world, getPowerWord(), RgbColor.ORANGE, 1.0F, x, y, z, 0.001, 0.07500000000000001, 0.001);
         this.shouldOnTop = true;
         this.particleGravity = -0.04F;
         this.scale = 0.5F;

@@ -4,8 +4,8 @@ import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.data.AuroraData;
 import com.mrfuzzihead.dynamicsurroundings.data.AuroraPreset;
 import com.mrfuzzihead.dynamicsurroundings.data.ColorPair;
-import com.mrfuzzihead.dynamicsurroundings.util.Color;
 import com.mrfuzzihead.dynamicsurroundings.util.MathStuff;
+import com.mrfuzzihead.dynamicsurroundings.util.RgbColor;
 import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 import cpw.mods.fml.relauncher.Side;
@@ -26,8 +26,8 @@ public final class Aurora {
     private float nodeLength;
     private float nodeWidth;
     private int bandOffset;
-    private final Color baseColor;
-    private final Color fadeColor;
+    private final RgbColor baseColor;
+    private final RgbColor fadeColor;
     private int alpha = 1;
 
     public Aurora(AuroraData data) {
@@ -58,11 +58,11 @@ public final class Aurora {
         this.bandOffset = p.bandOffset;
     }
 
-    public Color getBaseColor() {
+    public RgbColor getBaseColor() {
         return this.baseColor;
     }
 
-    public Color getFadeColor() {
+    public RgbColor getFadeColor() {
         return this.fadeColor;
     }
 

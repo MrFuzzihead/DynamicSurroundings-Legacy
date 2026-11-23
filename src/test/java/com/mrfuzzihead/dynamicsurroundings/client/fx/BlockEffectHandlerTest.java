@@ -15,6 +15,9 @@ public class BlockEffectHandlerTest {
     public void sampleCountIsDerivedFromTheConfiguredRange() {
         assertEquals(999, BlockEffectHandler.checkCountForRange(16));
         assertEquals(113, BlockEffectHandler.checkCountForRange(8));
+        assertEquals(499, BlockEffectHandler.sampleCountForRange(16));
+        assertEquals(56, BlockEffectHandler.sampleCountForRange(8));
+        assertEquals(1, BlockEffectHandler.sampleCountForRange(1));
     }
 
     @Test
