@@ -41,7 +41,13 @@ public class BiomeFogColorCalculator extends VanillaFogColorCalculator {
     public RgbColor calculate(@Nonnull FogColors event) {
         EnvironmentSnapshot snapshot = EnvironStateHandler.EnvironState.getSnapshot();
         EntityLivingBase player = snapshot.getPlayer();
+        if (player == null) {
+            player = EnvironStateHandler.EnvironState.getPlayer();
+        }
         World world = snapshot.getWorld();
+        if (world == null) {
+            world = EnvironStateHandler.EnvironState.getWorld();
+        }
         int playerX = MathStuff.floor(player.posX);
         int playerZ = MathStuff.floor(player.posZ);
         GameSettings settings = Minecraft.getMinecraft().gameSettings;

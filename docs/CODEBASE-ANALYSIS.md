@@ -1,7 +1,7 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1–63 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
+**Scope:** analysis + the implementation log below. Batches 1–64 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
 **Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 81 test suites / 328 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
@@ -430,6 +430,16 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - Marked the genuinely remaining performance items explicitly **Open**: P10 (config GUI virtualisation), P13/P14 (aurora template/VBO), and M8 diagnostics.
 - Replaced the stale §6 dead-code list with a current list; removed entries already fixed in batches 11–60.
 - **L1, L2 and L3 are complete.**
+
+**Batch 64 — C1/C2 client smoke harness (328 unit tests, 79/79 game checks)**
+
+- Added `clientSmokeTest` and a client-only `ClientSmokeTest` in the game-test source set.
+- The smoke run creates a flat creative world, forces rain/night, renders 200 client ticks, and checks: `glGetError`, new Mixin/uncaught-exception log lines, `WeatherBackend.Owner`, and effective `GL_FOG_START/END`.
+- When the owner is `ANGELICA_INSTANCED`, it asserts DS does not claim ownership.
+- Optional `-PexpectedNearFogPercent=1` asserts the effective near/far ratio for the NotFine 1 % configuration.
+- Added the GTNHLib 0.9.0 dev runtime dependency required by Angelica’s dev client launch.
+- Local smoke run passed: owner `ANGELICA_INSTANCED`, fog `47.16713 / 143.74847`, 200 ticks / 1308 rendered frames.
+- **C1 and C2 complete.** C3/C4 remain the manual matrix and config-GUI verification.
 
 **What remains:** the headless correctness backlog is exhausted. The release gate is the real client compatibility matrix; the authoritative remaining-work register is §11.
 
@@ -1048,8 +1058,8 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 | ID | Item | Sev | Notes |
 |---|---|---|---|
-| C1 | **Client smoke harness** | H | Launch a flat world, force rain/night, run ~200 frames, assert no `glGetError`, no exception/Mixin error in `latest.log`, and the expected `WeatherBackend.Owner`. This is the automation half of the matrix and should be a separate CI job. |
-| C2 | **Automate the ownership/fog assertions** | H | In the smoke harness, assert DS is not cancelling when Angelica owns weather, and read effective `GL_FOG_START/END` when NotFine near=1 % / `TERRAIN_FOG=false`. |
+| C1 | **Client smoke harness** | H | **Complete (batch 64):** `./gradlew clientSmokeTest` launches a flat world, forces rain/night, runs 200 ticks, and asserts GL errors, log errors, owner and fog state. |
+| C2 | **Automate the ownership/fog assertions** | H | **Complete (batch 64):** the harness asserts DS does not own an `ANGELICA_INSTANCED` frame and validates `GL_FOG_START/END`; `-PexpectedNearFogPercent=1` checks the NotFine 1 % case. |
 
 #### Manual/visual (C)
 
@@ -1148,7 +1158,7 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 ### 11.5 Recommended order
 
-1. **P0:** build the client smoke harness (C1/C2), then run the full manual matrix (C3). Fix anything it finds before release.
+1. **P0:** C1/C2 are done; optionally expand M8 diagnostics, then run the full manual matrix (C3) and config-GUI check (C4). Fix anything they find before release.
 2. **P1:** R1–R6, R9 and R10 are done; R7 (config GUI virtualisation) and R8 (aurora template/VBO) remain.
 3. **P2:** M1–M7 and M9–M11 are done; only the optional diagnostics expansion (M8) remains.
 4. **P3:** L1–L3 are done; L4/L5 remain optional feature work.

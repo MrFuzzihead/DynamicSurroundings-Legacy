@@ -37,7 +37,9 @@ dependencies {
     devOnlyNonPublishable("com.github.GTNewHorizons:waila:1.20.2:dev") { transitive = false }
     // Optional compatibility target. compileOnly keeps Angelica/NotFine/Iris out of the runtime dependencies while
     // letting the guarded bridge classes use their real APIs instead of reflection.
-    compileOnly("com.github.GTNewHorizons:Angelica:2.2.46:dev") { transitive = false }
+    devOnlyNonPublishable("com.github.GTNewHorizons:Angelica:2.2.46:dev") { transitive = false }
+    // Angelica's dev launch requires GTNHLib at runtime; it is not needed to compile DS.
+    devOnlyNonPublishable("com.github.GTNewHorizons:GTNHLib:0.9.0:dev") { transitive = false }
     compileOnly(rfg.deobf("curse.maven:CalendarApi-241515:2280303"))
     compileOnly(rfg.deobf("curse.maven:biomes-o-plenty-220318:2499612"))
 

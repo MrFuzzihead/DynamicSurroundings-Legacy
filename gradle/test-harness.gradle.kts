@@ -376,8 +376,9 @@ gameTestSourceSet.compileClasspath = gameTestSourceSet.compileClasspath
 
 val isGameTestRun = project.hasProperty("gameTest") ||
     gradle.startParameter.taskNames.any { it.contains("gameTestServer") }
+val isClientSmokeRun = gradle.startParameter.taskNames.any { it.contains("clientSmokeTest") }
 
-if (isGameTestRun) {
+if (isGameTestRun || isClientSmokeRun) {
     // Only our package is instrumented, and the file is dumped when the game calls System.exit (the game test's
     // exitJava with halt=false), so a crashed or hung run simply leaves no data behind.
     // The data is NOT merged into jacocoTestReport: a dev launch rewrites every class through ASM, so the class ids
@@ -395,6 +396,12 @@ if (isGameTestRun) {
         if (name.startsWith("runServer") || name.startsWith("runClient")) {
             classpath += gameTestSourceSet.output
             systemProperty("dynamicsurroundings.gameTest", "true")
+            if (isClientSmokeRun) {
+                systemProperty("dynamicsurroundings.clientSmoke", "true")
+                providers.gradleProperty("expectedNearFogPercent")
+                    .orNull
+                    ?.let { systemProperty("dynamicsurroundings.expectedNearFogPercent", it) }
+            }
             // A reused dev world may reference blocks from mods that are no longer installed; the game test is not
             // about that, so answer FML's "continue anyway?" prompt up front instead of blocking on stdin.
             systemProperty("fml.queryResult", "confirm")
@@ -405,6 +412,13 @@ if (isGameTestRun) {
 
 tasks.named("check").configure {
     dependsOn(gameTestSourceSet.classesTaskName)
+}
+
+tasks.register("clientSmokeTest") {
+    group = "verification"
+    description = "Launches the client, runs the flat-world smoke assertions, and exits with the result"
+    dependsOn(gameTestSourceSet.classesTaskName)
+    dependsOn(tasks.named("runClient"))
 }
 
 // ---------------------------------------------------------------------------------------------------------

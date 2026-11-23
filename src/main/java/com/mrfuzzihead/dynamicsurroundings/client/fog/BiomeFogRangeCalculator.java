@@ -36,7 +36,13 @@ public class BiomeFogRangeCalculator extends VanillaFogRangeCalculator {
     public FogResult calculate(@Nonnull RenderFogEvent event) {
         EnvironmentSnapshot snapshot = EnvironStateHandler.EnvironState.getSnapshot();
         EntityLivingBase player = snapshot.getPlayer();
+        if (player == null) {
+            player = EnvironStateHandler.EnvironState.getPlayer();
+        }
         World world = snapshot.getWorld();
+        if (world == null) {
+            world = EnvironStateHandler.EnvironState.getWorld();
+        }
         int playerX = MathStuff.floor(player.posX);
         int playerY = MathStuff.floor(player.posY);
         int playerZ = MathStuff.floor(player.posZ);

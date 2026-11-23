@@ -38,7 +38,11 @@ public class HazeFogRangeCalculator extends VanillaFogRangeCalculator {
 
                 float lowY = cloudHeight - 15;
                 float highY = cloudHeight + 15 + 10;
-                double eyeHeight = snapshot.getPlayer().posY + snapshot.getPlayer().eyeHeight;
+                net.minecraft.entity.player.EntityPlayer player = snapshot.getPlayer();
+                if (player == null) {
+                    player = EnvironStateHandler.EnvironState.getPlayer();
+                }
+                double eyeHeight = player.posY + player.eyeHeight;
                 if (eyeHeight >= lowY && eyeHeight <= highY) {
                     float coreLowY = lowY + 15.0F;
                     float coreHighY = coreLowY + 10.0F;
