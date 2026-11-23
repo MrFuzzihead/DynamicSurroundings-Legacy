@@ -6,6 +6,7 @@ import net.minecraftforge.client.event.EntityViewRenderEvent.RenderFogEvent;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironmentSnapshot;
 import com.mrfuzzihead.dynamicsurroundings.util.MathStuff;
 import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
@@ -27,9 +28,10 @@ public class MorningFogRangeCalculator extends VanillaFogRangeCalculator {
     @Override
     public FogResult calculate(@Nonnull RenderFogEvent event) {
         this.cache.set(event);
+        EnvironmentSnapshot snapshot = EnvironStateHandler.EnvironState.getSnapshot();
         if (this.doFog && event.farPlaneDistance * FogResult.DEFAULT_PLANE_SCALE > 10.0F
-            && EnvironStateHandler.EnvironState.getDimensionId() != 1
-            && EnvironStateHandler.EnvironState.getDimensionId() != -1) {
+            && snapshot.getDimensionId() != 1
+            && snapshot.getDimensionId() != -1) {
             float ca = EnvironStateHandler.EnvironState.getWorld()
                 .getCelestialAngle((float) event.renderPartialTicks);
             if (ca >= START && ca <= END) {

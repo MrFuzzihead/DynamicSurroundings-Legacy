@@ -26,8 +26,8 @@ public final class AuroraEffectHandler implements IClientEffectHandler {
     public static void addAurora(AuroraData data) {
         if (ModOptions.auroraEnable) {
             synchronized (auroras) {
-                if (auroraDimension != data.dimensionId
-                    || EnvironStateHandler.EnvironState.getDimensionId() != data.dimensionId) {
+                if (auroraDimension != data.dimensionId || EnvironStateHandler.EnvironState.getSnapshot()
+                    .getDimensionId() != data.dimensionId) {
                     auroras.clear();
                     currentAurora = null;
                     auroraDimension = data.dimensionId;

@@ -18,6 +18,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import com.mrfuzzihead.dynamicsurroundings.util.ConfigProcessor;
+
 /**
  * {@link ModOptions} is loaded twice - by the coremod at discovery time and again in pre-init - and both paths go
  * through {@link ModOptions#load(Configuration)}. That method also scrubs properties that carry no comment, which is
@@ -91,6 +93,19 @@ public class ModOptionsTest {
 
         assertEquals(0.25F, ModOptions.soundLevel, 0.0F);
         assertEquals(250, ModOptions.particleCountBase);
+    }
+
+    @Test
+    public void initTimeOptionsDeclareRestartRequired() throws Exception {
+        String[] restartBound = { "auroraEnable", "enableBiomeSounds", "enableFootstepSounds", "enableJumpSound",
+            "enableSwingSound", "enableCraftingSound", "enableBowPullSound", "culledSounds", "blockedSounds",
+            "potionHudEnabled", "disableWeatherEffects", "suppressPotionParticles" };
+        for (String name : restartBound) {
+            assertNotNull(
+                name + " must declare RestartRequired",
+                ModOptions.class.getField(name)
+                    .getAnnotation(ConfigProcessor.RestartRequired.class));
+        }
     }
 
     @Test

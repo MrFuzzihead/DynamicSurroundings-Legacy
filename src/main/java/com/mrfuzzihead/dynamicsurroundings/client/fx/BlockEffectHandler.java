@@ -11,6 +11,7 @@ import net.minecraft.world.World;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironmentSnapshot;
 import com.mrfuzzihead.dynamicsurroundings.client.IClientEffectHandler;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
 import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
@@ -50,7 +51,8 @@ public class BlockEffectHandler implements IClientEffectHandler {
             .isGamePaused() && BlockRegistry.hasEffectsOrSounds()) {
             BlockPos playerPos = new BlockPos(player);
             BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-            String conditions = EnvironStateHandler.EnvironState.getConditions();
+            EnvironmentSnapshot snapshot = EnvironStateHandler.EnvironState.getSnapshot();
+            String conditions = snapshot.getConditions();
             int range = ModOptions.specialEffectRange;
             int checkCount = checkCountForRange(range);
 
@@ -77,8 +79,7 @@ public class BlockEffectHandler implements IClientEffectHandler {
                 }
             }
 
-            if (EnvironStateHandler.EnvironState.isPlayerOnGround()
-                && EnvironStateHandler.EnvironState.isPlayerMoving()) {
+            if (snapshot.isPlayerOnGround() && snapshot.isPlayerMoving()) {
                 BlockPos stepPos = stepBlockPos(player);
                 Block block = MCHelper.getBlock(world, stepPos);
                 if (block != Blocks.air && !block.getMaterial()

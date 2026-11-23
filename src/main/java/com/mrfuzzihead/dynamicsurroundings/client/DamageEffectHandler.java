@@ -3,6 +3,7 @@ package com.mrfuzzihead.dynamicsurroundings.client;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.EffectRenderer;
 import net.minecraft.client.particle.EntityFX;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
@@ -20,10 +21,13 @@ public final class DamageEffectHandler {
     @SideOnly(Side.CLIENT)
     public static void handleEvent(HealthData data) {
         if (ModOptions.enableDamagePopoffs) {
+            EnvironmentSnapshot snapshot = EnvironStateHandler.EnvironState.getSnapshot();
+            EntityPlayer player = snapshot.getPlayer();
             if (!EnvironStateHandler.EnvironState.isPlayer(data.entityId)) {
-                double distance = EnvironStateHandler.EnvironState.distanceToPlayer(data.posX, data.posY, data.posZ);
+                double distance = player == null ? Double.MAX_VALUE
+                    : player.getDistanceSq(data.posX, data.posY, data.posZ);
                 if (!(distance >= 1024.0)) {
-                    World world = EnvironStateHandler.EnvironState.getWorld();
+                    World world = snapshot.getWorld();
                     if (world == null) {
                         return;
                     }

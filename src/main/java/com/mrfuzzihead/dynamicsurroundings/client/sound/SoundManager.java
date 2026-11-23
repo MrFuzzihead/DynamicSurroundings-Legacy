@@ -139,7 +139,8 @@ public class SoundManager {
 
     public static void playSoundAtPlayer(EntityPlayer player, SoundEffect sound) {
         if (player == null) {
-            player = EnvironStateHandler.EnvironState.getPlayer();
+            player = EnvironStateHandler.EnvironState.getSnapshot()
+                .getPlayer();
         }
 
         SpotSound s = new SpotSound(player, sound);

@@ -47,9 +47,13 @@ final class AngelicaDebugHook {
                         displayer.fact(group, "Dimension")
                             .value(context.world().provider.getDimensionName());
                         displayer.fact(group, "Biome")
-                            .value(EnvironStateHandler.EnvironState.getBiomeName());
+                            .value(
+                                EnvironStateHandler.EnvironState.getSnapshot()
+                                    .getBiomeName());
                         displayer.fact(group, "Conditions")
-                            .value(EnvironStateHandler.EnvironState.getConditions());
+                            .value(
+                                EnvironStateHandler.EnvironState.getSnapshot()
+                                    .getConditions());
                         displayer.line(group)
                             .text(Weather.diagnostic());
                         displayer.fact(group, "NotFine downfall")

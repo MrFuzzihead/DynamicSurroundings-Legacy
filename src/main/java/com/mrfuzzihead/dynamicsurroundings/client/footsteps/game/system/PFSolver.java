@@ -106,7 +106,8 @@ public class PFSolver implements ISolver {
 
     @Override
     public Association findAssociationForBlock(int xx, int yy, int zz) {
-        World world = EnvironStateHandler.EnvironState.getWorld();
+        World world = EnvironStateHandler.EnvironState.getSnapshot()
+            .getWorld();
         Block in = world.getBlock(xx, yy, zz);
         int inMeta = world.getBlockMetadata(xx, yy, zz);
         Block above = world.getBlock(xx, yy + 1, zz);
@@ -228,7 +229,8 @@ public class PFSolver implements ISolver {
         if (!strategy.equals("find_messy_foliage")) {
             return null;
         } else {
-            World world = EnvironStateHandler.EnvironState.getWorld();
+            World world = EnvironStateHandler.EnvironState.getSnapshot()
+                .getWorld();
             Block above = world.getBlock(xx, yy + 1, zz);
             if (above == Blocks.air) {
                 return null;

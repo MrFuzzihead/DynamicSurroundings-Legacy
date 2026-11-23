@@ -8,6 +8,7 @@ import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraftforge.client.event.EntityViewRenderEvent.RenderFogEvent;
 
 import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironmentSnapshot;
 import com.mrfuzzihead.dynamicsurroundings.client.weather.Weather;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 import com.mrfuzzihead.dynamicsurroundings.util.MathStuff;
@@ -33,15 +34,16 @@ public class BiomeFogRangeCalculator extends VanillaFogRangeCalculator {
     @Nonnull
     @Override
     public FogResult calculate(@Nonnull RenderFogEvent event) {
-        EntityLivingBase player = EnvironStateHandler.EnvironState.getPlayer();
-        World world = EnvironStateHandler.EnvironState.getWorld();
+        EnvironmentSnapshot snapshot = EnvironStateHandler.EnvironState.getSnapshot();
+        EntityLivingBase player = snapshot.getPlayer();
+        World world = snapshot.getWorld();
         int playerX = MathStuff.floor(player.posX);
         int playerY = MathStuff.floor(player.posY);
         int playerZ = MathStuff.floor(player.posZ);
         float rainStr = Weather.getIntensityLevel();
         int scanX = playerX >> COARSE_SHIFT;
         int scanZ = playerZ >> COARSE_SHIFT;
-        int tick = EnvironStateHandler.EnvironState.getTickCounter();
+        int tick = snapshot.getTickCounter();
         int signature = FogBiomeSignature.of(world, playerX, playerZ);
         BiomeFogRangeCalculator.Context ctx = this.context[this.getIdx(event)];
         if (ctx.returnCached(scanX, scanZ, signature, rainStr, event, tick)) {

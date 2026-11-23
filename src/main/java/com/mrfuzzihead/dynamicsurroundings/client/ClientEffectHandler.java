@@ -85,6 +85,8 @@ public class ClientEffectHandler {
                 .getClient().thePlayer;
             if (canProcess(world, player)) {
                 if (event.phase == Phase.START) {
+                    // Build one immutable environment snapshot before any handler reads it.
+                    EnvironStateHandler.refreshState(world, player);
                     for (IClientEffectHandler handler : effectHandlers) {
                         handler.process(world, player);
                     }

@@ -12,6 +12,7 @@ import net.minecraftforge.client.event.EntityViewRenderEvent.FogColors;
 import net.minecraftforge.common.ForgeModContainer;
 
 import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironmentSnapshot;
 import com.mrfuzzihead.dynamicsurroundings.client.weather.Weather;
 import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
 import com.mrfuzzihead.dynamicsurroundings.compat.notfine.NotFineBridge;
@@ -38,8 +39,9 @@ public class BiomeFogColorCalculator extends VanillaFogColorCalculator {
     @Nonnull
     @Override
     public Color calculate(@Nonnull FogColors event) {
-        EntityLivingBase player = EnvironStateHandler.EnvironState.getPlayer();
-        World world = EnvironStateHandler.EnvironState.getWorld();
+        EnvironmentSnapshot snapshot = EnvironStateHandler.EnvironState.getSnapshot();
+        EntityLivingBase player = snapshot.getPlayer();
+        World world = snapshot.getWorld();
         int playerX = MathStuff.floor(player.posX);
         int playerZ = MathStuff.floor(player.posZ);
         GameSettings settings = Minecraft.getMinecraft().gameSettings;
@@ -52,7 +54,7 @@ public class BiomeFogColorCalculator extends VanillaFogColorCalculator {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(0, 0, 0);
         int scanX = playerX >> COARSE_SHIFT;
         int scanZ = playerZ >> COARSE_SHIFT;
-        int tick = EnvironStateHandler.EnvironState.getTickCounter();
+        int tick = snapshot.getTickCounter();
         this.doScan = this.doScan | (this.posX != scanX || this.posZ != scanZ);
         if (this.doScan
             && (this.lastScanTick == Integer.MIN_VALUE || tick - this.lastScanTick >= MISSING_CHUNK_RETRY_TICKS)) {

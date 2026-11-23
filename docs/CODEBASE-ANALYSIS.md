@@ -1,8 +1,8 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1–58 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 76 test suites / 313 unit tests, plus a non-shipped in-game test mod.
+**Scope:** analysis + the implementation log below. Batches 1–59 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 77 test suites / 316 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -378,7 +378,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 **Batch 57 — P1 fully-automatable backlog (313 tests green)**
 
-- **R1 — coverage metric fixed.** `jacocoClassDirs()` now excludes only GL/audio/client-bound classes (renderers, handlers, config GUI, HUD, WAILA, particle instancing, sound cache/manager, biome-grid fog scans) instead of all of `client/**`. The measured subset is now **152/177 classes (86 %)**, with **56.3 % line / 40.8 % branch / 69.7 % class** coverage. Global floors rose to **50 % line / 35 % branch**, plus per-package floors for `util`, `data`, `client.weather`, `client.aurora`, `client.sound`, `client.fog`, footsteps, and config properties.
+- **R1 — coverage metric fixed.** `jacocoClassDirs()` now excludes only GL/audio/client-bound classes (renderers, handlers, config GUI, HUD, WAILA, particle instancing, sound cache/manager, biome-grid fog scans) instead of all of `client/**`. The measured subset is now **154/177 classes (87 %)**, with **57.1 % line / 40.8 % branch / 70.1 % class** coverage. Global floors rose to **50 % line / 35 % branch**, plus per-package floors for `util`, `data`, `client.weather`, `client.aurora`, `client.sound`, `client.fog`, footsteps, and config properties.
 - **R2 — game-test report guard.** `jacocoGameTestReport` now reports against `build/classes/java/main` (the classes the game test actually loaded) instead of a missing RFB dump. New `verifyGameTestReport` fails `check`/`gameTestServer` when `gameTest.exec` exists but the XML has no counters.
 - **R3 — remaining pure/client-logic tests.** Added `AuroraTest`, `NodeTest`, `WeatherTest`, `PFReaderHTest`, `PlayerSoundTest`, `SpotSoundTest`, `ProbabilityWeightsAcousticTest`, and `MorningAndHazeFogTest`. The Weather test exposed **B96**: `setIntensity(0)` was a no-op while the state was `VANILLA`, so `NONE` was unreachable from a fresh state; fixed.
 - **R4 — ForgeDictionary cache.** Extracted `OreLookupCache`; repeated `ForgeDictionary.initialize` calls reuse per-ore `ItemStack` lists, with `invalidate()` for ore-dictionary changes.
@@ -394,6 +394,12 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - `ServerEffectHandler.shouldSendRainIntensity` and `DimensionEffectDataFile.getData` are now public for the game-test harness.
 - **R6 complete.**
 
+**Batch 59 — R9 snapshot and R10 restart contract (316 unit tests, 79/79 game checks)**
+
+- **R9 — `EnvironmentSnapshot`.** Added an immutable per-tick snapshot (`EnvironmentSnapshot`) with the player/world, biome, dimension, conditions, temperature, inside/freezing/humid/dry flags, tick, ground/moving state. `ClientEffectHandler` builds it once before dispatching handlers; `EnvironState` getters now delegate to the published snapshot. Fog, block effects, ambient/player sounds, biome survey, aurora, damage effects, footsteps and Angelica diagnostics read the snapshot instead of a set of mutable static fields. Added `EnvironmentSnapshotTest`.
+- **R10 — restart contract.** Added `@RestartRequired` to `blockedSounds` (the last init-time option without it) and a `ModOptionsTest` that pins every handler/static-table option to the annotation. The config UI now consistently tells users that these options need a restart; runtime reload still handles the registry/fog options.
+- Coverage is now **57.1 % line / 40.8 % branch / 70.1 % class** over **154/177 classes**.
+
 **What remains:** the headless correctness backlog is exhausted. The release gate is the real client compatibility matrix; the authoritative remaining-work register is §11.
 
 ### The three compatibility moves that unlock the most value
@@ -404,7 +410,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 ### Coverage reality
 
-The JaCoCo floor now measures **56.3 % lines / 40.8 % branches / 69.7 % classes** over **152 of 177 classes (86 %)**, after batch 57 narrowed the exclusion from all of `client/**` to GL/audio/client-bound classes (`addon.gradle.kts`). The floor is a regression guard plus per-package floors, not a target; see §8.
+The JaCoCo floor now measures **57.1 % lines / 40.8 % branches / 70.1 % classes** over **154 of 177 classes (87 %)**, after batch 57 narrowed the exclusion from all of `client/**` to GL/audio/client-bound classes (`addon.gradle.kts`). The floor is a regression guard plus per-package floors, not a target; see §8.
 
 ---
 
@@ -741,7 +747,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B51 | **M** | `util/ConfigProcessor.java:58` | `Float.MIN_VALUE` as the "no minimum" sentinel clamped unannotated floats to `1.4e-45`. **Fixed in batch 13:** `-Float.MAX_VALUE`, with a negative-value config test. |
 | B52 | **M** | `util/ConfigProcessor.java:19-101` | No support for `double`/`long`/enums beyond `String[]`; parse failures were logged and ignored. **Fixed in batches 27+28+30:** `double`/`long`/enum support, invalid-value fallback, and a last-errors validation report are tested. |
 | B53 | **M** | `ModOptions.java:405-425` | `scrubCategory` removed any property with an empty comment. **Fixed in batch 26:** only unknown (non-annotated) properties are removed; known comment-less properties survive, with a unit test. |
-| B54 | **M** | `client/gui/DynamicSurroundingsConfigGui.java:92-96` | Synthetic sound/config saves ran after `super.actionPerformed`. **Partially fixed in batches 50+53:** saves happen first and the client registries/fog theme reload at runtime. Static-final sound tables and handler registration remain restart-bound. |
+| B54 | **M** | `client/gui/DynamicSurroundingsConfigGui.java:92-96` | Synthetic sound/config saves ran after `super.actionPerformed`. **Fixed in batches 50+53+59:** saves happen first, client registries/fog reload at runtime, and every static-final/handler-registration option now declares `RestartRequired` in the config UI. |
 | B55 | **M** | `client/waila/WailaHandler.java:119-121` | WAILA registration was debug-gated and loaded from the common proxy. **Fixed in batch 42:** registered from `ProxyClient` only when Waila is loaded; debug gate removed. |
 | B56 | **M** | `proxy/Proxy.java:31-36` | Common proxy imported client classes and initialized `DamageEffectHandler` on the server. **Fixed in batch 42:** common proxy has no client imports, server damage detection is `DamageEffectServer`, and the DTO is `network/HealthData`; client-only registries stay in `ProxyClient`. |
 | B57 | **M** | `data/DimensionRegistry.java:27` | `CALENDAR_API = Loader.isModLoaded("CalendarAPI")` in a static initializer forced FML bootstrap in tests. **Fixed in batch 15:** a safe class probe, no `Loader` call. |
@@ -761,7 +767,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B66 | **H** | `client/fx/JetEffect.java:83-89` | `Dust.trigger` required `world.isAirBlock(x, y-1, z)`, so dust only spawned on floating blocks. **Fixed in batch 15:** it now requires air above, like fire/fountain; tested both directions. |
 | B67 | **H** | `client/fx/BlockEffectHandler.java:40-62` | ~1,000 `BlockPos` allocations and repeated work per sample. **Fixed in batch 40:** one mutable position, cached sample count, registry early-out, and allocation-free weighted sound selection. |
 | B68 | **M** | `client/EnvironStateHandler.java:205-225` | 21 `CONDITION_TOKEN_*` constants and `CONDITION_SEPARATOR` were unused. **Fixed in batch 19:** removed; `getPlayerConditions` is the single literal source. |
-| B69 | **M** | `client/EnvironStateHandler.java:188-470` | `EnvironState` is a static mutable god-object. **Partially fixed in batch 44:** `getPlayer/getWorld/isPlayer/isPlayerMoving` are null-safe. The immutable `EnvironmentSnapshot` refactor remains. |
+| B69 | **M** | `client/EnvironStateHandler.java:188-470` | `EnvironState` is a static mutable god-object. **Fixed in batches 44+59:** null-safe accessors plus an immutable per-tick `EnvironmentSnapshot`; the static mutable state is gone. |
 | B70 | **M** | `client/BiomeSurveyHandler.java:57-70` | The dirty check included `playerY` and re-scanned per block moved. **Fixed in batches 25+27:** Y is ignored and position movement is throttled to one scan per 20 ticks; dimension/biome changes are immediate. |
 | B71 | **M** | `client/PlayerSoundEffectHandler.java:42-63` | Every tick allocated a map/list and re-ran regex matching per sound. **Fixed in batches 30+33:** weighted biome, player, and combined ambient lists are cached; `queueAmbientSounds` no longer mutates the caller list. Per-tick spot rolls remain by design. |
 | B72 | **M** | `client/hud/PotionHUD.java:30-100` | Null player, no state restore, per-frame formatting. **Fixed in batches 4+44:** dispatcher filter, null guard, `glPushAttrib`/`glPopAttrib`, and `PotionTextCache`. |
@@ -912,7 +918,7 @@ Confirmed unused (or production-dead) items to remove after the refactors land:
 
 ### 8.1 Fix the metric first
 
-**Implemented in batch 57.** The floor now covers 152/177 classes (86 %) instead of excluding all client code: renderers, handlers, GUI/HUD, audio-cache and biome-grid scans are the only exclusions. Global floors are 50 % line / 35 % branch, with per-package floors for the logic-heavy packages. The original plan was:
+**Implemented in batch 57.** The floor now covers 154/177 classes (87 %) instead of excluding all client code: renderers, handlers, GUI/HUD, audio-cache and biome-grid scans are the only exclusions. Global floors are 50 % line / 35 % branch, with per-package floors for the logic-heavy packages. The original plan was:
 
 1. **Narrow the JaCoCo exclusion** from `client/**` to the actual GL/audio-bound classes, e.g. `client/**Renderer*`, `client/**Handler*` (only those that touch `GL11`/`Tessellator`), `client/gui/**`, `client/hud/**`, `client/fx/particle/**`, `client/waila/**`, `client/sound/cache/**` (or leave the cache testable with mocks). Include pure classes such as `FogResult`, `Aurora`/`Node` geometry, `Weather` (after splitting the state from Minecraft), `SoundEffect`, `ConfigProperty`, `AuroraPreset`, `ColorPair`, `MathStuff`, `PlayerUtils` (after extracting a world-access interface), `BiomeRegistry`/`BlockRegistry` weighted pick (after extraction).
 2. **Better: move pure logic to a `core/`/`logic/` package** (no `client` in the name) so the coverage configuration stays simple and the code is obviously side-neutral. E.g. `logic/fog/FogResult`, `logic/aurora/AuroraGeometry`, `logic/weather/WeatherState`, `logic/sound/WeightedRandom`.
@@ -1005,7 +1011,7 @@ Keep each PR small and keep the game test + new compat job green. The compatibil
 
 ## 11. Remaining work register (after batch 56)
 
-**Baseline:** `./gradlew check` green with **313 unit tests / 76 suites**; `gameTestServer` **79/79**; production code has no `System.out`/`System.err`/`printStackTrace`. **No known headless-testable correctness bug remains.**
+**Baseline:** `./gradlew check` green with **316 unit tests / 77 suites**; `gameTestServer` **79/79**; production code has no `System.out`/`System.err`/`printStackTrace`. **No known headless-testable correctness bug remains.**
 
 This register is authoritative where an earlier table still describes a finding as open even though a later batch fixed it (notably B15, B25, B30, B75, B80 and P1/P5/P6/P9/P11/P12/P16). The dead-code list in §6 also predates batches 11–49 and must be re-verified item by item rather than removed wholesale.
 
@@ -1037,7 +1043,7 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 ### 11.2 P1 — high priority
 
-**R1–R6 are complete in batches 57–58.** The remaining P1 items are R7–R10.
+**R1–R10 are complete in batches 57–59.** No P1 items remain.
 
 #### Fully automatable (A)
 
@@ -1066,8 +1072,8 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 | ID | Item | Sev | Notes |
 |---|---|---|---|
-| R9 | **`EnvironmentSnapshot` refactor (B69)** | M | Replace the static mutable `EnvironState` with one immutable per-tick snapshot passed to fog/weather/sound/block effects. The pure snapshot can be unit-tested; integration needs a client pass. |
-| R10 | **Finish B54's runtime contract** | M | Either make the remaining restart-bound options reloadable (static-final sound tables, handler registration) or surface an explicit restart-required message/test. Current state is documented but inconsistent for users. |
+| R9 | **`EnvironmentSnapshot` refactor (B69)** | M | **Complete (batch 59):** immutable snapshot built once per client tick; `EnvironState` delegates to it and fog/weather/sound/block/footstep consumers read it; tested. |
+| R10 | **Finish B54's runtime contract** | M | **Complete (batch 59):** every init-time/handler-registration option now declares `RestartRequired` (including `blockedSounds`), so the config UI reports it consistently; `ModOptionsTest` pins the list. |
 
 ### 11.3 P2 — medium priority
 
@@ -1122,6 +1128,6 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 ### 11.5 Recommended order
 
 1. **P0:** build the client smoke harness (C1/C2), then run the full manual matrix (C3). Fix anything it finds before release.
-2. **P1:** R1–R6 are done; next are GUI/aurora performance (R7/R8) and `EnvironmentSnapshot` (R9), then B54’s runtime contract (R10).
+2. **P1:** complete — R1–R10 are done.
 3. **P2:** registry/config/resource-loader structure (M7/M9/M10), then dead-code and golden-data cleanup (M4/M5).
 4. **P3:** opportunistic cleanup and feature work (L1–L5).

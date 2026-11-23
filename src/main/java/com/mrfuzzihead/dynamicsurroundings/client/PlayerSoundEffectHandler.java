@@ -126,8 +126,9 @@ public class PlayerSoundEffectHandler implements IClientEffectHandler {
         if (player.isDead) {
             resetSounds();
         } else {
-            BiomeGenBase playerBiome = EnvironStateHandler.EnvironState.getPlayerBiome();
-            String conditions = EnvironStateHandler.EnvironState.getConditions();
+            EnvironmentSnapshot snapshot = EnvironStateHandler.EnvironState.getSnapshot();
+            BiomeGenBase playerBiome = snapshot.getPlayerBiome();
+            String conditions = snapshot.getConditions();
             SoundManager.queueAmbientSounds(getAmbientSounds(conditions, doBiomeSounds()));
             if (doBiomeSounds()) {
                 SoundEffect sound = BiomeRegistry
@@ -143,7 +144,7 @@ public class PlayerSoundEffectHandler implements IClientEffectHandler {
                 SoundManager.playSoundAtPlayer(player, sound);
             }
 
-            this.processWaterDrops();
+            this.processWaterDrops(snapshot.getWorld());
         }
     }
 
@@ -185,10 +186,8 @@ public class PlayerSoundEffectHandler implements IClientEffectHandler {
         }
     }
 
-    private void processWaterDrops() {
+    private void processWaterDrops(World world) {
         if (!drops.isEmpty()) {
-            World world = EnvironStateHandler.EnvironState.getWorld();
-
             for (EntityDropParticleFX drop : drops) {
                 if (drop.isEntityAlive() && !(drop.posY < 1.0)) {
                     int x = MathHelper.floor_double(drop.posX);

@@ -37,12 +37,12 @@ public final class BiomeSurveyHandler implements IClientEffectHandler {
         return revision;
     }
 
-    private static void doSurvey(EntityPlayer player, int range) {
+    private static void doSurvey(EntityPlayer player, int range, BiomeGenBase playerBiome) {
         area = 0;
         weights.clear();
-        if (EnvironStateHandler.EnvironState.getPlayerBiome() instanceof FakeBiome) {
+        if (playerBiome instanceof FakeBiome) {
             area = 1;
-            weights.put(EnvironStateHandler.EnvironState.getPlayerBiome(), 1);
+            weights.put(playerBiome, 1);
         } else {
             int x = MathHelper.floor_double(player.posX);
             int z = MathHelper.floor_double(player.posZ);
@@ -68,9 +68,10 @@ public final class BiomeSurveyHandler implements IClientEffectHandler {
     public void process(World world, EntityPlayer player) {
         int playerX = MathHelper.floor_double(player.posX);
         int playerZ = MathHelper.floor_double(player.posZ);
-        BiomeGenBase playerBiome = EnvironStateHandler.EnvironState.getPlayerBiome();
+        EnvironmentSnapshot snapshot = EnvironStateHandler.EnvironState.getSnapshot();
+        BiomeGenBase playerBiome = snapshot.getPlayerBiome();
         if (shouldSurvey(
-            EnvironStateHandler.EnvironState.getDimensionId(),
+            snapshot.getDimensionId(),
             playerX,
             playerZ,
             playerBiome,
@@ -78,14 +79,14 @@ public final class BiomeSurveyHandler implements IClientEffectHandler {
             lastPlayerX,
             lastPlayerZ,
             lastPlayerBiome,
-            EnvironStateHandler.EnvironState.getTickCounter(),
+            snapshot.getTickCounter(),
             lastSurveyTick)) {
             lastPlayerBiome = playerBiome;
-            lastSurveyTick = EnvironStateHandler.EnvironState.getTickCounter();
-            lastDimension = EnvironStateHandler.EnvironState.getDimensionId();
+            lastSurveyTick = snapshot.getTickCounter();
+            lastDimension = snapshot.getDimensionId();
             lastPlayerX = playerX;
             lastPlayerZ = playerZ;
-            doSurvey(player, BIOME_SURVEY_RANGE);
+            doSurvey(player, BIOME_SURVEY_RANGE, playerBiome);
         }
     }
 

@@ -286,6 +286,7 @@ public final class ModOptions {
         defaultValue = "dynamicsurroundings:bison")
     @ConfigProcessor.Comment("Sounds to block from playing")
     @ConfigProcessor.Hidden
+    @ConfigProcessor.RestartRequired
     public static String[] blockedSounds = new String[] { "dynamicsurroundings:bison" };
     @ConfigProcessor.Parameter(category = "sound", property = "Sound Volume", defaultValue = "")
     @ConfigProcessor.Comment("Individual sound scaling factors")

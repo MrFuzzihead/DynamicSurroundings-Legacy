@@ -57,9 +57,12 @@ public class EnvironStateHandler implements IClientEffectHandler {
     private List<String> diagnostics;
     private int craftSoundThrottle = Integer.MIN_VALUE;
 
+    static void refreshState(World world, EntityPlayer player) {
+        EnvironState.tick(world, player);
+    }
+
     @Override
     public void process(World world, EntityPlayer player) {
-        EnvironStateHandler.EnvironState.tick(world, player);
         if (Minecraft.getMinecraft().gameSettings.showDebugInfo && ModOptions.enableDebugLogging) {
             DiagnosticEvent.Gather gather = new DiagnosticEvent.Gather(world, player);
             MinecraftForge.EVENT_BUS.post(gather);
@@ -190,75 +193,115 @@ public class EnvironStateHandler implements IClientEffectHandler {
     public static class EnvironState {
 
         public static final Random RANDOM = new XorShiftRandom();
-        private static String conditions = "";
-        private static String biomeName = "";
-        private static BiomeGenBase playerBiome = null;
-        private static DimensionRegistry dimensionInfo = null;
-        private static int dimensionId;
-        private static String dimensionName;
-        private static EntityPlayer player;
-        private static boolean freezing;
-        private static boolean fog;
-        private static boolean humid;
-        private static boolean dry;
-        private static String temperatureCategory = "";
-        private static boolean inside;
-        private static int tickCounter;
-
+        private static volatile EnvironmentSnapshot snapshot = EnvironmentSnapshot.EMPTY;
         private static int cachedConditionMask = -1;
         private static String cachedConditionTemperature;
         private static String cachedPlayerConditions;
 
-        private static String getPlayerConditions(EntityPlayer player) {
+        public static EnvironmentSnapshot getSnapshot() {
+            return snapshot;
+        }
+
+        private static boolean isCreative(EntityPlayer player) {
+            return player.capabilities.isCreativeMode;
+        }
+
+        private static boolean isPlayerHurt(EntityPlayer player) {
+            return !isCreative(player) && player.getHealth() <= ModOptions.playerHurtThreshold;
+        }
+
+        private static boolean isPlayerHungry(EntityPlayer player) {
+            return !isCreative(player) && player.getFoodStats()
+                .getFoodLevel() <= ModOptions.playerHungerThreshold;
+        }
+
+        private static boolean isPlayerBurning(EntityPlayer player) {
+            return player.isBurning();
+        }
+
+        private static boolean isPlayerSuffocating(EntityPlayer player) {
+            return player.getAir() <= 0;
+        }
+
+        private static boolean isPlayerFlying(EntityPlayer player) {
+            return player.capabilities.isFlying;
+        }
+
+        private static boolean isPlayerSprinting(EntityPlayer player) {
+            return player.isSprinting();
+        }
+
+        private static boolean isPlayerInLava(EntityPlayer player) {
+            return player.worldObj.isMaterialInBB(player.boundingBox.expand(-0.1F, -0.4F, -0.1F), Material.lava);
+        }
+
+        private static boolean isPlayerInvisible(EntityPlayer player) {
+            return player.isInvisible();
+        }
+
+        private static boolean isPlayerBlind(EntityPlayer player) {
+            return player.isPotionActive(Potion.blindness);
+        }
+
+        private static boolean isPlayerInWater(EntityPlayer player) {
+            return player.isInWater();
+        }
+
+        private static boolean isPlayerRiding(EntityPlayer player) {
+            return player.isRiding();
+        }
+
+        private static String getPlayerConditions(EntityPlayer player, String temperature, boolean freezing,
+            boolean fog, boolean humid, boolean dry, boolean inside) {
             int mask = 0;
-            if (isPlayerHurt()) {
+            if (isPlayerHurt(player)) {
                 mask |= 1;
             }
-            if (isPlayerHungry()) {
+            if (isPlayerHungry(player)) {
                 mask |= 1 << 1;
             }
-            if (isPlayerBurning()) {
+            if (isPlayerBurning(player)) {
                 mask |= 1 << 2;
             }
-            if (isPlayerSuffocating()) {
+            if (isPlayerSuffocating(player)) {
                 mask |= 1 << 3;
             }
-            if (isPlayerFlying()) {
+            if (isPlayerFlying(player)) {
                 mask |= 1 << 4;
             }
-            if (isPlayerSprinting()) {
+            if (isPlayerSprinting(player)) {
                 mask |= 1 << 5;
             }
-            if (isPlayerInLava()) {
+            if (isPlayerInLava(player)) {
                 mask |= 1 << 6;
             }
-            if (isPlayerInvisible()) {
+            if (isPlayerInvisible(player)) {
                 mask |= 1 << 7;
             }
-            if (isPlayerBlind()) {
+            if (isPlayerBlind(player)) {
                 mask |= 1 << 8;
             }
-            if (isPlayerInWater()) {
+            if (isPlayerInWater(player)) {
                 mask |= 1 << 9;
             }
-            if (isFreezing()) {
+            if (freezing) {
                 mask |= 1 << 10;
             }
-            if (isFoggy()) {
+            if (fog) {
                 mask |= 1 << 11;
             }
-            if (isHumid()) {
+            if (humid) {
                 mask |= 1 << 12;
             }
-            if (isDry()) {
+            if (dry) {
                 mask |= 1 << 13;
             }
-            if (isPlayerInside()) {
+            if (inside) {
                 mask |= 1 << 14;
             }
 
             int ride = 0;
-            if (isPlayerRiding()) {
+            if (isPlayerRiding(player)) {
                 if (player.ridingEntity instanceof EntityMinecart) {
                     ride = 1;
                 } else if (player.ridingEntity instanceof EntityHorse) {
@@ -273,7 +316,7 @@ public class EnvironStateHandler implements IClientEffectHandler {
             }
 
             mask |= ride << 15;
-            if (mask == cachedConditionMask && temperatureCategory.equals(cachedConditionTemperature)) {
+            if (mask == cachedConditionMask && temperature.equals(cachedConditionTemperature)) {
                 return cachedPlayerConditions;
             }
 
@@ -339,64 +382,82 @@ public class EnvironStateHandler implements IClientEffectHandler {
             }
 
             builder.append('#')
-                .append(temperatureCategory);
+                .append(temperature);
             builder.append('#');
             cachedConditionMask = mask;
-            cachedConditionTemperature = temperatureCategory;
+            cachedConditionTemperature = temperature;
             cachedPlayerConditions = builder.toString();
             return cachedPlayerConditions;
         }
 
         private static void tick(World world, EntityPlayer player) {
-            EnvironStateHandler.EnvironState.player = player;
-            conditions = DimensionRegistry.getConditions(world) + getPlayerConditions(player);
-            playerBiome = PlayerUtils.getPlayerBiome(player, false);
-            biomeName = BiomeRegistry.resolveName(playerBiome);
-            dimensionInfo = DimensionRegistry.getData(player.worldObj);
-            dimensionId = world.provider.dimensionId;
-            dimensionName = world.provider.getDimensionName();
-            inside = PlayerUtils.isReallyInside(EnvironStateHandler.EnvironState.player);
+            BiomeGenBase playerBiome = PlayerUtils.getPlayerBiome(player, false);
+            BiomeGenBase trueBiome = PlayerUtils.getPlayerBiome(player, true);
             int posX = MathHelper.floor_double(player.posX);
             int posY = MathHelper.floor_double(player.posY);
             int posZ = MathHelper.floor_double(player.posZ);
-            BiomeGenBase trueBiome = PlayerUtils.getPlayerBiome(player, true);
-            freezing = trueBiome.getFloatTemperature(posX, posY, posZ) < 0.15F;
-            temperatureCategory = "tc" + trueBiome.getTempCategory()
+            boolean freezing = trueBiome.getFloatTemperature(posX, posY, posZ) < 0.15F;
+            String temperature = "tc" + trueBiome.getTempCategory()
                 .name()
                 .toLowerCase();
-            humid = trueBiome.isHighHumidity();
-            dry = trueBiome.getFloatRainfall() == 0.0F;
+            boolean humid = trueBiome.isHighHumidity();
+            boolean dry = trueBiome.getFloatRainfall() == 0.0F;
+            boolean inside = PlayerUtils.isReallyInside(player);
+            int nextTick = snapshot.getTickCounter();
             if (!Minecraft.getMinecraft()
                 .isGamePaused()) {
-                tickCounter++;
+                nextTick++;
             }
+
+            snapshot = EnvironmentSnapshot.builder()
+                .player(player)
+                .world(world)
+                .playerBiome(playerBiome)
+                .biomeName(BiomeRegistry.resolveName(playerBiome))
+                .dimensionInfo(DimensionRegistry.getData(player.worldObj))
+                .dimensionId(world.provider.dimensionId)
+                .dimensionName(world.provider.getDimensionName())
+                .conditions(
+                    DimensionRegistry.getConditions(world)
+                        + getPlayerConditions(player, temperature, freezing, false, humid, dry, inside))
+                .freezing(freezing)
+                .foggy(false)
+                .humid(humid)
+                .dry(dry)
+                .inside(inside)
+                .temperatureCategory(temperature)
+                .tickCounter(nextTick)
+                .playerOnGround(player.onGround)
+                .playerMoving(player.distanceWalkedModified != player.prevDistanceWalkedModified)
+                .build();
         }
 
         public static String getConditions() {
-            return conditions;
+            return snapshot.getConditions();
         }
 
         public static BiomeGenBase getPlayerBiome() {
-            return playerBiome;
+            return snapshot.getPlayerBiome();
         }
 
         public static String getBiomeName() {
-            return biomeName;
+            return snapshot.getBiomeName();
         }
 
         public static DimensionRegistry getDimensionInfo() {
-            return dimensionInfo;
+            return snapshot.getDimensionInfo();
         }
 
         public static int getDimensionId() {
-            return dimensionId;
+            return snapshot.getDimensionId();
         }
 
         public static String getDimensionName() {
-            return dimensionName;
+            return snapshot.getDimensionName();
         }
 
         public static EntityPlayer getPlayer() {
+            EntityPlayer player = snapshot.getPlayer();
             if (player == null) {
                 Minecraft mc = Minecraft.getMinecraft();
                 if (mc != null) {
@@ -425,107 +486,111 @@ public class EnvironStateHandler implements IClientEffectHandler {
         }
 
         public static boolean isCreative() {
-            return getPlayer().capabilities.isCreativeMode;
+            return isCreative(getPlayer());
         }
 
         public static boolean isPlayerHurt() {
-            return !isCreative() && getPlayer().getHealth() <= ModOptions.playerHurtThreshold;
+            return isPlayerHurt(getPlayer());
         }
 
         public static boolean isPlayerHungry() {
-            return !isCreative() && getPlayer().getFoodStats()
-                .getFoodLevel() <= ModOptions.playerHungerThreshold;
+            return isPlayerHungry(getPlayer());
         }
 
         public static boolean isPlayerBurning() {
-            return getPlayer().isBurning();
+            return isPlayerBurning(getPlayer());
         }
 
         public static boolean isPlayerSuffocating() {
-            return getPlayer().getAir() <= 0;
+            return isPlayerSuffocating(getPlayer());
         }
 
         public static boolean isPlayerFlying() {
-            return getPlayer().capabilities.isFlying;
+            return isPlayerFlying(getPlayer());
         }
 
         public static boolean isPlayerSprinting() {
-            return getPlayer().isSprinting();
+            return isPlayerSprinting(getPlayer());
         }
 
         public static boolean isPlayerInLava() {
-            return getPlayer().worldObj
-                .isMaterialInBB(getPlayer().boundingBox.expand(-0.1F, -0.4F, -0.1F), Material.lava);
+            return isPlayerInLava(getPlayer());
         }
 
         public static boolean isPlayerInvisible() {
-            return getPlayer().isInvisible();
+            return isPlayerInvisible(getPlayer());
         }
 
         public static boolean isPlayerBlind() {
-            return getPlayer().isPotionActive(Potion.blindness);
+            return isPlayerBlind(getPlayer());
         }
 
         public static boolean isPlayerInWater() {
-            return getPlayer().isInWater();
+            return isPlayerInWater(getPlayer());
         }
 
         public static boolean isPlayerRiding() {
-            return getPlayer().isRiding();
+            return isPlayerRiding(getPlayer());
         }
 
         public static boolean isPlayerOnGround() {
-            return getPlayer().onGround;
+            return snapshot.isPlayerOnGround();
         }
 
         public static boolean isPlayerMoving() {
-            EntityPlayer current = getPlayer();
-            return current != null && current.distanceWalkedModified != player.prevDistanceWalkedModified;
+            return snapshot.isPlayerMoving();
         }
 
         public static boolean isPlayerInside() {
-            return inside;
+            return snapshot.isInside();
         }
 
         public static boolean isPlayerUnderground() {
-            return playerBiome == BiomeRegistry.UNDERGROUND;
+            return snapshot.getPlayerBiome() == BiomeRegistry.UNDERGROUND;
         }
 
         public static boolean isPlayerInSpace() {
-            return playerBiome == BiomeRegistry.OUTERSPACE;
+            return snapshot.getPlayerBiome() == BiomeRegistry.OUTERSPACE;
         }
 
         public static boolean isPlayerInClouds() {
-            return playerBiome == BiomeRegistry.CLOUDS;
+            return snapshot.getPlayerBiome() == BiomeRegistry.CLOUDS;
         }
 
         public static boolean isFreezing() {
-            return freezing;
+            return snapshot.isFreezing();
         }
 
         public static boolean isFoggy() {
-            return fog;
+            return snapshot.isFoggy();
         }
 
         public static boolean isHumid() {
-            return humid;
+            return snapshot.isHumid();
         }
 
         public static boolean isDry() {
-            return dry;
+            return snapshot.isDry();
         }
 
         public static World getWorld() {
+            World world = snapshot.getWorld();
+            if (world != null) {
+                return world;
+            }
+
             EntityPlayer current = getPlayer();
             return current == null ? null : current.worldObj;
         }
 
         public static int getTickCounter() {
-            return tickCounter;
+            return snapshot.getTickCounter();
         }
 
         public static double distanceToPlayer(double x, double y, double z) {
+            EntityPlayer player = getPlayer();
             return player == null ? Double.MAX_VALUE : player.getDistanceSq(x, y, z);
         }
     }
+
 }
