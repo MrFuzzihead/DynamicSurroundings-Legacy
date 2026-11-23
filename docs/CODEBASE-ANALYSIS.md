@@ -1,7 +1,7 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1–62 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
+**Scope:** analysis + the implementation log below. Batches 1–63 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
 **Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 81 test suites / 328 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
@@ -424,6 +424,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **M11 — build hygiene.** Moved the test/game-test/JaCoCo harness from `addon.gradle.kts` into `gradle/test-harness.gradle.kts`, applied from `addon.gradle.kts`. Root `build.gradle.kts` and `settings.gradle.kts` are unchanged.
 - Coverage is now **56.7 % line / 41.3 % branch / 71.1 % class** over **159/177 classes (90 %)**.
 
+**Batch 63 — L3 documentation audit (328 unit tests, 79/79 game checks)**
+
+- Re-verified the §3/§4/§6 backlog and marked findings fixed in later batches as fixed (B15/B25/B30/B42/B75/B80; P1/P4/P5/P6/P9/P11/P12/P16).
+- Marked the genuinely remaining performance items explicitly **Open**: P10 (config GUI virtualisation), P13/P14 (aurora template/VBO), and M8 diagnostics.
+- Replaced the stale §6 dead-code list with a current list; removed entries already fixed in batches 11–60.
+- **L1, L2 and L3 are complete.**
+
 **What remains:** the headless correctness backlog is exhausted. The release gate is the real client compatibility matrix; the authoritative remaining-work register is §11.
 
 ### The three compatibility moves that unlock the most value
@@ -712,7 +719,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B12 | **C** | `client/FogEffectHandler.java:76-77` | Absolute fog override broke NotFine `TERRAIN_FOG`/`FOG_NEAR_DISTANCE` (Angelica #2304). **Fixed in batch 2:** relative scales applied to the current GL fog; `Respect External Fog` opt-out. |
 | B13 | **H** | `client/FogEffectHandler.java:42-44` | `doFog()` was `enableBiomeFog || allowDesertFog`; elevation haze, morning fog and weather fog were ignored when those two were off. **Fixed in batch 2:** all fog options are considered. |
 | B14 | **M** | `client/fog/MorningFogRangeCalculator.java:39` | `clamp(start - shift*2, 11, newEnd)` could return `11` when `newEnd < 11`, producing `start > end`. **Fixed in batch 2:** the floor is scaled and `FogResult` clamps `start <= end`. |
-| B15 | **M** | `client/fog/BiomeFogRangeCalculator.java:47-80` | 41×41 = 1,681 biome lookups whenever the player moves one block (or the rain/far-plane changes). Cache on a coarser grid (e.g., 4-block cells) or only re-scan when the biome mix changes. |
+| B15 | **M** | `client/fog/BiomeFogRangeCalculator.java:47-80` | 41×41 biome lookups whenever the player moves one block. **Fixed in batches 37+46+47:** 4-block cells, a missing-chunk retry cooldown, and biome-mix signature invalidation. |
 | B16 | **M** | `client/fog/BiomeFogColorCalculator.java:60-79` | Same per-block 169-column rescan. **Fixed in batches 4+37+46:** NotFine `VOID_FOG` gating, 4-block coarse scan keying, and missing-chunk retry cooldown. `applyPlayerEffects` remains a local reimplementation. |
 | B17 | **L** | `client/fog/BiomeFogRangeCalculator.java:13-15` | `DUST_FOG_IMPACT`/`weightMixed` were unused literals. **Fixed in batch 37:** named constants and a derived grid weight. |
 | B18 | **L** | `client/fog/HolisticFogRangeCalculator.java:30-37` | `Math.min` of starts/ends could produce an invalid pair. **Fixed in batch 2:** `FogResult` clamps `start <= end` and the handler checks `isValid`. |
@@ -727,7 +734,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B22 | **M** | `client/AuroraEffectHandler.java:27-75` | `currentAurora` was written outside the `synchronized (auroras)` block and read by the renderer; `addAurora` could run on the Netty thread. **Fixed in batches 1+3:** `currentAurora` is `volatile`, selection is locked, and `PacketAurora` is scheduled on the client thread. |
 | B23 | **M** | `client/aurora/AuroraRenderer.java:137` | `GL11.glScaled(3.5, 25.0, 3.5)` after `tess.draw()` was a leftover; `lowY`/`lowY2` were unused. **Fixed in batch 1.** |
 | B24 | **M** | `client/aurora/Aurora.java:17-22` | Unused constants removed. **Fixed in batch 49.** |
-| B25 | **M** | §2.4 | Aurora is drawn inside `RAIN_SNOW` and is disabled with weather. |
+| B25 | **M** | §2.4 | Aurora was drawn inside `RAIN_SNOW` and disabled with weather. **Fixed in batches 1+6:** `RenderWorldLastEvent` draw plus an Iris `CLOUDS` phase. |
 | B26 | **L** | `client/aurora/AuroraRenderer.java:80-146` | Immediate-mode state was restored by enabling cull/lighting/texture unconditionally rather than restoring the previous state. **Fixed in batch 1:** `glPushAttrib(GL_ALL_ATTRIB_BITS)` / `glPopAttrib`. |
 
 ### 3.4 Sound
@@ -737,7 +744,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B27 | **C** | `client/sound/SoundManager.java:88` | `SoundManager.update()` was only called from `PlayerSoundEffectHandler.process`, which is registered only when `enableBiomeSounds` is true. With biome sounds off, pending block/step sounds never flushed and emitters never ticked. **Fixed in batch 3:** `ClientEffectHandler.clientTick` updates the queue unconditionally. |
 | B28 | **H** | `client/sound/cache/SoundCache.java:25-27,48` | Static manager/buffer, no reload invalidation, `Error` on failure, unreliable `available()`. **Fixed in batches 38+39:** lazy manager, `ThreadLocal` buffer, bounded LRU cache, reload listener, EOF read, and logger/silence fallback. |
 | B29 | **H** | `client/sound/SoundManager.java:84` | Equal emitter keys could be replaced without fading. **Fixed in batch 38:** dedupe by sound name and fade removed emitters. |
-| B30 | **M** | `client/sound/SoundManager.java:67-84` | `queueAmbientSounds` is O(n²) and mutates `sounds` while iterating (safe only because of the immediate `break`). Use maps/sets. |
+| B30 | **M** | `client/sound/DynamicSoundManager.java:58-82` | `queueAmbientSounds` was O(n²) and mutated its input. **Fixed in batches 33+38:** one working map, fade-on-remove, and no mutation of the caller list. |
 | B31 | **M** | `client/sound/SoundManager.java:161-167` | `isSoundPlaying` scanned the whole playing map. **Fixed in batch 38:** vanilla inverse-map check + delayed map; no `containsValue`. |
 | B32 | **M** | `client/sound/PlayerSound.java:30-33` | The first `volume` assignment was dead. **Fixed in batch 38.** |
 | B33 | **M** | `client/sound/SoundManager.java:240-275` | `configureSound()` created/destroyed a temporary OpenAL context just to query channels. **Fixed in batch 39:** live device query, or a short device-only open/close; pure channel-splitting helper tested. |
@@ -754,7 +761,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B39 | **H** | `server/WorldHandler.java:28-31` | The replacement for `World.updateWeatherBody` dropped vanilla's `!provider.hasNoSky` guard, so the state machine ran in the End and other no-sky dimensions. **Fixed in batch 15:** it skips no-sky worlds unless `DimensionRegistry.hasWeather` opts them in, so the Nether config still works. |
 | B40 | **M** | `data/DimensionEffectDataFile.java:31` | `getFile()` marked the saved data dirty on every access, so every autosave rewrote it. **Fixed in batch 16:** dirty callbacks on the real setters and aurora add/clear; repeated reads stay clean. |
 | B41 | **M** | `data/DimensionEffectDataFile.java:23-33` | `world.loadItemData` ran on every tick. **Fixed in batch 41:** synchronized `WeakHashMap` cache cleared on world unload; tested. |
-| B42 | **M** | `server/ServerEffectHandler.java:30,60` | `MIN_AURORA_DISTANCE_SQ`, `CHECK_INTERVAL`, `RESET` are unused; the literals `160000L`, `100`, `-10` are duplicated in `Network`/`DimensionEffectData`. |
+| B42 | **M** | `server/ServerEffectHandler.java:30,60` | The aurora interval/range/reset constants were unused. **Fixed in batches 16+41:** the send/cap paths use the named constants and the keepalive constant is tested. |
 | B43 | **M** | `network/PacketAurora.java:41-47` | `colorSet`/`preset` were serialized as bytes but held as ints. **Fixed in batch 13:** both are written/read as `int`; the codec test pins the width. |
 | B44 | **M** | `server/ServerEffectHandler.java:90-95` | Aurora creation could grow without bound. **Fixed in batch 41:** 32-per-dimension cap with a tested `canAddAurora` guard; hash/range fixes from batches 1/41 handle dedupe. |
 | B45 | **L** | `commands/CommandRain.java:60` | `getCommandSenderAsPlayer` meant the server console could not run `/rain status`. **Fixed in batch 17:** `ICommandSender.getEntityWorld()` and sender replies; tested with a mocked console. |
@@ -767,7 +774,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 |---|---|---|---|
 | B48 | **H** | `data/BiomeRegistry.java:167`, `data/BlockRegistry.java:79,86`, `client/fx/BlockEffect.java:31` | `random.nextInt(chance)` threw `IllegalArgumentException` when the configured chance was `0`. **Fixed in batch 12:** all call sites use `WeightedRandom.roll`, where `chance <= 0` means never. |
 | B49 | **M** | `data/BiomeRegistry.java:187`, `data/BlockRegistry.java:69`, `client/footsteps/engine/implem/ProbabilityWeightsAcoustic.java:42` | The reverse-cumulative pick was duplicated and unguarded: negative weights could walk past index 0 and an empty table called `nextInt(0)`. **Fixed in batch 12:** one `WeightedRandom` helper, negative weights ignored, empty tables return no pick, distribution and guard tested. |
-| B50 | **H** | `data/config/BiomeConfig.java:43`, `data/config/BlockConfig.java:26,41` | The JSON models accept any `Integer` for `spotSoundChance`/`chance`/`stepChance`. **Fixed in batch 12 at the use site:** zero/negative values are treated as "never" rather than reaching `nextInt`; no ambiguous clamping to "always". |
+| B50 | **H** | `data/config/BiomeConfig.java:43`, `data/config/BlockConfig.java:26,41` | The JSON models accept any `Integer` for `spotSoundChance`/`chance`/`stepChance`. **Fixed in batch 12 at the use site:** zero/negative values are treated as "never" rather than reaching `nextInt`. |
 | B51 | **M** | `util/ConfigProcessor.java:58` | `Float.MIN_VALUE` as the "no minimum" sentinel clamped unannotated floats to `1.4e-45`. **Fixed in batch 13:** `-Float.MAX_VALUE`, with a negative-value config test. |
 | B52 | **M** | `util/ConfigProcessor.java:19-101` | No support for `double`/`long`/enums beyond `String[]`; parse failures were logged and ignored. **Fixed in batches 27+28+30:** `double`/`long`/enum support, invalid-value fallback, and a last-errors validation report are tested. |
 | B53 | **M** | `ModOptions.java:405-425` | `scrubCategory` removed any property with an empty comment. **Fixed in batch 26:** only unknown (non-annotated) properties are removed; known comment-less properties survive, with a unit test. |
@@ -797,7 +804,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B72 | **M** | `client/hud/PotionHUD.java:30-100` | Null player, no state restore, per-frame formatting. **Fixed in batches 4+44:** dispatcher filter, null guard, `glPushAttrib`/`glPopAttrib`, and `PotionTextCache`. |
 | B73 | **M** | `client/PotionParticleScrubHandler.java:8-11` | Wrote the potion liquid colour datawatcher every tick. **Fixed in batch 31:** removed; a client-only mixin cancels the local player `mobSpell` spawn when enabled. |
 | B74 | **M** | `client/fx/particle/EntityTextPopOffFX.java:59-89` | Immediate-mode font draw and depth-func state leak; see §2.5. **Fixed in batch 7:** render-less marker + post-world renderer with pushed attributes and an Iris `PARTICLES` phase. |
-| B75 | **L** | `client/hud/GuiHUDHandler.java:36-40` | The dispatcher forwards all overlay phases to all overlays; filter by `ElementType` in the dispatcher. |
+| B75 | **L** | `client/hud/GuiHUDHandler.java:36-40` | The dispatcher forwarded all overlay phases. **Fixed in batch 4:** only the non-cancelable `EXPERIENCE` pass is dispatched. |
 | B76 | **L** | `client/EnvironStateHandler.java:104-109` | `craftSoundThrottle` made the first craft depend on the tick counter. **Fixed in batch 44:** initialized to `Integer.MIN_VALUE`. |
 
 ### 3.8 Footsteps / sound engine
@@ -807,7 +814,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B77 | **H** | `client/footsteps/game/system/PFSolver.java:49` | `Math.abs(motionY) < 0.02` returned null for every grounded player with zero vertical motion, suppressing flat-ground footsteps. **Fixed in batch 20:** only stationary airborne players are skipped; ground/water/ladder cases are tested. |
 | B78 | **M** | `client/footsteps/game/system/PFReaderQP.java:50-85` | Dead branches and unused fields in a class never instantiated. **Fixed in batch 19:** class removed. |
 | B79 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:126-135` | `newMinimum` was assigned every remaining sound instead of the minimum, and `randAB` sampled `[a, a+b]` instead of `[a, b]`. **Fixed in batch 14:** `Math.min` for the wake-up and a bounded `randomDelay`, with tests. |
-| B80 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:40-43` | `USING_LATENESS`, `USING_EARLYNESS`, `LATENESS_THRESHOLD_DIVIDER`, `EARLYNESS_THRESHOLD_POW` unused; the literals are repeated. |
+| B80 | **M** | `client/footsteps/mcpackage/implem/AcousticsManager.java:40-43` | The always-true `USING_*` flags were removed and the thresholds now have named constants. **Fixed in batch 14.** |
 | B81 | **M** | `client/footsteps/mcpackage/implem/LegacyCapableBlockMap.java:15-35` | Only `^` and `.` were treated as legacy separators; `id:meta` keys failed. **Fixed in batch 17:** `:`, `^`, and `.` are accepted; `1:0`, `1^0`, `1.0`, and bare IDs are tested. |
 | B82 | **M** | `client/footsteps/mcpackage/implem/BasicBlockMap.java:97-120` | The regex is fragile; `BlockInfo.hashCode` NPE'd on a null block and `equals` cast without `instanceof`; `getBlockMap` reuses a mutable key. **Fixed in batches 18+22+26:** null-safe `BlockInfo` hash/`instanceof` equality, an anchored `parseKey` parser, and a `ThreadLocal` lookup key. The regex/key work is covered by tests. |
 | B83 | **M** | `client/footsteps/game/system/Footsteps.java:74-166` | Empty streams threw `NoSuchElementException` and malformed JSON was swallowed. **Fixed in batch 23:** empty streams are skipped, loaders catch runtime parse failures, and `AcousticsJsonReader` logs through `ModLog`. |
@@ -855,22 +862,22 @@ Ordered by expected win. Each item is independent and testable.
 
 | # | Hotspot | Current cost | Fix |
 |---|---|---|---|
-| P1 | `ServerEffectHandler` rain packet | 20 packets/s/dimension, always | Send only on change (compare last sent value), on join, and at a low keep-alive rate (e.g., 20 ticks). |
+| P1 | `ServerEffectHandler` rain packet | 20 packets/s/dimension, always | **Done in batches 16+58:** send on change, first-send on join, 40-tick keepalive, and game-test coverage. |
 | P2 | `StormRenderer` + `StormSplashRenderer` world lookups | 441 columns × (biome + temperature + precipitation + light) per frame, up to 100 more per frame for splashes | **Done in batch 37:** shared `WeatherColumnCache` keyed by column/dimension/20-tick bucket; light remains uncached. |
 | P3 | `BiomeFogRangeCalculator` | 1,681 biome lookups on every block move / rain / far-plane change | **Done in batches 37+46+47:** 4-block cells, 20-tick missing-chunk retry, and biome-mix signature invalidation. |
-| P4 | `BlockEffectHandler` | ~1,000 samples/tick × 2 block reads + allocations + weighted-list allocation | Mutable `BlockPos`, one `getBlock`+metadata read, allocation-free weighted pick, and an early-out when no block effects/sounds are configured. Optionally sample 1/2 or 1/4 of the volume per tick on a rolling schedule. |
-| P5 | `PlayerSoundEffectHandler` | New maps/lists/scaled effects every tick; regex per sound | Cache the weighted sound list per (conditions, survey revision); reuse lists; precompile `SoundEffect` patterns. |
-| P6 | `BiomeSurveyHandler` | 169 biome lookups per block moved (including Y changes) | Drop Y from the key, throttle to 20 ticks/area change, skip if the player hasn't moved a block. |
+| P4 | `BlockEffectHandler` | ~1,000 samples/tick × 2 block reads + allocations + weighted-list allocation | **Done in batches 40+60:** mutable position, cached sample count, registry early-out, allocation-free pick, and half-volume rolling samples. |
+| P5 | `PlayerSoundEffectHandler` | New maps/lists/scaled effects every tick; regex per sound | **Done in batches 30+33:** weighted biome/player/ambient lists are cached by conditions and survey revision; patterns are precompiled. |
+| P6 | `BiomeSurveyHandler` | 169 biome lookups per block moved (including Y changes) | **Done in batches 25+27:** Y is ignored and position movement is throttled to one scan per 20 ticks. |
 | P7 | `SoundCache` | Unbounded retention of every played ogg; 64 KiB static buffer | **Done in batches 38+39:** `ThreadLocal` buffer, reload clear, and a 256-entry LRU. |
 | P8 | `SoundManager` | O(n²) `containsValue`/`contains`/`remove` per tick | **Done in batches 38+39:** removed `containsValue`, emitter dedupe by name, and `SoundEffect.hashCode`. |
-| P9 | `PotionHUD` | `I18n.format`, `getStringWidth`, string building every frame | Cache per `PotionEffect` and refresh when the displayed second changes. |
-| P10 | Config GUI | Builds 570 Boolean + 570 Integer properties on open | Virtualize/lazy-load the sound lists, or move per-sound volume to a separate searchable screen. |
-| P11 | `DimensionEffectDataFile` | `loadItemData` + `markDirty` per tick per world | Cache per world; mark dirty on mutation. |
-| P12 | `WorldHandler` | Static `XorShiftRandom` shared, `DimensionEffectDataFile` per tick | Fine, but pass an RNG or a `WeatherTicker` for deterministic tests; cache the data. |
-| P13 | `Aurora` | Per-frame trig over ~3 × 128 nodes | Precompute the band template per seed; only update offsets when `auroraAnimate`; use `MathStuff` (already). |
-| P14 | `AuroraRenderer` | Immediate-mode + attribute state churn | A small static VBO / `Tessellator` buffer with the geometry rebuilt only when the node set changes; batch all three bands into one draw. |
+| P9 | `PotionHUD` | `I18n.format`, `getStringWidth`, string building every frame | **Done in batch 44:** `PotionTextCache` caches names and once-per-second durations. |
+| P10 | Config GUI | Builds 570 Boolean + 570 Integer properties on open | **Open:** virtualize/lazy-load the sound lists, or move per-sound volume to a separate searchable screen. |
+| P11 | `DimensionEffectDataFile` | `loadItemData` + `markDirty` per tick per world | **Done in batches 16+41:** per-world cache and dirty-on-mutation callbacks. |
+| P12 | `WorldHandler` | Static `XorShiftRandom` shared, `DimensionEffectDataFile` per tick | **Done in batches 41+45:** cached data and an injectable RNG with tested interval helpers. |
+| P13 | `Aurora` | Per-frame trig over ~3 × 128 nodes | **Open:** precompute the band template per seed; only update offsets when `auroraAnimate` (R8). |
+| P14 | `AuroraRenderer` | Immediate-mode + attribute state churn | **Open:** small static VBO/Tessellator buffer rebuilt only when the node set changes (R8). |
 | P15 | `EnvironState.tick` | Regex per biome + string concat per tick | **Done in batches 48+54+57:** dimension/player condition strings are cached, and biome config regexes are compiled once per reload. |
-| P16 | `VersionCheck` | Blocking HTTP on a non-daemon thread | Timeouts, daemon thread, optional. |
+| P16 | `VersionCheck` | Blocking HTTP on a non-daemon thread | **Done in batches 29+34:** timeouts, daemon thread, opt-in default, configurable URL, and GitHub Releases parsing. |
 | P17 | `SoundManager.configureSound` | AL create/destroy | **Done in batch 39:** live-device query with a device-only fallback. |
 | P18 | `ForgeDictionary` | Repeated ore-dictionary lookups on every reload | **Done in batch 57:** `OreLookupCache` reuses per-ore `ItemStack` lists; `invalidate()` clears them when the ore dictionary changes. |
 
@@ -897,29 +904,15 @@ Ordered by expected win. Each item is independent and testable.
 
 ## 6. Dead code / cleanup
 
-Confirmed unused (or production-dead) items to remove after the refactors land:
+Re-verified in batch 63. The blocks that later batches already fixed have been removed from this list; what remains is either still production-dead or only exercised by tests.
 
-- **`BlockPos`**: `getAllInBox`, `getAllInBoxMutable`, `getImmutable`, `fromLong` (only tests use it), `ORIGIN` maybe; the class has no `equals`/`hashCode` and the test documents the broken iterators.
-- **`EnvironStateHandler`**: 21 `CONDITION_TOKEN_*` constants + `CONDITION_SEPARATOR`; `CONDITION_TOKEN_MINECART/HORSE/BOAT/PIG` also duplicated as literals.
-- **`DimensionEffectData`**: `NBT` inner class, `MIN_INTENSITY`, `MAX_INTENSITY`; `DimensionEffectDataFile.NBT`; `AuroraData.NBT`.
-- **`Aurora`**: `ANGLE1`, `FADE_LIMIT`, `AURORA_SPEED`, `AURORA_AMPLITUDE`, `AURORA_WAVELENGTH`; **`AuroraRenderer`**: `lowY`, `lowY2`, the `glScaled(3.5, 25, 3.5)` line.
-- **`PFReaderQP`**: `USE_FUNCTION`, the `if (2 == …)` branches and unused locals. The class is never instantiated (`Footsteps` always uses `PFReaderH`); either wire a config for quadrupeds or delete it.
-- **`AcousticsManager`**: `USING_LATENESS`, `USING_EARLYNESS`, `LATENESS_THRESHOLD_DIVIDER`, `EARLYNESS_THRESHOLD_POW`.
-- **`PlayerUtils`**: `INSIDE_Y_ADJUST`, `RANGE`, `AREA` (literals used).
-- **`BiomeSurveyHandler`**: `BIOME_SURVEY_RANGE` (literal 6).
-- **`ServerEffectHandler`**: `MIN_AURORA_DISTANCE_SQ`, `CHECK_INTERVAL`, `RESET`.
-- **`WorldHandler`**: `STRENGTH_ADJUST` (literal 0.01F).
-- **`VersionCheck`**: `VERSION_CHECK_RETRIES`, `VERSION_CHECK_INTERVAL`, `REMOTE_VERSION_FILE` (literal URL), `CURSE_PROJECT_NAME`, `MOD_NAME_TEMPLATE` (literals in `register`).
-- **`MathStuff`**: `RAD_TO_INDEX`, `DEG_FULL`, `DEG_TO_INDEX`, `COS_TO_SIN`, `RAD_TO_DEG`, `DEG_TO_RAD`, `PI_F`, `E_F` (verify test usage before removing public constants).
-- **`ModOptions`**: many `CONFIG_*` constants are only used by the GUI; prune or keep as the schema. `SOUND_QUEUE_SLACK`/`AGE_THRESHOLD_TICKS` are used as literals.
-- **`StormSplashRenderer`**: `PARTICLE_SOUND_CHANCE` (literal 20), `RANGE` (literal 10); `GENERATOR` is used.
-- **`BiomeFogRangeCalculator`**: `DUST_FOG_IMPACT` (literal 0.9F).
-- **`RgbColor`**: duplicate `MC_BLACK`/`MC_WHITE` removed in batch 60; verify any remaining unused palette constants before pruning.
-- **Assets**: the six unreferenced ogg files were removed in batch 60.
-- **`variator.json` / variator loader**: removed in batch 60; `NormalVariator` defaults remain.
-- **`RenderWeather.register`**: removed in batch 60; the static list is populated directly.
-- **`WailaHandler`**: made an explicit singleton in batch 60.
-- **`Module`**: self-registration on the FML bus removed in batch 49.
+- **`BlockPos`**: `fromLong`/`ORIGIN` are test-only, and the box iterators are test-only utilities; keep them if the API is useful, otherwise remove them together with their tests. The old broken `equals`/`hashCode`/copy behaviour is fixed.
+- **`ModOptions`**: several `CONFIG_*` constants are only used by the GUI; keep them as the schema or prune them in a later cleanup.
+- **`RgbColor`**: verify the remaining named palette entries; the duplicate `MC_BLACK`/`MC_WHITE` constants are gone.
+- **`BlockEffectHandler`**: `SAMPLE_SLICES` is a fixed internal tuning constant; expose it only if profiling shows a need.
+- **`Addon` harness**: `gradle/test-harness.gradle.kts` is intentionally separate; no dead build code remains in `addon.gradle.kts`.
+
+The earlier fixed entries (condition tokens, NBT holders, Aurora/Renderer constants, `PFReaderQP`, `AcousticsManager` flags, unused assets, `variator.json`, `RenderWeather.register`, `WailaHandler` singleton, FML-bus registration) are intentionally not repeated here.
 
 ---
 
@@ -1136,13 +1129,15 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 ### 11.4 P3 — low priority / opportunistic
 
+**L1–L3 are complete in batches 60–63.** L4/L5 remain optional design work.
+
 #### Fully automatable (A)
 
 | ID | Item | Sev | Notes |
 |---|---|---|---|
 | L1 | **Unused asset cleanup** | L | **Complete (batch 60):** the six unreferenced ogg files and empty `variator.json` were removed. |
 | L2 | **Small dead-code removals** | L | **Complete (batch 60):** duplicate color constants, `RenderWeather.register`, and the `WailaHandler` singleton path were cleaned up. |
-| L3 | **Comment/doc drift** | L | Several §3/§4/§6 rows are historical; mark fixed rows consistently so the next audit does not re-open closed work. |
+| L3 | **Comment/doc drift** | L | **Complete (batch 63):** stale §3/§4/§6 rows marked fixed or explicitly open; §6 dead-code list re-verified. |
 
 #### Design/refactor (D)
 
@@ -1156,4 +1151,4 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 1. **P0:** build the client smoke harness (C1/C2), then run the full manual matrix (C3). Fix anything it finds before release.
 2. **P1:** complete — R1–R10 are done.
 3. **P2:** M1–M11 are done; only the optional diagnostics expansion (M8) remains.
-4. **P3:** opportunistic cleanup and feature work (L1–L5).
+4. **P3:** L1–L3 are done; L4/L5 remain optional feature work.
