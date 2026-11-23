@@ -57,6 +57,46 @@ public final class NotFineBridge {
         }
     }
 
+    /** NotFine's terrain-fog toggle, or {@code null} when NotFine is absent. */
+    public static Boolean terrainFog() {
+        if (!isAvailable()) {
+            return null;
+        }
+
+        try {
+            return NotFineSettingsHook.terrainFog();
+        } catch (LinkageError | RuntimeException e) {
+            ModLog.debug("NotFine terrain fog bridge unavailable: %s", e.toString());
+            return null;
+        }
+    }
+
+    /** NotFine's near-fog percentage, or {@code null} when NotFine is absent. */
+    public static Integer nearFogPercent() {
+        if (!isAvailable()) {
+            return null;
+        }
+
+        try {
+            return NotFineSettingsHook.nearFogPercent();
+        } catch (LinkageError | RuntimeException e) {
+            ModLog.debug("NotFine near fog bridge unavailable: %s", e.toString());
+            return null;
+        }
+    }
+
+    /** One-line NotFine state for the F3/debug diagnostics. */
+    public static String diagnostic() {
+        if (!isAvailable()) {
+            return "n/a";
+        }
+
+        Boolean terrain = terrainFog();
+        Integer near = nearFogPercent();
+        return "downfall=" + downfallDistance(
+            10) + ", terrainFog=" + (terrain == null ? "?" : terrain) + ", near=" + (near == null ? "?" : near + "%");
+    }
+
     /** NotFine's configured cloud height, or {@code fallback} when NotFine is absent. */
     public static int cloudHeight(int fallback) {
         if (!isAvailable()) {

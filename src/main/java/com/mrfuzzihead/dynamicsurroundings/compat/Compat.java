@@ -1,6 +1,7 @@
 package com.mrfuzzihead.dynamicsurroundings.compat;
 
 import cpw.mods.fml.common.Loader;
+import cpw.mods.fml.common.ModContainer;
 
 /**
  * Small, dependency-free mod detection facade. Optional compatibility classes must never name Angelica, NotFine or
@@ -33,6 +34,18 @@ public final class Compat {
 
     public static boolean isBiomesOPlentyLoaded() {
         return isLoaded(BIOMES_O_PLENTY);
+    }
+
+    /** Version of a loaded mod, or {@code "absent"} when it is not present. */
+    public static String version(String modId) {
+        try {
+            ModContainer container = Loader.instance()
+                .getIndexedModList()
+                .get(modId);
+            return container == null ? "absent" : container.getVersion();
+        } catch (Exception | LinkageError e) {
+            return "unknown";
+        }
     }
 
     /**

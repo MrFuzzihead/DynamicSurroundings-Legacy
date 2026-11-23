@@ -18,6 +18,7 @@ import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.AuroraEffectHandler;
 import com.mrfuzzihead.dynamicsurroundings.client.aurora.Aurora;
 import com.mrfuzzihead.dynamicsurroundings.client.weather.WeatherBackend;
+import com.mrfuzzihead.dynamicsurroundings.compat.CompatibilityDiagnostics;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -192,6 +193,19 @@ public final class ClientSmokeTest {
             pass = false;
             print("FAIL invalid fog range");
         }
+        List<String> diagnostics = CompatibilityDiagnostics.lines(this.mc.theWorld);
+        boolean diagnosticsOk = diagnostics.size() >= 5 && diagnostics.stream()
+            .anyMatch(line -> line.startsWith("Mods: "))
+            && diagnostics.stream()
+                .anyMatch(line -> line.startsWith("Fog: "))
+            && diagnostics.stream()
+                .anyMatch(line -> line.startsWith("NotFine: "));
+        print("diagnostics: " + String.join(" | ", diagnostics));
+        if (!diagnosticsOk) {
+            pass = false;
+            print("FAIL compatibility diagnostics are incomplete");
+        }
+
         if (ModOptions.auroraEnable && this.auroraFrames == 0) {
             pass = false;
             print("FAIL aurora was enabled but never rendered");

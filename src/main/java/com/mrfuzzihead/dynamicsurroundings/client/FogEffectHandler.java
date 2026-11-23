@@ -34,6 +34,8 @@ public class FogEffectHandler implements IClientEffectHandler {
 
     protected HolisticFogColorCalculator fogColor = new HolisticFogColorCalculator();
     protected HolisticFogRangeCalculator fogRange = new HolisticFogRangeCalculator();
+    private static float lastFogStart = Float.NaN;
+    private static float lastFogEnd = Float.NaN;
 
     @Override
     public boolean hasEvents() {
@@ -91,10 +93,20 @@ public class FogEffectHandler implements IClientEffectHandler {
                     if (range != null) {
                         GL11.glFogf(GL11.GL_FOG_START, range[0]);
                         GL11.glFogf(GL11.GL_FOG_END, range[1]);
+                        lastFogStart = range[0];
+                        lastFogEnd = range[1];
                     }
                 }
             }
         }
+    }
+
+    /** Last range DS applied, for the F3/debug diagnostics. */
+    public static String effectiveFog() {
+        if (!Float.isFinite(lastFogStart) || !Float.isFinite(lastFogEnd)) {
+            return "n/a";
+        }
+        return "start=" + lastFogStart + ", end=" + lastFogEnd;
     }
 
     /**
@@ -126,6 +138,8 @@ public class FogEffectHandler implements IClientEffectHandler {
     @SubscribeEvent(receiveCanceled = false, priority = EventPriority.LOWEST)
     public void onWorldLoad(@Nonnull Load event) {
         if (event.world.isRemote) {
+            lastFogStart = Float.NaN;
+            lastFogEnd = Float.NaN;
             this.setupTheme(event.world);
         }
     }

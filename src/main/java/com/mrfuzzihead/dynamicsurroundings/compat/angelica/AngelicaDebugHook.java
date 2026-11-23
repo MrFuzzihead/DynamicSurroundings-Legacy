@@ -13,6 +13,7 @@ import com.gtnewhorizons.angelica.api.debug.DebugScreenEntry;
 import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
 import com.mrfuzzihead.dynamicsurroundings.client.weather.Weather;
 import com.mrfuzzihead.dynamicsurroundings.client.weather.WeatherBackend;
+import com.mrfuzzihead.dynamicsurroundings.compat.CompatibilityDiagnostics;
 import com.mrfuzzihead.dynamicsurroundings.compat.notfine.NotFineBridge;
 
 import cpw.mods.fml.relauncher.Side;
@@ -56,8 +57,12 @@ final class AngelicaDebugHook {
                                     .getConditions());
                         displayer.line(group)
                             .text(Weather.diagnostic());
-                        displayer.fact(group, "NotFine downfall")
-                            .value(String.valueOf(NotFineBridge.downfallDistance(10)));
+                        displayer.fact(group, "Mods")
+                            .value(CompatibilityDiagnostics.modSummary());
+                        displayer.fact(group, "Fog")
+                            .value(CompatibilityDiagnostics.fogSummary());
+                        displayer.fact(group, "NotFine")
+                            .value(NotFineBridge.diagnostic());
                     }
                 }));
     }

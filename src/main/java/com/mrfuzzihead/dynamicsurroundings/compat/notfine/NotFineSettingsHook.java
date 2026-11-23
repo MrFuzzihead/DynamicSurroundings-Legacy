@@ -23,6 +23,16 @@ final class NotFineSettingsHook {
         return !(value instanceof Boolean) || (Boolean) value;
     }
 
+    static boolean terrainFog() {
+        Object value = Settings.TERRAIN_FOG.option.getStore();
+        return !(value instanceof Boolean) || (Boolean) value;
+    }
+
+    static int nearFogPercent() {
+        Object value = Settings.FOG_NEAR_DISTANCE.option.getStore();
+        return value instanceof Number ? ((Number) value).intValue() : 75;
+    }
+
     static int cloudHeight() {
         Object value = Settings.CLOUD_HEIGHT.option.getStore();
         return value instanceof Number ? ((Number) value).intValue() : 128;
