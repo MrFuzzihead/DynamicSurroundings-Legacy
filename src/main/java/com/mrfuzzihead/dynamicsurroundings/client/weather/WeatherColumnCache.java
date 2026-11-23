@@ -13,6 +13,7 @@ import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import gnu.trove.map.hash.TIntFloatHashMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 
 /**
  * Shared per-tick cache for the biome/precipitation/height data used by both the storm quads and splash particles.
@@ -45,6 +46,7 @@ public final class WeatherColumnCache {
         public final boolean hasDust;
         public final boolean hasPrecipitation;
         private final TIntFloatHashMap temperatures = new TIntFloatHashMap();
+        private final TIntIntHashMap lights = new TIntIntHashMap();
 
         private Column(BiomeGenBase biome, int x, int z, int precipitationHeight, float temperature, boolean hasDust,
             boolean hasPrecipitation) {
@@ -56,6 +58,16 @@ public final class WeatherColumnCache {
             this.hasDust = hasDust;
             this.hasPrecipitation = hasPrecipitation;
             this.temperatures.put(precipitationHeight, temperature);
+        }
+
+        public int lightAt(World world, int y) {
+            if (this.lights.containsKey(y)) {
+                return this.lights.get(y);
+            }
+
+            int value = world.getLightBrightnessForSkyBlocks(this.x, y, this.z, 0);
+            this.lights.put(y, value);
+            return value;
         }
 
         public float temperatureAt(World world, int y) {

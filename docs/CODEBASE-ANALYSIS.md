@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 63 test suites / 268 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 63 test suites / 270 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -314,6 +314,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B69 (partial):** `EnvironState.getPlayer/getWorld/isPlayer/isPlayerMoving` now tolerate a missing client player instead of dereferencing null. The broader static-state refactor remains.
 - **B76:** `craftSoundThrottle` starts at `Integer.MIN_VALUE`, so the first craft is not tick-counter dependent.
 
+**Batch 45 — weather light cache and deterministic weather RNG (270 tests green)**
+
+- **B9 residual:** `WeatherColumnCache.Column` now caches the sky light per column/height; `StormRenderer` no longer calls `getLightBrightnessForSkyBlocks` for every column frame. Added a cache-hit test.
+- **B10:** the storm renderer reuses immutable white for the non-nether case and only allocates a `Color` copy when nether dust tint is needed.
+- **P12:** `WorldHandler` has package-private `nextRainInterval`/`nextThunderInterval` overloads accepting an RNG; the tick path uses the shared RNG, tests use a mock. `STRENGTH_ADJUST` is now used for the strength steps.
+- **P3/P13/P14/P15/P18/P10** remain.
+
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
@@ -590,8 +597,8 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B6 | **H** | `client/weather/StormSplashRenderer.java:90-91`, `NetherSplashRenderer.java:30` | The base `getPrecipitationHeight` ignores its `range` parameter; the nether override used `EnvironState.getPlayer()` instead of the passed view entity. **Fixed in batch 15 for the nether path:** it receives the view entity; the base remains a vanilla delegate. |
 | B7 | **M** | `client/weather/Weather.java:119` | `level = (float)(level + 0.01)` is dead — the parameter is never used afterwards. Remove or use it in the threshold comparisons. |
 | B8 | **M** | `client/weather/Weather.java:25,111-131` | `intensity`/`intensityLevel`/texture statics were mutated from the packet handler (Netty) while the render thread read them. **Fixed in batch 3:** `PacketRainIntensity` schedules on the client thread. |
-| B9 | **M** | `client/weather/StormRenderer.java:90-100` | 441 columns × biome/temperature/precipitation per frame; no cache. **Fixed in batch 37:** shared 20-tick `WeatherColumnCache`; light is still per-call. |
-| B10 | **M** | `client/weather/StormSplashRenderer.java:100-160` | Up to 100 attempts/frame with repeated world lookups. **Fixed in batch 37:** biome/height/temperature flags come from the shared weather cache; per-particle `Color` remains. |
+| B9 | **M** | `client/weather/StormRenderer.java:90-100` | 441 columns × biome/temperature/precipitation per frame; no cache. **Fixed in batches 37+45:** shared 20-tick `WeatherColumnCache` with cached lightmap values. |
+| B10 | **M** | `client/weather/StormSplashRenderer.java:100-160` | Up to 100 attempts/frame with repeated world lookups. **Fixed in batches 37+45:** biome/height/temperature/light values come from the shared weather cache; non-nether column colors reuse immutable white. |
 | B11 | **L** | `client/weather/StormRenderer.java:247-257` | `RAIN_X_COORDS/RAIN_Y_COORDS` divided by zero at the centre column (NaN vertices). **Fixed in batch 24:** minimum radius clamp and a finite-centre test. |
 
 ### 3.2 Fog

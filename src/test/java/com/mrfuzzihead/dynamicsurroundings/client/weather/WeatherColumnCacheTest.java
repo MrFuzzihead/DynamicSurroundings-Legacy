@@ -36,6 +36,7 @@ public class WeatherColumnCacheTest {
         when(world.getBiomeGenForCoords(anyInt(), anyInt())).thenReturn(BiomeGenBase.plains);
         when(world.getPrecipitationHeight(anyInt(), anyInt())).thenReturn(64);
         when(world.getTotalWorldTime()).thenReturn(0L);
+        when(world.getLightBrightnessForSkyBlocks(anyInt(), anyInt(), anyInt(), anyInt())).thenReturn(0xABCDEF);
         when(chunkManager.getTemperatureAtHeight(anyFloat(), anyInt())).thenReturn(0.2F);
     }
 
@@ -54,6 +55,15 @@ public class WeatherColumnCacheTest {
         assertEquals(0.2F, first.temperature, 0.0F);
         assertEquals(1, WeatherColumnCache.INSTANCE.size());
         verify(world, times(1)).getBiomeGenForCoords(10, 20);
+    }
+
+    @Test
+    public void cachesLightAtTheRequestedHeight() {
+        WeatherColumnCache.Column column = WeatherColumnCache.INSTANCE.get(world, 10, 20);
+        assertEquals(0xABCDEF, column.lightAt(world, 70));
+        assertEquals(0xABCDEF, column.lightAt(world, 70));
+
+        verify(world, times(1)).getLightBrightnessForSkyBlocks(10, 70, 20, 0);
     }
 
     @Test

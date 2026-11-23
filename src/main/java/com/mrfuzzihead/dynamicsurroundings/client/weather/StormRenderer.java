@@ -128,7 +128,7 @@ public class StormRenderer implements IAtmosRenderer {
                                     double deltaX = locX + 0.5F - entity.posX;
                                     double deltaZ = locZ + 0.5F - entity.posZ;
                                     float dist = MathHelper.sqrt_double(deltaX * deltaX + deltaZ * deltaZ) / radius;
-                                    tessellator.setBrightness(world.getLightBrightnessForSkyBlocks(locX, j2, locZ, 0));
+                                    tessellator.setBrightness(column.lightAt(world, j2));
                                     tessellator.setColorRGBA_F(
                                         1.0F,
                                         1.0F,
@@ -184,12 +184,12 @@ public class StormRenderer implements IAtmosRenderer {
                                     double deltaX = locX + 0.5F - entity.posX;
                                     double deltaZ = locZ + 0.5F - entity.posZ;
                                     float dist = MathHelper.sqrt_double(deltaX * deltaX + deltaZ * deltaZ) / radius;
-                                    tessellator.setBrightness(
-                                        (world.getLightBrightnessForSkyBlocks(locX, j2, locZ, 0) * 3 + 15728880) / 4);
-                                    Color color = new Color(1.0F, 1.0F, 1.0F);
+                                    tessellator.setBrightness((column.lightAt(world, j2) * 3 + 15728880) / 4);
+                                    Color color = Color.WHITE;
                                     if (world.provider.dimensionId == -1) {
                                         Color c = BiomeRegistry.getDustColor(biome);
                                         if (c != null) {
+                                            color = new Color(Color.WHITE);
                                             color.mix(c);
                                         }
                                     }
