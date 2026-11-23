@@ -30,6 +30,7 @@ public class BiomeFogColorCalculator extends VanillaFogColorCalculator {
     protected int posX;
     protected int posZ;
     protected int lastScanTick = Integer.MIN_VALUE;
+    protected int signature;
     protected double weightBiomeFog;
     protected Color biomeFogColor;
     protected boolean doScan = true;

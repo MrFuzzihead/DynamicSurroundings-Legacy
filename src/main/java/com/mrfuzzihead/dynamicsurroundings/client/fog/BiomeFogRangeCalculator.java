@@ -42,8 +42,9 @@ public class BiomeFogRangeCalculator extends VanillaFogRangeCalculator {
         int scanX = playerX >> COARSE_SHIFT;
         int scanZ = playerZ >> COARSE_SHIFT;
         int tick = EnvironStateHandler.EnvironState.getTickCounter();
+        int signature = FogBiomeSignature.of(world, playerX, playerZ);
         BiomeFogRangeCalculator.Context ctx = this.context[this.getIdx(event)];
-        if (ctx.returnCached(scanX, scanZ, rainStr, event, tick)) {
+        if (ctx.returnCached(scanX, scanZ, signature, rainStr, event, tick)) {
             return ctx.cached;
         } else {
             float fpDistanceBiomeFog = 0.0F;
@@ -81,6 +82,7 @@ public class BiomeFogRangeCalculator extends VanillaFogRangeCalculator {
                 / weightMixed;
             ctx.posX = scanX;
             ctx.posZ = scanZ;
+            ctx.signature = signature;
             ctx.lastScanTick = tick;
             ctx.lastFarPlane = event.farPlaneDistance;
             farPlaneDistance = Math.min(farPlaneDistance, event.farPlaneDistance);
@@ -100,14 +102,14 @@ public class BiomeFogRangeCalculator extends VanillaFogRangeCalculator {
         public float rain;
         public float lastFarPlane;
         public int lastScanTick = Integer.MIN_VALUE;
+        public int signature;
         public boolean doScan = true;
         public final FogResult cached = new FogResult();
 
         private Context() {}
 
-        public boolean returnCached(int pX, int pZ, float r, @Nonnull RenderFogEvent event, int tick) {
-            return pX == this.posX && pZ == this.posZ
-                && r == this.rain
+        public boolean returnCached(int pX, int pZ, int signature, float r, @Nonnull RenderFogEvent event, int tick) {
+            return signature == this.signature && r == this.rain
                 && this.lastFarPlane == event.farPlaneDistance
                 && this.cached.isValid(event)
                 && (!this.doScan || this.lastScanTick == Integer.MIN_VALUE

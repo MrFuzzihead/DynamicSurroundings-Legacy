@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/angelica-notfine-compat`
 **Scope:** analysis + the implementation log below. Batches 1–10 (weather/aurora, relative fog, client-thread safety, NotFine HUD/void fog, the Angelica provider bridge, BOP/cloud/phase compatibility, text-pop-off instancing, the compileOnly Angelica API, Angelica debug entries, and the validation hardening) are merged into the branch.
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 63 test suites / 270 unit tests, plus a non-shipped in-game test mod.
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 64 test suites / 272 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -325,6 +325,11 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 - **P3 (partial):** both biome fog calculators keep their cached result for 20 ticks when a chunk is not loaded and retry after the cooldown, instead of rescanning every frame. Also fixed the color calculator's inverted `blockExists` flag, which previously forced a scan almost every frame.
 - **B16:** the color scan now uses the same coarse/cached behavior and only marks itself dirty for missing chunks.
+
+**Batch 47 — biome-mix fog invalidation (272 tests green)**
+
+- **P3:** fog caches now use a cheap centre-plus-cardinal biome signature. They reuse the cached scan while the signature is unchanged, even if the player moves within the same biome mix; the 20-tick missing-chunk cooldown remains.
+- Added `FogBiomeSignatureTest` for stable and changing mixes.
 
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
@@ -758,7 +763,7 @@ Ordered by expected win. Each item is independent and testable.
 |---|---|---|---|
 | P1 | `ServerEffectHandler` rain packet | 20 packets/s/dimension, always | Send only on change (compare last sent value), on join, and at a low keep-alive rate (e.g., 20 ticks). |
 | P2 | `StormRenderer` + `StormSplashRenderer` world lookups | 441 columns × (biome + temperature + precipitation + light) per frame, up to 100 more per frame for splashes | **Done in batch 37:** shared `WeatherColumnCache` keyed by column/dimension/20-tick bucket; light remains uncached. |
-| P3 | `BiomeFogRangeCalculator` | 1,681 biome lookups on every block move / rain / far-plane change | **Partially done in batches 37+46:** 4-block cells and a 20-tick missing-chunk retry; biome-mix-only invalidation remains. |
+| P3 | `BiomeFogRangeCalculator` | 1,681 biome lookups on every block move / rain / far-plane change | **Done in batches 37+46+47:** 4-block cells, 20-tick missing-chunk retry, and biome-mix signature invalidation. |
 | P4 | `BlockEffectHandler` | ~1,000 samples/tick × 2 block reads + allocations + weighted-list allocation | Mutable `BlockPos`, one `getBlock`+metadata read, allocation-free weighted pick, and an early-out when no block effects/sounds are configured. Optionally sample 1/2 or 1/4 of the volume per tick on a rolling schedule. |
 | P5 | `PlayerSoundEffectHandler` | New maps/lists/scaled effects every tick; regex per sound | Cache the weighted sound list per (conditions, survey revision); reuse lists; precompile `SoundEffect` patterns. |
 | P6 | `BiomeSurveyHandler` | 169 biome lookups per block moved (including Y changes) | Drop Y from the key, throttle to 20 ticks/area change, skip if the player hasn't moved a block. |
