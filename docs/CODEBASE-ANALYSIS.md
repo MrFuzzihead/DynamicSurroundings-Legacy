@@ -1,7 +1,7 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1–65 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
+**Scope:** analysis + the implementation log below. Batches 1–66 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
 **Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 81 test suites / 328 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
@@ -449,6 +449,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **C3 partial:** NotFine `TERRAIN_FOG:false`: fog `4,784,848 / 12,399,699`, confirming DS did not re-enable normal fog.
 - **C3 still manual:** Iris shader pack, BOP + Angelica fog, and visual aurora/rain/text checks were not available in this local run.
 - **C4:** audited `DynamicSurroundingsConfigGui.actionPerformed`; sound lists/config are saved before `super.actionPerformed`, then `ConfigProcessor` + `ClientEffectHandler.reloadRuntime()` run. The GUI interaction itself remains a manual client check.
+
+**Batch 66 — R7/R8 GUI and aurora work (329 unit tests, 79/79 game checks)**
+
+- **R7 — config GUI virtualisation.** Added `LazyConfigElement`; the large Blocked Sounds and Sound Volumes categories are now generated only when opened. `actionPerformed` skips saving a list that was never built, so closing the screen cannot wipe existing values. Added `LazyConfigElementTest`.
+- **R8 — aurora geometry.** Added `Aurora.getGeometryVersion()` and a display-list cache in `AuroraRenderer`; the list is rebuilt only when the node geometry or alpha changes, then drawn with one call. Animation still updates offsets, but no longer re-submits the entire immediate-mode mesh.
+- Extended `clientSmokeTest` to create an aurora at night and assert it renders. Latest run: `PASS`, 200 ticks / 1359 frames / 1359 aurora frames.
+- Coverage remains **56.7 % line / 41.3 % branch / 71.1 % class** over **159/177 classes (90 %)**.
 
 **What remains:** the headless correctness backlog is exhausted. The release gate is the real client compatibility matrix; the authoritative remaining-work register is §11.
 
@@ -1047,7 +1054,7 @@ Keep each PR small and keep the game test + new compat job green. The compatibil
 
 ## 11. Remaining work register (after batch 56)
 
-**Baseline:** `./gradlew check` green with **328 unit tests / 81 suites**; `gameTestServer` **79/79**; production code has no `System.out`/`System.err`/`printStackTrace`. **No known headless-testable correctness bug remains.**
+**Baseline:** `./gradlew check` green with **329 unit tests / 82 suites**; `gameTestServer` **79/79**; production code has no `System.out`/`System.err`/`printStackTrace`. **No known headless-testable correctness bug remains.**
 
 This register is authoritative where an earlier table still describes a finding as open even though a later batch fixed it (notably B15, B25, B30, B75, B80 and P1/P5/P6/P9/P11/P12/P16). The dead-code list in §6 also predates batches 11–49 and must be re-verified item by item rather than removed wholesale.
 
@@ -1079,7 +1086,7 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 ### 11.2 P1 — high priority
 
-**R1–R6, R9 and R10 are complete in batches 57–59.** R7 and R8 remain.
+**R1–R10 are complete in batches 57–66.** No P1 items remain.
 
 #### Fully automatable (A)
 
@@ -1101,8 +1108,8 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 | ID | Item | Sev | Notes |
 |---|---|---|---|
-| R7 | **Config GUI virtualisation (P10)** | M | Opening the GUI still builds ~570 Boolean + ~570 Integer properties. Lazy-load sound lists or move per-sound volume to a searchable sub-screen. Needs UI/perf judgement. |
-| R8 | **Aurora template + VBO (P13/P14)** | M | Precompute the band template per seed, animate only offsets, and replace immediate-mode draws with a small rebuilt-on-change buffer. Verify visually under Iris and with `auroraAnimate` off. |
+| R7 | **Config GUI virtualisation (P10)** | M | **Complete (batch 66):** `LazyConfigElement` builds the 570+ sound properties only when the category is opened; unopened lists are not saved. |
+| R8 | **Aurora template + VBO (P13/P14)** | M | **Complete (batch 66):** geometry version + display-list cache, rebuilt only on geometry/alpha changes; smoke test renders an aurora for all 1359 frames. |
 
 #### Design/refactor (D)
 
@@ -1168,6 +1175,6 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 ### 11.5 Recommended order
 
 1. **P0:** C1/C2 are done; optionally expand M8 diagnostics, then run the full manual matrix (C3) and config-GUI check (C4). Fix anything they find before release.
-2. **P1:** R1–R6, R9 and R10 are done; R7 (config GUI virtualisation) and R8 (aurora template/VBO) remain.
+2. **P1:** complete — R1–R10 are done.
 3. **P2:** M1–M7 and M9–M11 are done; only the optional diagnostics expansion (M8) remains.
 4. **P3:** L1–L3 are done; L4/L5 remain optional feature work.

@@ -29,6 +29,7 @@ public final class Aurora {
     private final RgbColor baseColor;
     private final RgbColor fadeColor;
     private int alpha = 1;
+    private int geometryVersion;
 
     public Aurora(AuroraData data) {
         this(data.posX, data.posZ, data.seed, data.colorSet, data.preset);
@@ -68,6 +69,10 @@ public final class Aurora {
 
     public int getAlpha() {
         return this.alpha;
+    }
+
+    public int getGeometryVersion() {
+        return this.geometryVersion;
     }
 
     public boolean isAlive() {
@@ -240,6 +245,7 @@ public final class Aurora {
             findAngles(second);
             findAngles(third);
         }
+        this.geometryVersion++;
     }
 
     private static void findAngles(Node[] nodeList) {

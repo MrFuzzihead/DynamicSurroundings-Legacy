@@ -32,10 +32,10 @@ import cpw.mods.fml.relauncher.SideOnly;
 public class DynamicSurroundingsConfigGui extends GuiConfig {
 
     private final Configuration config = Module.config();
-    private final ConfigElement soundElement;
-    private final ConfigCategory soundCategory;
-    private final ConfigElement soundVolumeElement;
-    private final ConfigCategory soundVolumeCategory;
+    private final LazyConfigElement soundElement;
+    private ConfigCategory soundCategory;
+    private final LazyConfigElement soundVolumeElement;
+    private ConfigCategory soundVolumeCategory;
 
     public DynamicSurroundingsConfigGui(GuiScreen parentScreen) {
         super(parentScreen, new ArrayList(), "dynamicsurroundings", false, false, "Dynamic Surroundings");
@@ -55,15 +55,12 @@ public class DynamicSurroundingsConfigGui extends GuiConfig {
             .add(this.getPropertyConfigElement("sound", "Bow Pull Sound", "Player Bow Pull Sound Effect"));
         this.configElements.add(this.getPropertyConfigElement("sound", "Footsteps", "Footstep Sound Effects"));
         this.configElements.add(this.getPropertyConfigElement("player.potion hud", "Enable", "Potion HUD Overlay"));
-        this.soundCategory = new ConfigCategory("Blocked Sounds");
-        this.soundCategory.setComment("Sounds that will be blocked from playing");
-        this.soundElement = new MyConfigElement(this.soundCategory);
-        this.generateSoundList(this.soundCategory);
+        this.soundElement = new LazyConfigElement("Blocked Sounds", "Blocked Sounds", this::buildSoundCategory);
         this.configElements.add(this.soundElement);
-        this.soundVolumeCategory = new ConfigCategory("Sound Volumes");
-        this.soundVolumeCategory.setComment("Individual sound volume control");
-        this.soundVolumeElement = new MyConfigElement(this.soundVolumeCategory);
-        this.generateSoundVolumeList(this.soundVolumeCategory);
+        this.soundVolumeElement = new LazyConfigElement(
+            "Sound Volumes",
+            "Sound Volumes",
+            this::buildSoundVolumeCategory);
         this.configElements.add(this.soundVolumeElement);
         this.configElements.add(this.getCategoryConfigElement("general", "General Settings"));
         this.configElements.add(this.getCategoryConfigElement("rain", "Rain Settings"));
@@ -99,7 +96,24 @@ public class DynamicSurroundingsConfigGui extends GuiConfig {
         super.actionPerformed(button);
     }
 
+    private ConfigCategory buildSoundCategory() {
+        this.soundCategory = new ConfigCategory("Blocked Sounds");
+        this.soundCategory.setComment("Sounds that will be blocked from playing");
+        this.generateSoundList(this.soundCategory);
+        return this.soundCategory;
+    }
+
+    private ConfigCategory buildSoundVolumeCategory() {
+        this.soundVolumeCategory = new ConfigCategory("Sound Volumes");
+        this.soundVolumeCategory.setComment("Individual sound volume control");
+        this.generateSoundVolumeList(this.soundVolumeCategory);
+        return this.soundVolumeCategory;
+    }
+
     protected void saveSoundList() {
+        if (this.soundCategory == null) {
+            return;
+        }
         List<String> sounds = new ArrayList<>();
 
         for (Entry<String, Property> entry : this.soundCategory.entrySet()) {
@@ -116,6 +130,9 @@ public class DynamicSurroundingsConfigGui extends GuiConfig {
     }
 
     protected void saveSoundVolumeList() {
+        if (this.soundVolumeCategory == null) {
+            return;
+        }
         List<String> sounds = new ArrayList<>();
 
         for (Entry<String, Property> entry : this.soundVolumeCategory.entrySet()) {

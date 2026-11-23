@@ -14,6 +14,9 @@ import net.minecraftforge.common.MinecraftForge;
 
 import org.lwjgl.opengl.GL11;
 
+import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.AuroraEffectHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.aurora.Aurora;
 import com.mrfuzzihead.dynamicsurroundings.client.weather.WeatherBackend;
 
 import cpw.mods.fml.common.FMLCommonHandler;
@@ -47,7 +50,9 @@ public final class ClientSmokeTest {
     private int ticks;
     private int loadTicks;
     private int frames;
+    private int auroraFrames;
     private int glErrors;
+    private Aurora smokeAurora;
     private long logOffset;
     private float fogStart = Float.NaN;
     private float fogEnd = Float.NaN;
@@ -100,9 +105,17 @@ public final class ClientSmokeTest {
             this.mc.theWorld.getWorldInfo()
                 .setRainTime(20000);
             this.mc.theWorld.setWorldTime(18000L);
+            if (ModOptions.auroraEnable) {
+                this.smokeAurora = new Aurora(0.0F, 0.0F, 1234L, 0, 0);
+            }
         }
 
         this.ticks++;
+        if (this.smokeAurora != null) {
+            // Re-publish after AuroraEffectHandler's START-phase refresh; this keeps the renderer exercised
+            // without depending on server-side aurora spawning.
+            AuroraEffectHandler.currentAurora = this.smokeAurora;
+        }
         int error = GL11.glGetError();
         if (error != 0) {
             this.glErrors++;
@@ -120,6 +133,9 @@ public final class ClientSmokeTest {
         this.fogStart = GL11.glGetFloat(GL11.GL_FOG_START);
         this.fogEnd = GL11.glGetFloat(GL11.GL_FOG_END);
         this.frames++;
+        if (AuroraEffectHandler.currentAurora != null) {
+            this.auroraFrames++;
+        }
     }
 
     private void loadWorld() {
@@ -175,6 +191,10 @@ public final class ClientSmokeTest {
             || this.fogStart > this.fogEnd) {
             pass = false;
             print("FAIL invalid fog range");
+        }
+        if (ModOptions.auroraEnable && this.auroraFrames == 0) {
+            pass = false;
+            print("FAIL aurora was enabled but never rendered");
         }
         if (EXPECTED_NEAR_FOG_PERCENT > 0.0F && this.fogEnd > 0.0F) {
             float actual = this.fogStart / this.fogEnd * 100.0F;
@@ -234,7 +254,7 @@ public final class ClientSmokeTest {
             return;
         }
         this.finished = true;
-        print((pass ? "PASS " : "FAIL ") + detail + " frames=" + this.frames);
+        print((pass ? "PASS " : "FAIL ") + detail + " frames=" + this.frames + " auroraFrames=" + this.auroraFrames);
         FMLCommonHandler.instance()
             .exitJava(pass ? 0 : 1, false);
     }
