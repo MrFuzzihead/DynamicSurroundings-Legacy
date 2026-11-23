@@ -87,7 +87,6 @@ public class DynamicSurroundingsConfigGui extends GuiConfig {
     }
 
     protected void actionPerformed(GuiButton button) {
-        super.actionPerformed(button);
         if (button.id == 2000) {
             this.saveSoundList();
             this.saveSoundVolumeList();
@@ -95,6 +94,8 @@ public class DynamicSurroundingsConfigGui extends GuiConfig {
             ConfigProcessor.process(this.config, ModOptions.class);
             SoundRegistry.initialize();
         }
+
+        super.actionPerformed(button);
     }
 
     protected void saveSoundList() {

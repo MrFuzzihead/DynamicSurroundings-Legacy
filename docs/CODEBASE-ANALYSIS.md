@@ -346,6 +346,10 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **B91:** documented column-based `AuroraData` identity and added `sameColumn`; seed/color updates no longer obscure the intended identity.
 - **B92:** `isReallyInside` now uses `World.canBlockSeeTheSky` over the survey area, so a tall roofed room counts as inside; tests updated.
 
+**Batch 50 — config save ordering (274 tests green)**
+
+- **B54 (partial):** the config GUI now saves the synthetic sound lists and config before calling `super.actionPerformed`, so a closing screen cannot save stale values. The broader runtime-reload/no-restart behavior remains.
+
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
@@ -692,7 +696,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B51 | **M** | `util/ConfigProcessor.java:58` | `Float.MIN_VALUE` as the "no minimum" sentinel clamped unannotated floats to `1.4e-45`. **Fixed in batch 13:** `-Float.MAX_VALUE`, with a negative-value config test. |
 | B52 | **M** | `util/ConfigProcessor.java:19-101` | No support for `double`/`long`/enums beyond `String[]`; parse failures were logged and ignored. **Fixed in batches 27+28+30:** `double`/`long`/enum support, invalid-value fallback, and a last-errors validation report are tested. |
 | B53 | **M** | `ModOptions.java:405-425` | `scrubCategory` removed any property with an empty comment. **Fixed in batch 26:** only unknown (non-annotated) properties are removed; known comment-less properties survive, with a unit test. |
-| B54 | **M** | `client/gui/DynamicSurroundingsConfigGui.java:92-96` | `super.actionPerformed` runs before the synthetic sound lists are saved; the screen may already be closing/saving. Save the synthetic categories first, then call `super`. Applying the config also does not re-run `BlockRegistry`/`BiomeRegistry`/`SoundRegistry` initialization or refresh `EnvironStateHandler` static finals, so several non-restart options appear to do nothing until a world reload. Either make them `@RestartRequired` or add a `reloadRuntime()` path. |
+| B54 | **M** | `client/gui/DynamicSurroundingsConfigGui.java:92-96` | Synthetic sound/config saves ran after `super.actionPerformed`. **Partially fixed in batch 50:** saves now happen first. Runtime registry/EnvironState refresh for non-restart options remains. |
 | B55 | **M** | `client/waila/WailaHandler.java:119-121` | WAILA registration was debug-gated and loaded from the common proxy. **Fixed in batch 42:** registered from `ProxyClient` only when Waila is loaded; debug gate removed. |
 | B56 | **M** | `proxy/Proxy.java:31-36` | Common proxy imported client classes and initialized `DamageEffectHandler` on the server. **Fixed in batch 42:** common proxy has no client imports, server damage detection is `DamageEffectServer`, and the DTO is `network/HealthData`; client-only registries stay in `ProxyClient`. |
 | B57 | **M** | `data/DimensionRegistry.java:27` | `CALENDAR_API = Loader.isModLoaded("CalendarAPI")` in a static initializer forced FML bootstrap in tests. **Fixed in batch 15:** a safe class probe, no `Loader` call. |
