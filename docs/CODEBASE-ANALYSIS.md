@@ -321,6 +321,11 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **P12:** `WorldHandler` has package-private `nextRainInterval`/`nextThunderInterval` overloads accepting an RNG; the tick path uses the shared RNG, tests use a mock. `STRENGTH_ADJUST` is now used for the strength steps.
 - **P3/P13/P14/P15/P18/P10** remain.
 
+**Batch 46 — fog cache retry cooldown (270 tests green)**
+
+- **P3 (partial):** both biome fog calculators keep their cached result for 20 ticks when a chunk is not loaded and retry after the cooldown, instead of rescanning every frame. Also fixed the color calculator's inverted `blockExists` flag, which previously forced a scan almost every frame.
+- **B16:** the color scan now uses the same coarse/cached behavior and only marks itself dirty for missing chunks.
+
 **What remains:** run the real client compatibility matrix (Angelica on/off, NotFine near=1 %, Iris pack), then the remaining non-compat findings (B9–B11, B15–B17) and the optional per-effect HUD text cache (P9).
 
 ### The three compatibility moves that unlock the most value
@@ -609,7 +614,7 @@ Severity: **C**ritical (crash/corruption/major feature loss), **H**igh (wrong vi
 | B13 | **H** | `client/FogEffectHandler.java:42-44` | `doFog()` was `enableBiomeFog || allowDesertFog`; elevation haze, morning fog and weather fog were ignored when those two were off. **Fixed in batch 2:** all fog options are considered. |
 | B14 | **M** | `client/fog/MorningFogRangeCalculator.java:39` | `clamp(start - shift*2, 11, newEnd)` could return `11` when `newEnd < 11`, producing `start > end`. **Fixed in batch 2:** the floor is scaled and `FogResult` clamps `start <= end`. |
 | B15 | **M** | `client/fog/BiomeFogRangeCalculator.java:47-80` | 41×41 = 1,681 biome lookups whenever the player moves one block (or the rain/far-plane changes). Cache on a coarser grid (e.g., 4-block cells) or only re-scan when the biome mix changes. |
-| B16 | **M** | `client/fog/BiomeFogColorCalculator.java:60-79` | Same per-block 169-column rescan. **Fixed in batches 4+37:** NotFine `VOID_FOG` gating and 4-block coarse scan keying; `applyPlayerEffects` remains a local reimplementation. |
+| B16 | **M** | `client/fog/BiomeFogColorCalculator.java:60-79` | Same per-block 169-column rescan. **Fixed in batches 4+37+46:** NotFine `VOID_FOG` gating, 4-block coarse scan keying, and missing-chunk retry cooldown. `applyPlayerEffects` remains a local reimplementation. |
 | B17 | **L** | `client/fog/BiomeFogRangeCalculator.java:13-15` | `DUST_FOG_IMPACT`/`weightMixed` were unused literals. **Fixed in batch 37:** named constants and a derived grid weight. |
 | B18 | **L** | `client/fog/HolisticFogRangeCalculator.java:30-37` | `Math.min` of starts/ends could produce an invalid pair. **Fixed in batch 2:** `FogResult` clamps `start <= end` and the handler checks `isValid`. |
 
@@ -753,7 +758,7 @@ Ordered by expected win. Each item is independent and testable.
 |---|---|---|---|
 | P1 | `ServerEffectHandler` rain packet | 20 packets/s/dimension, always | Send only on change (compare last sent value), on join, and at a low keep-alive rate (e.g., 20 ticks). |
 | P2 | `StormRenderer` + `StormSplashRenderer` world lookups | 441 columns × (biome + temperature + precipitation + light) per frame, up to 100 more per frame for splashes | **Done in batch 37:** shared `WeatherColumnCache` keyed by column/dimension/20-tick bucket; light remains uncached. |
-| P3 | `BiomeFogRangeCalculator` | 1,681 biome lookups on every block move / rain / far-plane change | Coarse grid (4×4 cells), rescan only when the biome mix changes, keep the old result on chunk-not-loaded. |
+| P3 | `BiomeFogRangeCalculator` | 1,681 biome lookups on every block move / rain / far-plane change | **Partially done in batches 37+46:** 4-block cells and a 20-tick missing-chunk retry; biome-mix-only invalidation remains. |
 | P4 | `BlockEffectHandler` | ~1,000 samples/tick × 2 block reads + allocations + weighted-list allocation | Mutable `BlockPos`, one `getBlock`+metadata read, allocation-free weighted pick, and an early-out when no block effects/sounds are configured. Optionally sample 1/2 or 1/4 of the volume per tick on a rolling schedule. |
 | P5 | `PlayerSoundEffectHandler` | New maps/lists/scaled effects every tick; regex per sound | Cache the weighted sound list per (conditions, survey revision); reuse lists; precompile `SoundEffect` patterns. |
 | P6 | `BiomeSurveyHandler` | 169 biome lookups per block moved (including Y changes) | Drop Y from the key, throttle to 20 ticks/area change, skip if the player hasn't moved a block. |

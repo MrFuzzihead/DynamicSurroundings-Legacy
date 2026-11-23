@@ -26,8 +26,10 @@ import cpw.mods.fml.relauncher.SideOnly;
 public class BiomeFogColorCalculator extends VanillaFogColorCalculator {
 
     protected static final int COARSE_SHIFT = 2;
+    protected static final int MISSING_CHUNK_RETRY_TICKS = 20;
     protected int posX;
     protected int posZ;
+    protected int lastScanTick = Integer.MIN_VALUE;
     protected double weightBiomeFog;
     protected Color biomeFogColor;
     protected boolean doScan = true;
@@ -49,18 +51,21 @@ public class BiomeFogColorCalculator extends VanillaFogColorCalculator {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(0, 0, 0);
         int scanX = playerX >> COARSE_SHIFT;
         int scanZ = playerZ >> COARSE_SHIFT;
+        int tick = EnvironStateHandler.EnvironState.getTickCounter();
         this.doScan = this.doScan | (this.posX != scanX || this.posZ != scanZ);
-        if (this.doScan) {
+        if (this.doScan
+            && (this.lastScanTick == Integer.MIN_VALUE || tick - this.lastScanTick >= MISSING_CHUNK_RETRY_TICKS)) {
             this.doScan = false;
             this.posX = scanX;
             this.posZ = scanZ;
+            this.lastScanTick = tick;
             this.biomeFogColor = new Color(0, 0, 0);
             this.weightBiomeFog = 0.0;
 
             for (int x = -distance; x <= distance; x++) {
                 for (int z = -distance; z <= distance; z++) {
                     pos.setPos(playerX + x, 0, playerZ + z);
-                    this.doScan = this.doScan | world.blockExists(pos.getX(), pos.getY(), pos.getZ());
+                    this.doScan = this.doScan | !world.blockExists(pos.getX(), pos.getY(), pos.getZ());
                     BiomeGenBase biome = world.getBiomeGenForCoords(pos.getX(), pos.getZ());
                     Color color;
                     if (BiomeRegistry.hasDust(biome)) {

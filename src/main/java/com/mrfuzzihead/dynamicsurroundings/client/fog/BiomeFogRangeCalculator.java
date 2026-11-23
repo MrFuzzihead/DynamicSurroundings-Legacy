@@ -20,6 +20,7 @@ public class BiomeFogRangeCalculator extends VanillaFogRangeCalculator {
 
     protected static final int DISTANCE = 20;
     protected static final int COARSE_SHIFT = 2;
+    protected static final int MISSING_CHUNK_RETRY_TICKS = 20;
     protected static final float DUST_FOG_IMPACT = 0.9F;
     protected final BiomeFogRangeCalculator.Context[] context = new BiomeFogRangeCalculator.Context[] {
         new BiomeFogRangeCalculator.Context(), new BiomeFogRangeCalculator.Context(),
@@ -40,8 +41,9 @@ public class BiomeFogRangeCalculator extends VanillaFogRangeCalculator {
         float rainStr = Weather.getIntensityLevel();
         int scanX = playerX >> COARSE_SHIFT;
         int scanZ = playerZ >> COARSE_SHIFT;
+        int tick = EnvironStateHandler.EnvironState.getTickCounter();
         BiomeFogRangeCalculator.Context ctx = this.context[this.getIdx(event)];
-        if (ctx.returnCached(scanX, scanZ, rainStr, event)) {
+        if (ctx.returnCached(scanX, scanZ, rainStr, event, tick)) {
             return ctx.cached;
         } else {
             float fpDistanceBiomeFog = 0.0F;
@@ -79,6 +81,7 @@ public class BiomeFogRangeCalculator extends VanillaFogRangeCalculator {
                 / weightMixed;
             ctx.posX = scanX;
             ctx.posZ = scanZ;
+            ctx.lastScanTick = tick;
             ctx.lastFarPlane = event.farPlaneDistance;
             farPlaneDistance = Math.min(farPlaneDistance, event.farPlaneDistance);
             float reference = event.farPlaneDistance > 0.0F ? event.farPlaneDistance : 1.0F;
@@ -96,17 +99,19 @@ public class BiomeFogRangeCalculator extends VanillaFogRangeCalculator {
         public int posZ;
         public float rain;
         public float lastFarPlane;
+        public int lastScanTick = Integer.MIN_VALUE;
         public boolean doScan = true;
         public final FogResult cached = new FogResult();
 
         private Context() {}
 
-        public boolean returnCached(int pX, int pZ, float r, @Nonnull RenderFogEvent event) {
-            return !this.doScan && pX == this.posX
-                && pZ == this.posZ
+        public boolean returnCached(int pX, int pZ, float r, @Nonnull RenderFogEvent event, int tick) {
+            return pX == this.posX && pZ == this.posZ
                 && r == this.rain
                 && this.lastFarPlane == event.farPlaneDistance
-                && this.cached.isValid(event);
+                && this.cached.isValid(event)
+                && (!this.doScan || this.lastScanTick == Integer.MIN_VALUE
+                    || tick - this.lastScanTick < MISSING_CHUNK_RETRY_TICKS);
         }
     }
 }
