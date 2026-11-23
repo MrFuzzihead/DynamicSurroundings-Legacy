@@ -1,7 +1,7 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1–64 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
+**Scope:** analysis + the implementation log below. Batches 1–65 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
 **Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 81 test suites / 328 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
@@ -440,6 +440,15 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - Added the GTNHLib 0.9.0 dev runtime dependency required by Angelica’s dev client launch.
 - Local smoke run passed: owner `ANGELICA_INSTANCED`, fog `47.16713 / 143.74847`, 200 ticks / 1308 rendered frames.
 - **C1 and C2 complete.** C3/C4 remain the manual matrix and config-GUI verification.
+
+**Batch 65 — C3 local matrix exercise and C4 code audit**
+
+- **C3 partial:** ran `clientSmokeTest` with Angelica instanced weather **on**: owner `ANGELICA_INSTANCED`, pass.
+- **C3 partial:** with `enableInstancedWeather=false`: owner `DYNAMIC_SURROUNDINGS`, pass.
+- **C3 partial:** NotFine near fog `1 %` (`optionsnf.txt`: `TERRAIN_FOG:true`, `FOG_NEAR_DISTANCE:1`): fog `0.268 / 140.98`, expected-near assertion passed.
+- **C3 partial:** NotFine `TERRAIN_FOG:false`: fog `4,784,848 / 12,399,699`, confirming DS did not re-enable normal fog.
+- **C3 still manual:** Iris shader pack, BOP + Angelica fog, and visual aurora/rain/text checks were not available in this local run.
+- **C4:** audited `DynamicSurroundingsConfigGui.actionPerformed`; sound lists/config are saved before `super.actionPerformed`, then `ConfigProcessor` + `ClientEffectHandler.reloadRuntime()` run. The GUI interaction itself remains a manual client check.
 
 **What remains:** the headless correctness backlog is exhausted. The release gate is the real client compatibility matrix; the authoritative remaining-work register is §11.
 
