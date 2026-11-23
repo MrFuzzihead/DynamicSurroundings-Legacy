@@ -434,7 +434,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 **Batch 64 — C1/C2 client smoke harness (328 unit tests, 79/79 game checks)**
 
 - Added `clientSmokeTest` and a client-only `ClientSmokeTest` in the game-test source set.
-- The smoke run creates a flat creative world, forces rain/night, renders 200 client ticks, and checks: `glGetError`, new Mixin/uncaught-exception log lines, `WeatherBackend.Owner`, and effective `GL_FOG_START/END`.
+- The smoke run deletes and recreates the `ds_client_smoke` world as flat creative, forces rain/night, renders 200 client ticks, and checks: `glGetError`, new Mixin/uncaught-exception log lines, `WeatherBackend.Owner`, and effective `GL_FOG_START/END`.
 - When the owner is `ANGELICA_INSTANCED`, it asserts DS does not claim ownership.
 - Optional `-PexpectedNearFogPercent=1` asserts the effective near/far ratio for the NotFine 1 % configuration.
 - Added the GTNHLib 0.9.0 dev runtime dependency required by Angelica’s dev client launch.

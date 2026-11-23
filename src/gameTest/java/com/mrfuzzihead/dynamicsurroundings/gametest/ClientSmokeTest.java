@@ -132,12 +132,28 @@ public final class ClientSmokeTest {
 
         this.launchRequested = true;
         try {
+            deleteRecursively(new File(this.mc.mcDataDir, "saves/ds_client_smoke"));
             this.mc.launchIntegratedServer(
                 "ds_client_smoke",
                 "DS Client Smoke",
                 new WorldSettings(1234L, WorldSettings.GameType.CREATIVE, false, false, WorldType.FLAT));
         } catch (Throwable t) {
             this.finish(false, "unable to launch the smoke world: " + t);
+        }
+    }
+
+    private static void deleteRecursively(File file) {
+        if (file == null || !file.exists()) {
+            return;
+        }
+        File[] children = file.listFiles();
+        if (children != null) {
+            for (File child : children) {
+                deleteRecursively(child);
+            }
+        }
+        if (!file.delete()) {
+            print("WARN unable to delete " + file);
         }
     }
 
