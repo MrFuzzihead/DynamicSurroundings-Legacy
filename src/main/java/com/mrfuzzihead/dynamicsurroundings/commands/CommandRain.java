@@ -11,8 +11,8 @@ import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
 import com.google.common.collect.ImmutableList;
-import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionEffectData;
+import com.mrfuzzihead.dynamicsurroundings.data.RegistryManager;
 import com.mrfuzzihead.dynamicsurroundings.network.Network;
 
 public final class CommandRain extends CommandBase {
@@ -68,7 +68,7 @@ public final class CommandRain extends CommandBase {
                 world.provider.resetRainAndThunder();
                 sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("msg.RainReset")));
             } else if ("reload".compareToIgnoreCase(parms[0]) == 0) {
-                BiomeRegistry.initialize();
+                RegistryManager.reload("biomes");
                 Network.sendReload(world.provider.dimensionId);
                 sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("msg.BiomeReload")));
             } else {

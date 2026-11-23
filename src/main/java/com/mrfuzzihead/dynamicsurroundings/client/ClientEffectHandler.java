@@ -100,10 +100,7 @@ public class ClientEffectHandler {
     }
 
     public static void reloadRuntime() {
-        com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry.initialize();
-        com.mrfuzzihead.dynamicsurroundings.data.BlockRegistry.initialize();
-        com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry.initialize();
-        com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry.initialize();
+        com.mrfuzzihead.dynamicsurroundings.data.RegistryManager.reloadAll();
 
         for (IClientEffectHandler handler : effectHandlers) {
             if (handler instanceof FogEffectHandler) {

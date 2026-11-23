@@ -22,7 +22,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.sound.cache.SoundCacheReloadLi
 import com.mrfuzzihead.dynamicsurroundings.client.waila.WailaHandler;
 import com.mrfuzzihead.dynamicsurroundings.compat.angelica.AngelicaDebugEntries;
 import com.mrfuzzihead.dynamicsurroundings.data.BlockRegistry;
-import com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry;
+import com.mrfuzzihead.dynamicsurroundings.data.RegistryManager;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.SoundHandlerAccessor;
 
 import cpw.mods.fml.common.Loader;
@@ -47,13 +47,14 @@ public class ProxyClient extends Proxy {
             WailaHandler.register();
         }
 
-        BlockRegistry.initialize();
+        RegistryManager.register("blocks", BlockRegistry::initialize);
+        RegistryManager.reload("blocks");
         ClientEffectHandler.initialize();
         MinecraftForge.EVENT_BUS.register(new AuroraRenderHandler());
         MinecraftForge.EVENT_BUS.register(new TextPopOffRenderer());
         AngelicaDebugEntries.register();
         GuiHUDHandler.initialize();
-        SoundRegistry.initialize();
+        RegistryManager.reload("sounds");
         DynamicSoundManager.configureSound();
         ((IReloadableResourceManager) Minecraft.getMinecraft()
             .getResourceManager()).registerReloadListener(new SoundCacheReloadListener());

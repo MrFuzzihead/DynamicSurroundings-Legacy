@@ -1,8 +1,8 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1–60 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 78 test suites / 322 unit tests, plus a non-shipped in-game test mod.
+**Scope:** analysis + the implementation log below. Batches 1–61 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 79 test suites / 325 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -378,7 +378,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 **Batch 57 — P1 fully-automatable backlog (313 tests green)**
 
-- **R1 — coverage metric fixed.** `jacocoClassDirs()` now excludes only GL/audio/client-bound classes (renderers, handlers, config GUI, HUD, WAILA, particle instancing, sound cache/manager, biome-grid fog scans) instead of all of `client/**`. The measured subset is now **155/177 classes (88 %)**, with **56.4 % line / 40.6 % branch / 70.3 % class** coverage. Global floors rose to **50 % line / 35 % branch**, plus per-package floors for `util`, `data`, `client.weather`, `client.aurora`, `client.sound`, `client.fog`, footsteps, and config properties.
+- **R1 — coverage metric fixed.** `jacocoClassDirs()` now excludes only GL/audio/client-bound classes (renderers, handlers, config GUI, HUD, WAILA, particle instancing, sound cache/manager, biome-grid fog scans) instead of all of `client/**`. The measured subset is now **152/177 classes (86 %)**, with **56.3 % line / 40.8 % branch / 69.7 % class** coverage. Global floors rose to **50 % line / 35 % branch**, plus per-package floors for `util`, `data`, `client.weather`, `client.aurora`, `client.sound`, `client.fog`, footsteps, and config properties.
 - **R2 — game-test report guard.** `jacocoGameTestReport` now reports against `build/classes/java/main` (the classes the game test actually loaded) instead of a missing RFB dump. New `verifyGameTestReport` fails `check`/`gameTestServer` when `gameTest.exec` exists but the XML has no counters.
 - **R3 — remaining pure/client-logic tests.** Added `AuroraTest`, `NodeTest`, `WeatherTest`, `PFReaderHTest`, `PlayerSoundTest`, `SpotSoundTest`, `ProbabilityWeightsAcousticTest`, and `MorningAndHazeFogTest`. The Weather test exposed **B96**: `setIntensity(0)` was a no-op while the state was `VANILLA`, so `NONE` was unreachable from a fresh state; fixed.
 - **R4 — ForgeDictionary cache.** Extracted `OreLookupCache`; repeated `ForgeDictionary.initialize` calls reuse per-ore `ItemStack` lists, with `invalidate()` for ore-dictionary changes.
@@ -398,7 +398,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 - **R9 — `EnvironmentSnapshot`.** Added an immutable per-tick snapshot (`EnvironmentSnapshot`) with the player/world, biome, dimension, conditions, temperature, inside/freezing/humid/dry flags, tick, ground/moving state. `ClientEffectHandler` builds it once before dispatching handlers; `EnvironState` getters now delegate to the published snapshot. Fog, block effects, ambient/player sounds, biome survey, aurora, damage effects, footsteps and Angelica diagnostics read the snapshot instead of a set of mutable static fields. Added `EnvironmentSnapshotTest`.
 - **R10 — restart contract.** Added `@RestartRequired` to `blockedSounds` (the last init-time option without it) and a `ModOptionsTest` that pins every handler/static-table option to the annotation. The config UI now consistently tells users that these options need a restart; runtime reload still handles the registry/fog options.
-- Coverage is now **56.4 % line / 40.6 % branch / 70.3 % class** over **155/177 classes**.
+- Coverage is now **57.1 % line / 40.8 % branch / 70.1 % class** over **154/177 classes**.
 
 **Batch 60 — P2 fully-automatable cleanup (322 unit tests, 79/79 game checks)**
 
@@ -410,6 +410,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - **M6 — property loops.** Added seeded loops for `RgbColor` integer round trips, `BlockPos` long serialization, `MathStuff` trig accuracy, and `SoftwareVersion` ordering.
 - Coverage is now **56.4 % line / 40.6 % branch / 70.3 % class** over **155/177 classes (88 %)**.
 
+**Batch 61 — M7 registry lifecycle (325 unit tests, 79/79 game checks)**
+
+- Added `RegistryManager` with named `Reloadable` entries and `reload(...)`/`reloadAll()`.
+- Biome, dimension and sound registries are registered centrally; the client registers `blocks` during client init.
+- Server post-init, client runtime reload, `PacketReload`, and `/rain reload` now call the manager instead of repeating the registry list.
+- A failing registry is logged without preventing the remaining registries from reloading; covered by `RegistryManagerTest`.
+
 **What remains:** the headless correctness backlog is exhausted. The release gate is the real client compatibility matrix; the authoritative remaining-work register is §11.
 
 ### The three compatibility moves that unlock the most value
@@ -420,7 +427,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 ### Coverage reality
 
-The JaCoCo floor now measures **56.4 % lines / 40.6 % branches / 70.3 % classes** over **155 of 177 classes (88 %)**, after batch 57 narrowed the exclusion from all of `client/**` to GL/audio/client-bound classes (`addon.gradle.kts`). The floor is a regression guard plus per-package floors, not a target; see §8.
+The JaCoCo floor now measures **56.7 % lines / 40.8 % branches / 70.5 % classes** over **156 of 177 classes (88 %)**, after batch 57 narrowed the exclusion from all of `client/**` to GL/audio/client-bound classes (`addon.gradle.kts`). The floor is a regression guard plus per-package floors, not a target; see §8.
 
 ---
 
@@ -870,7 +877,7 @@ Ordered by expected win. Each item is independent and testable.
 4. **One weighted random helper.** `WeightedRandom.pick(List<T>, ToIntFunction<T>, Random)` used by all three call sites; statistical tests with a fixed seed.
 5. **Side-safe proxies.** `Proxy` should not import `client.*`. Move `DamageEffectHandler.initialize`, `WailaHandler.register` and `SoundRegistry` client bits into `ProxyClient`; create a `ServerPacketSender` for the health/rain packets. `DamageEffectHandler` should be split into `client/…/DamageEffectClient` and `server/…/DamageEffectServer`.
 6. **Rename the clashing classes.** **Done in batch 60:** `DynamicSoundManager` and `RgbColor`; no Minecraft or `java.awt` name collision remains.
-7. **Registry lifecycle.** `BiomeRegistry`, `BlockRegistry`, `SoundRegistry`, `DimensionRegistry` share a `Reloadable` interface + a `RegistryManager` that handles init/reload/publish. Server reload broadcasts a client packet; client reload rebuilds fog/sound. This also fixes `/rain reload` (B46).
+7. **Registry lifecycle.** **Done in batches 42+61:** `RegistryManager` handles named init/reload, server reload broadcasts `PacketReload`, and client reload rebuilds fog/sound.
 8. **Config schema.** Replace the 422-line `ModOptions` with an annotated schema per module and generated category/sort/flags; add a validation pass that reports unknown options instead of silently dropping them. Keep the current `ConfigProcessor` for compatibility but fix `Float.MIN_VALUE`.
 9. **Resource loading.** One `ResourceLoader`/`JsonConfigLoader` with strict parsing, error aggregation and a `reload` lifecycle; the footsteps engine currently has four near-identical try/catch/close blocks.
 10. **Mixins.** **Done in batches 1+60:** weather ownership/order checks, an exclusion test for the mixin package, and a `@Unique`/`@Shadow` field audit.
@@ -928,7 +935,7 @@ Confirmed unused (or production-dead) items to remove after the refactors land:
 
 ### 8.1 Fix the metric first
 
-**Implemented in batch 57.** The floor now covers 155/177 classes (88 %) instead of excluding all client code: renderers, handlers, GUI/HUD, audio-cache and biome-grid scans are the only exclusions. Global floors are 50 % line / 35 % branch, with per-package floors for the logic-heavy packages. The original plan was:
+**Implemented in batch 57.** The floor now covers 156/177 classes (88 %) instead of excluding all client code: renderers, handlers, GUI/HUD, audio-cache and biome-grid scans are the only exclusions. Global floors are 50 % line / 35 % branch, with per-package floors for the logic-heavy packages. The original plan was:
 
 1. **Narrow the JaCoCo exclusion** from `client/**` to the actual GL/audio-bound classes, e.g. `client/**Renderer*`, `client/**Handler*` (only those that touch `GL11`/`Tessellator`), `client/gui/**`, `client/hud/**`, `client/fx/particle/**`, `client/waila/**`, `client/sound/cache/**` (or leave the cache testable with mocks). Include pure classes such as `FogResult`, `Aurora`/`Node` geometry, `Weather` (after splitting the state from Minecraft), `SoundEffect`, `ConfigProperty`, `AuroraPreset`, `ColorPair`, `MathStuff`, `PlayerUtils` (after extracting a world-access interface), `BiomeRegistry`/`BlockRegistry` weighted pick (after extraction).
 2. **Better: move pure logic to a `core/`/`logic/` package** (no `client` in the name) so the coverage configuration stays simple and the code is obviously side-neutral. E.g. `logic/fog/FogResult`, `logic/aurora/AuroraGeometry`, `logic/weather/WeatherState`, `logic/sound/WeightedRandom`.
@@ -1021,7 +1028,7 @@ Keep each PR small and keep the game test + new compat job green. The compatibil
 
 ## 11. Remaining work register (after batch 56)
 
-**Baseline:** `./gradlew check` green with **322 unit tests / 78 suites**; `gameTestServer` **79/79**; production code has no `System.out`/`System.err`/`printStackTrace`. **No known headless-testable correctness bug remains.**
+**Baseline:** `./gradlew check` green with **325 unit tests / 79 suites**; `gameTestServer` **79/79**; production code has no `System.out`/`System.err`/`printStackTrace`. **No known headless-testable correctness bug remains.**
 
 This register is authoritative where an earlier table still describes a finding as open even though a later batch fixed it (notably B15, B25, B30, B75, B80 and P1/P5/P6/P9/P11/P12/P16). The dead-code list in §6 also predates batches 11–49 and must be re-verified item by item rather than removed wholesale.
 
@@ -1087,7 +1094,7 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 ### 11.3 P2 — medium priority
 
-**M1–M6 are complete in batch 60.** The remaining P2 items are M7–M11.
+**M1–M7 are complete in batches 60–61.** The remaining P2 items are M8–M11.
 
 #### Fully automatable (A)
 
@@ -1104,7 +1111,7 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 | ID | Item | Sev | Notes |
 |---|---|---|---|
-| M7 | **Registry lifecycle abstraction (#7)** | M | A shared `Reloadable`/`RegistryManager` for biome/block/sound/dimension. `reloadRuntime()` and `PacketReload` already cover the behaviour; this is the structure that removes the four copies. |
+| M7 | **Registry lifecycle abstraction (#7)** | M | **Complete (batch 61):** `RegistryManager` owns named reloads, with block registration on the client; proxy init, `PacketReload`, `/rain reload`, and runtime reload all use it. |
 
 #### Manual/visual (C)
 
@@ -1141,5 +1148,5 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 1. **P0:** build the client smoke harness (C1/C2), then run the full manual matrix (C3). Fix anything it finds before release.
 2. **P1:** complete — R1–R10 are done.
-3. **P2:** M1–M6 are done; next are registry/config/resource-loader structure (M7/M9/M10) and diagnostics (M8).
+3. **P2:** M1–M7 are done; next are config/resource-loader structure (M9/M10) and diagnostics (M8).
 4. **P3:** opportunistic cleanup and feature work (L1–L5).

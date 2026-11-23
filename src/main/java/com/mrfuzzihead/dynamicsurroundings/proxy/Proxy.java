@@ -6,8 +6,7 @@ import net.minecraft.server.MinecraftServer;
 
 import com.mrfuzzihead.dynamicsurroundings.VersionCheck;
 import com.mrfuzzihead.dynamicsurroundings.commands.CommandRain;
-import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
-import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
+import com.mrfuzzihead.dynamicsurroundings.data.RegistryManager;
 import com.mrfuzzihead.dynamicsurroundings.network.Network;
 import com.mrfuzzihead.dynamicsurroundings.server.DamageEffectServer;
 import com.mrfuzzihead.dynamicsurroundings.server.ServerEffectHandler;
@@ -30,8 +29,7 @@ public class Proxy {
     }
 
     public void postInit(FMLPostInitializationEvent event) {
-        BiomeRegistry.initialize();
-        DimensionRegistry.initialize();
+        RegistryManager.reload("biomes", "dimensions");
     }
 
     public void serverStarting(FMLServerStartingEvent event) {

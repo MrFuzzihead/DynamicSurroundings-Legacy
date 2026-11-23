@@ -1,8 +1,6 @@
 package com.mrfuzzihead.dynamicsurroundings.network;
 
-import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
-import com.mrfuzzihead.dynamicsurroundings.data.BlockRegistry;
-import com.mrfuzzihead.dynamicsurroundings.data.SoundRegistry;
+import com.mrfuzzihead.dynamicsurroundings.data.RegistryManager;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -21,11 +19,7 @@ public final class PacketReload implements IMessage, IMessageHandler<PacketReloa
 
     @Override
     public IMessage onMessage(PacketReload message, MessageContext ctx) {
-        ClientPacketHandler.schedule(() -> {
-            BiomeRegistry.initialize();
-            BlockRegistry.initialize();
-            SoundRegistry.initialize();
-        });
+        ClientPacketHandler.schedule(() -> RegistryManager.reload("biomes", "blocks", "sounds"));
         return null;
     }
 }
