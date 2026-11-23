@@ -8,7 +8,6 @@ import org.apache.logging.log4j.LogManager;
 
 import com.mrfuzzihead.dynamicsurroundings.proxy.Proxy;
 
-import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.Mod.Instance;
@@ -22,13 +21,13 @@ import cpw.mods.fml.common.event.FMLServerStartingEvent;
     modid = "dynamicsurroundings",
     useMetadata = true,
     dependencies = "required-after:Forge@[10.13.4.1614,)",
-    version = "1.0.6.4",
+    version = Module.VERSION,
     guiFactory = "com.mrfuzzihead.dynamicsurroundings.client.gui.ConfigGuiFactory")
 public class Module {
 
     public static final String MOD_ID = "dynamicsurroundings";
     public static final String MOD_NAME = "Dynamic Surroundings";
-    public static final String VERSION = "1.0.6.4";
+    public static final String VERSION = Tags.VERSION;
     public static final String DEPENDENCIES = "required-after:Forge@[10.13.4.1614,)";
     public static final String GUI_FACTORY = "com.mrfuzzihead.dynamicsurroundings.client.gui.ConfigGuiFactory";
     @Instance("dynamicsurroundings")
@@ -62,9 +61,6 @@ public class Module {
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
-        FMLCommonHandler.instance()
-            .bus()
-            .register(this);
         dataDirectory = new File(event.getModConfigurationDirectory(), "dynamicsurroundings");
         dataDirectory.mkdirs();
         config = new Configuration(new File(dataDirectory, "dynamicsurroundings.cfg"));

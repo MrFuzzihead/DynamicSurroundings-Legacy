@@ -37,8 +37,8 @@ public final class PacketAurora implements IMessage, IMessageHandler<PacketAuror
         this.seed = buf.readLong();
         this.posX = buf.readInt();
         this.posZ = buf.readInt();
-        this.colorSet = buf.readByte();
-        this.preset = buf.readByte();
+        this.colorSet = buf.readInt();
+        this.preset = buf.readInt();
     }
 
     public void toBytes(ByteBuf buf) {
@@ -46,19 +46,19 @@ public final class PacketAurora implements IMessage, IMessageHandler<PacketAuror
         buf.writeLong(this.seed);
         buf.writeInt(this.posX);
         buf.writeInt(this.posZ);
-        buf.writeByte(this.colorSet);
-        buf.writeByte(this.preset);
+        buf.writeInt(this.colorSet);
+        buf.writeInt(this.preset);
     }
 
     public IMessage onMessage(PacketAurora message, MessageContext ctx) {
-        AuroraEffectHandler.addAurora(
-            new AuroraData(
-                message.dimension,
-                message.posX,
-                message.posZ,
-                message.seed,
-                message.colorSet,
-                message.preset));
+        final AuroraData data = new AuroraData(
+            message.dimension,
+            message.posX,
+            message.posZ,
+            message.seed,
+            message.colorSet,
+            message.preset);
+        ClientPacketHandler.schedule(() -> AuroraEffectHandler.addAurora(data));
         return null;
     }
 }

@@ -1,7 +1,5 @@
 package com.mrfuzzihead.dynamicsurroundings.client.footsteps;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Scanner;
 
@@ -20,14 +18,13 @@ import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system.PFIsolat
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system.PFReaderH;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system.PFResourcePackDealer;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system.PFSolver;
+import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system.ResourceLoader;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.game.system.UserConfigSoundPlayerWrapper;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem.AcousticsManager;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem.BasicPrimitiveMap;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem.LegacyCapableBlockMap;
-import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.implem.NormalVariator;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IBlockMap;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IPrimitiveMap;
-import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IVariator;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.parsers.AcousticsJsonReader;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.parsers.Register;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.util.property.simple.ConfigProperty;
@@ -58,57 +55,18 @@ public class Footsteps implements IResourceManagerReloadListener, IClientEffectH
         this.reloadPrimitiveMap(repo);
         this.reloadAcoustics(repo);
         this.isolator.setSolver(new PFSolver(this.isolator));
-        this.reloadVariator(repo);
         this.isolator.setGenerator(new PFReaderH(this.isolator));
-    }
-
-    private void reloadVariator(List<IResourcePack> repo) {
-        IVariator var = new NormalVariator();
-
-        for (IResourcePack pack : repo) {
-            InputStream stream = null;
-
-            try {
-                stream = this.dealer.openVariator(pack);
-                if (stream != null) {
-                    var.loadConfig(ConfigProperty.fromStream(stream));
-                }
-            } catch (Exception var15) {
-                ModLog.debug("Unable to load variator data from pack %s", pack.getPackName());
-            } finally {
-                if (stream != null) {
-                    try {
-                        stream.close();
-                    } catch (IOException var14) {}
-                }
-            }
-        }
-
-        this.isolator.setVariator(var);
     }
 
     private void reloadBlockMap(List<IResourcePack> repo) {
         IBlockMap blockMap = new LegacyCapableBlockMap();
         ForgeDictionary.initialize(blockMap);
 
-        for (IResourcePack pack : repo) {
-            InputStream stream = null;
-
-            try {
-                stream = this.dealer.openBlockMap(pack);
-                if (stream != null) {
-                    Register.setup(ConfigProperty.fromStream(stream), blockMap);
-                }
-            } catch (IOException var15) {
-                ModLog.debug("Unable to load block map data from pack %s", pack.getPackName());
-            } finally {
-                if (stream != null) {
-                    try {
-                        stream.close();
-                    } catch (IOException var14) {}
-                }
-            }
-        }
+        ResourceLoader.forEachPack(
+            repo,
+            "block map",
+            this.dealer::openBlockMap,
+            stream -> Register.setup(ConfigProperty.fromStream(stream), blockMap));
 
         this.isolator.setBlockMap(blockMap);
     }
@@ -116,56 +74,29 @@ public class Footsteps implements IResourceManagerReloadListener, IClientEffectH
     private void reloadPrimitiveMap(List<IResourcePack> repo) {
         IPrimitiveMap primitiveMap = new BasicPrimitiveMap();
 
-        for (IResourcePack pack : repo) {
-            InputStream stream = null;
-
-            try {
-                stream = this.dealer.openPrimitiveMap(pack);
-                if (stream != null) {
-                    Register.setup(ConfigProperty.fromStream(stream), primitiveMap);
-                }
-            } catch (IOException var15) {
-                ModLog.debug("Unable to load primitive map data from pack %s", pack.getPackName());
-            } finally {
-                if (stream != null) {
-                    try {
-                        stream.close();
-                    } catch (IOException var14) {}
-                }
-            }
-        }
+        ResourceLoader.forEachPack(
+            repo,
+            "primitive map",
+            this.dealer::openPrimitiveMap,
+            stream -> Register.setup(ConfigProperty.fromStream(stream), primitiveMap));
 
         this.isolator.setPrimitiveMap(primitiveMap);
     }
 
     private void reloadAcoustics(List<IResourcePack> repo) {
         AcousticsManager acoustics = new AcousticsManager(this.isolator);
-        Scanner scanner = null;
-        InputStream stream = null;
 
-        for (IResourcePack pack : repo) {
+        ResourceLoader.forEachPack(repo, "acoustics", this.dealer::openAcoustics, stream -> {
+            Scanner scanner = new Scanner(stream);
             try {
-                stream = this.dealer.openAcoustics(pack);
-                if (stream != null) {
-                    scanner = new Scanner(stream);
-                    String jasonString = scanner.useDelimiter("\\Z")
-                        .next();
-                    new AcousticsJsonReader("").parseJSON(jasonString, acoustics);
-                }
-            } catch (IOException var16) {
-                ModLog.debug("Unable to load acoustic data from pack %s", pack.getPackName());
+                new AcousticsJsonReader("").parseJSON(
+                    scanner.useDelimiter("\\Z")
+                        .next(),
+                    acoustics);
             } finally {
-                try {
-                    if (scanner != null) {
-                        scanner.close();
-                    }
-
-                    if (stream != null) {
-                        stream.close();
-                    }
-                } catch (IOException var15) {}
+                scanner.close();
             }
-        }
+        });
 
         this.isolator.setAcoustics(acoustics);
         this.isolator.setSoundPlayer(new UserConfigSoundPlayerWrapper(acoustics));
@@ -187,7 +118,9 @@ public class Footsteps implements IResourceManagerReloadListener, IClientEffectH
         this.isolator.onFrame();
         EntityAccessor accessor = (EntityAccessor) player;
         if (ModOptions.footstepsSoundFactor > 0.0F) {
-            accessor.dynamicsurroundings$setNextStepDistance(Integer.MAX_VALUE);
+            if (accessor.dynamicsurroundings$getNextStepDistance() != Integer.MAX_VALUE) {
+                accessor.dynamicsurroundings$setNextStepDistance(Integer.MAX_VALUE);
+            }
         } else if (accessor.dynamicsurroundings$getNextStepDistance() == Integer.MAX_VALUE) {
             accessor.dynamicsurroundings$setNextStepDistance(0);
         }

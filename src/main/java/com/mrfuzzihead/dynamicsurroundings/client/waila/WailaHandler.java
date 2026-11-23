@@ -16,7 +16,6 @@ import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import org.apache.commons.lang3.StringUtils;
 
 import com.mrfuzzihead.dynamicsurroundings.ModLog;
-import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.Footsteps;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.mcpackage.interfaces.IBlockMap;
 
@@ -71,14 +70,15 @@ public final class WailaHandler implements IWailaDataProvider {
         }
     }
 
+    private static final WailaHandler INSTANCE = new WailaHandler();
+
     @Method(modid = "Waila")
     public static void callbackRegister(IWailaRegistrar register) {
         ModLog.info("Registering Waila handler...");
-        WailaHandler instance = new WailaHandler();
-        register.registerTailProvider(instance, Block.class);
+        register.registerTailProvider(INSTANCE, Block.class);
     }
 
-    public WailaHandler() {
+    private WailaHandler() {
         MinecraftForge.EVENT_BUS.register(this);
     }
 
@@ -117,8 +117,6 @@ public final class WailaHandler implements IWailaDataProvider {
     }
 
     public static void register() {
-        if (ModOptions.enableDebugLogging) {
-            FMLInterModComms.sendMessage("Waila", "register", WailaHandler.class.getName() + ".callbackRegister");
-        }
+        FMLInterModComms.sendMessage("Waila", "register", WailaHandler.class.getName() + ".callbackRegister");
     }
 }

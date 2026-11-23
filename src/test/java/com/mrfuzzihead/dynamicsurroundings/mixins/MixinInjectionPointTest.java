@@ -9,6 +9,7 @@ import java.util.List;
 
 import net.minecraft.client.audio.SoundManager;
 import net.minecraft.client.renderer.EntityRenderer;
+import net.minecraft.entity.EntityLivingBase;
 
 import org.junit.Test;
 import org.objectweb.asm.ClassReader;
@@ -55,6 +56,12 @@ public class MixinInjectionPointTest {
             "play",
             "(Ljava/lang/String;)V");
         assertNotNull(call);
+    }
+
+    @Test
+    public void updatePotionEffectsStillSpawnsParticles() throws Exception {
+        MethodNode method = findMethod(read(EntityLivingBase.class), "updatePotionEffects", "()V");
+        assertNotNull(findCall(method, "net/minecraft/world/World", "spawnParticle", "(Ljava/lang/String;DDDDDD)V"));
     }
 
     @Test

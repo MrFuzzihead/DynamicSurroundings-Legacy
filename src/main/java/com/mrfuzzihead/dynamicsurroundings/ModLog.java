@@ -37,16 +37,13 @@ public final class ModLog {
 
     public static void error(String msg, Throwable e) {
         if (logger != null) {
-            logger.error(msg);
+            logger.error(msg, e);
         }
-
-        e.printStackTrace();
     }
 
     public static void catching(Throwable t) {
         if (logger != null) {
             logger.catching(t);
-            t.printStackTrace();
         }
     }
 }

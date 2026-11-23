@@ -19,12 +19,16 @@ public class WeatherFogRangeCalculator extends VanillaFogRangeCalculator {
     @Nonnull
     @Override
     public FogResult calculate(@Nonnull RenderFogEvent event) {
+        return this.calculate(event, Weather.getRainStrength());
+    }
+
+    @Nonnull
+    FogResult calculate(@Nonnull RenderFogEvent event, float rainStr) {
         this.cache.set(event);
-        float rainStr = Weather.getRainStrength();
         if (rainStr > 0.0F) {
             float startScale = 1.0F - 0.9F * rainStr;
             float endScale = 1.0F - 0.4F * rainStr;
-            this.cache.set(this.cache.getStart() * startScale, this.cache.getEnd() * endScale);
+            this.cache.set(event.fogMode, startScale, endScale);
         }
 
         return this.cache;

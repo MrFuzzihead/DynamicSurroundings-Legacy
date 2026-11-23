@@ -1,8 +1,11 @@
 package com.mrfuzzihead.dynamicsurroundings.data;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import java.util.regex.Pattern;
 
 import net.minecraft.world.biome.BiomeGenBase;
 
@@ -69,6 +72,14 @@ public class BiomeRegistryTest {
         assertTrue(!BiomeRegistry.hasAurora(unknown));
         assertTrue(!BiomeRegistry.hasFog(unknown));
         assertEquals(0.0F, BiomeRegistry.getFogDensity(unknown), 0.0F);
+    }
+
+    @Test
+    public void precompiledBiomePatternsKeepTheSameMatchingRules() {
+        Pattern ocean = Pattern.compile(".*Ocean.*");
+        assertTrue(BiomeRegistry.isBiomeMatch(ocean, "Ocean"));
+        assertTrue(BiomeRegistry.isBiomeMatch(ocean, "Deep Ocean"));
+        assertFalse(BiomeRegistry.isBiomeMatch(ocean, "Plains"));
     }
 
     @Test

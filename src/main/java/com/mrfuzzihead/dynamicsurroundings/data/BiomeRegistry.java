@@ -17,20 +17,24 @@ import com.mrfuzzihead.dynamicsurroundings.ModLog;
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.Module;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
+import com.mrfuzzihead.dynamicsurroundings.compat.Compat;
 import com.mrfuzzihead.dynamicsurroundings.data.compat.BOPFogIntegration;
 import com.mrfuzzihead.dynamicsurroundings.data.compat.IBOPFog;
 import com.mrfuzzihead.dynamicsurroundings.data.config.BiomeConfig;
 import com.mrfuzzihead.dynamicsurroundings.data.config.SoundConfig;
 import com.mrfuzzihead.dynamicsurroundings.event.RegistryReloadEvent;
-import com.mrfuzzihead.dynamicsurroundings.util.Color;
 import com.mrfuzzihead.dynamicsurroundings.util.MyUtils;
+import com.mrfuzzihead.dynamicsurroundings.util.RgbColor;
+import com.mrfuzzihead.dynamicsurroundings.util.WeightedRandom;
 
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 public final class BiomeRegistry {
 
-    private static final TIntObjectHashMap<BiomeRegistry.Entry> registry = new TIntObjectHashMap();
-    private static final Map<String, String> biomeAliases = new HashMap<>();
+    private static volatile TIntObjectHashMap<BiomeRegistry.Entry> registry = new TIntObjectHashMap<>();
+    private static volatile Map<String, String> biomeAliases = new HashMap<>();
+    private static final Object INIT_LOCK = new Object();
+    private static volatile boolean initialized;
     private static final boolean BOP_PRESENT = isClassPresent("biomesoplenty.BiomesOPlenty");
     public static final BiomeGenBase UNDERGROUND = new FakeBiome(-1, "Underground");
     public static final BiomeGenBase PLAYER = new FakeBiome(-2, "Player");
@@ -65,65 +69,75 @@ public final class BiomeRegistry {
     }
 
     public static void initialize() {
-        synchronized (registry) {
-            biomeAliases.clear();
-
-            for (String entry : ModOptions.biomeAliases) {
-                String[] parts = StringUtils.split(entry, "=");
-                if (parts.length == 2) {
-                    biomeAliases.put(parts[0], parts[1]);
-                }
+        Map<String, String> aliases = new HashMap<>();
+        for (String entry : ModOptions.biomeAliases) {
+            String[] parts = StringUtils.split(entry, "=");
+            if (parts.length == 2) {
+                aliases.put(parts[0], parts[1]);
             }
+        }
 
-            registry.clear();
-            BiomeGenBase[] biomeArray = BiomeGenBase.getBiomeGenArray();
-
-            for (int i = 0; i < biomeArray.length; i++) {
-                if (biomeArray[i] != null) {
-                    registry.put(biomeArray[i].biomeID, new BiomeRegistry.Entry(biomeArray[i]));
-                }
+        TIntObjectHashMap<BiomeRegistry.Entry> fresh = new TIntObjectHashMap<>();
+        BiomeGenBase[] biomeArray = BiomeGenBase.getBiomeGenArray();
+        for (BiomeGenBase biome : biomeArray) {
+            if (biome != null) {
+                fresh.put(biome.biomeID, new BiomeRegistry.Entry(biome));
             }
+        }
 
-            registry.put(UNDERGROUND.biomeID, new BiomeRegistry.Entry(UNDERGROUND));
-            registry.put(UNDERWATER.biomeID, new BiomeRegistry.Entry(UNDERWATER));
-            registry.put(UNDEROCEAN.biomeID, new BiomeRegistry.Entry(UNDEROCEAN));
-            registry.put(UNDERDEEPOCEAN.biomeID, new BiomeRegistry.Entry(UNDERDEEPOCEAN));
-            registry.put(UNDERRIVER.biomeID, new BiomeRegistry.Entry(UNDERRIVER));
-            registry.put(OUTERSPACE.biomeID, new BiomeRegistry.Entry(OUTERSPACE));
-            registry.put(CLOUDS.biomeID, new BiomeRegistry.Entry(CLOUDS));
-            registry.put(PLAYER.biomeID, new BiomeRegistry.Entry(PLAYER));
-            registry.put(WTF.biomeID, new BiomeRegistry.Entry(WTF));
-            processConfig();
-            if (ModOptions.enableDebugLogging) {
-                ModLog.info("*** BIOME REGISTRY ***");
+        fresh.put(UNDERGROUND.biomeID, new BiomeRegistry.Entry(UNDERGROUND));
+        fresh.put(UNDERWATER.biomeID, new BiomeRegistry.Entry(UNDERWATER));
+        fresh.put(UNDEROCEAN.biomeID, new BiomeRegistry.Entry(UNDEROCEAN));
+        fresh.put(UNDERDEEPOCEAN.biomeID, new BiomeRegistry.Entry(UNDERDEEPOCEAN));
+        fresh.put(UNDERRIVER.biomeID, new BiomeRegistry.Entry(UNDERRIVER));
+        fresh.put(OUTERSPACE.biomeID, new BiomeRegistry.Entry(OUTERSPACE));
+        fresh.put(CLOUDS.biomeID, new BiomeRegistry.Entry(CLOUDS));
+        fresh.put(PLAYER.biomeID, new BiomeRegistry.Entry(PLAYER));
+        fresh.put(WTF.biomeID, new BiomeRegistry.Entry(WTF));
+        biomeAliases = aliases;
+        processConfig(fresh);
 
-                for (BiomeRegistry.Entry entryx : registry.valueCollection()) {
-                    ModLog.info(entryx.toString());
-                }
+        synchronized (INIT_LOCK) {
+            registry = fresh;
+            initialized = true;
+        }
+
+        if (ModOptions.enableDebugLogging) {
+            ModLog.info("*** BIOME REGISTRY ***");
+            for (BiomeRegistry.Entry entryx : fresh.valueCollection()) {
+                ModLog.info(entryx.toString());
             }
-
-            biomeAliases.clear();
         }
 
         MinecraftForge.EVENT_BUS.post(new RegistryReloadEvent.Biome());
     }
 
     private static BiomeRegistry.Entry get(BiomeGenBase biome) {
-        synchronized (registry) {
-            BiomeRegistry.Entry entry = (BiomeRegistry.Entry) registry.get(biome == null ? WTF.biomeID : biome.biomeID);
+        int id = biome == null ? WTF.biomeID : biome.biomeID;
+        BiomeRegistry.Entry entry = registry.get(id);
+        if (entry != null) {
+            return entry;
+        }
+
+        synchronized (INIT_LOCK) {
+            entry = registry.get(id);
             if (entry == null) {
-                ModLog.warn("Biome [%s] was not detected during initial scan! Reloading config...", resolveName(biome));
-                initialize();
-                entry = (BiomeRegistry.Entry) registry.get(biome.biomeID);
+                if (!initialized) {
+                    initialize();
+                    entry = registry.get(biome.biomeID);
+                }
+
                 if (entry == null) {
-                    ModLog.warn("Still can't find biome [%s]! Explicitly adding at defaults", resolveName(biome));
+                    ModLog.warn(
+                        "Biome [%s] was not detected during initial scan! Explicitly adding defaults",
+                        resolveName(biome));
                     entry = new BiomeRegistry.Entry(biome);
                     registry.put(biome.biomeID, entry);
                 }
             }
-
-            return entry;
         }
+
+        return entry;
     }
 
     public static boolean hasDust(BiomeGenBase biome) {
@@ -142,11 +156,11 @@ public final class BiomeRegistry {
         return get(biome).hasFog;
     }
 
-    public static Color getDustColor(BiomeGenBase biome) {
+    public static RgbColor getDustColor(BiomeGenBase biome) {
         return get(biome).dustColor;
     }
 
-    public static Color getFogColor(BiomeGenBase biome) {
+    public static RgbColor getFogColor(BiomeGenBase biome) {
         return get(biome).fogColor;
     }
 
@@ -164,42 +178,18 @@ public final class BiomeRegistry {
 
     public static SoundEffect getSpotSound(BiomeGenBase biome, String conditions, Random random) {
         BiomeRegistry.Entry e = get(biome);
-        if (e != null && !e.spotSounds.isEmpty() && random.nextInt(e.spotSoundChance) == 0) {
-            int totalWeight = 0;
-            List<SoundEffect> candidates = new ArrayList<>();
-
-            for (SoundEffect s : e.spotSounds) {
-                if (s.matches(conditions)) {
-                    candidates.add(s);
-                    totalWeight += s.weight;
-                }
-            }
-
-            if (totalWeight <= 0) {
-                return null;
-            } else if (candidates.size() == 1) {
-                return candidates.get(0);
-            } else {
-                int targetWeight = random.nextInt(totalWeight);
-                int i = 0;
-                i = candidates.size();
-
-                while ((targetWeight -= candidates.get(i - 1).weight) >= 0) {
-                    i--;
-                }
-
-                return candidates.get(i - 1);
-            }
-        } else {
+        if (e == null || e.spotSounds.isEmpty() || !WeightedRandom.roll(random, e.spotSoundChance)) {
             return null;
         }
+
+        return WeightedRandom.pick(e.spotSounds, s -> s.matches(conditions) ? s.weight : 0, random);
     }
 
-    private static void processConfig() {
+    private static void processConfig(TIntObjectHashMap<BiomeRegistry.Entry> map) {
         try {
-            process(BiomeConfig.load("dynamicsurroundings"));
+            process(BiomeConfig.load("dynamicsurroundings"), map);
         } catch (Exception var8) {
-            var8.printStackTrace();
+            ModLog.error("Unable to load default biome config", var8);
         }
 
         String[] configFiles = ModOptions.biomeConfigFiles;
@@ -210,7 +200,7 @@ public final class BiomeRegistry {
                 try {
                     BiomeConfig config = BiomeConfig.load(theFile);
                     if (config != null) {
-                        process(config);
+                        process(config, map);
                     } else {
                         ModLog.warn("Unable to process biome config file " + file);
                     }
@@ -224,18 +214,26 @@ public final class BiomeRegistry {
     }
 
     static final boolean isBiomeMatch(BiomeConfig.Entry entry, String biomeName) {
-        if (Pattern.matches(entry.biomeName, biomeName)) {
+        return isBiomeMatch(Pattern.compile(entry.biomeName), biomeName);
+    }
+
+    static final boolean isBiomeMatch(Pattern pattern, String biomeName) {
+        if (pattern.matcher(biomeName)
+            .matches()) {
             return true;
         } else {
             String alias = biomeAliases.get(biomeName);
-            return alias == null ? false : Pattern.matches(entry.biomeName, alias);
+            return alias == null ? false
+                : pattern.matcher(alias)
+                    .matches();
         }
     }
 
-    private static void process(BiomeConfig config) {
+    private static void process(BiomeConfig config, TIntObjectHashMap<BiomeRegistry.Entry> map) {
         for (BiomeConfig.Entry entry : config.entries) {
-            for (BiomeRegistry.Entry biomeEntry : registry.valueCollection()) {
-                if (isBiomeMatch(entry, resolveName(biomeEntry.biome))) {
+            Pattern pattern = Pattern.compile(entry.biomeName);
+            for (BiomeRegistry.Entry biomeEntry : map.valueCollection()) {
+                if (isBiomeMatch(pattern, resolveName(biomeEntry.biome))) {
                     if (entry.hasPrecipitation != null) {
                         biomeEntry.hasPrecipitation = entry.hasPrecipitation;
                     }
@@ -259,14 +257,14 @@ public final class BiomeRegistry {
                     if (entry.fogColor != null) {
                         int[] rgb = MyUtils.splitToInts(entry.fogColor, ',');
                         if (rgb.length == 3) {
-                            biomeEntry.fogColor = new Color(rgb[0], rgb[1], rgb[2]);
+                            biomeEntry.fogColor = new RgbColor(rgb[0], rgb[1], rgb[2]);
                         }
                     }
 
                     if (entry.dustColor != null) {
                         int[] rgb = MyUtils.splitToInts(entry.dustColor, ',');
                         if (rgb.length == 3) {
-                            biomeEntry.dustColor = new Color(rgb[0], rgb[1], rgb[2]);
+                            biomeEntry.dustColor = new RgbColor(rgb[0], rgb[1], rgb[2]);
                         }
                     }
 
@@ -301,8 +299,8 @@ public final class BiomeRegistry {
         public boolean hasDust;
         public boolean hasAurora;
         public boolean hasFog;
-        public Color dustColor;
-        public Color fogColor;
+        public RgbColor dustColor;
+        public RgbColor fogColor;
         public float fogDensity;
         public List<SoundEffect> sounds;
         public int spotSoundChance;
@@ -314,15 +312,16 @@ public final class BiomeRegistry {
             this.sounds = new ArrayList<>();
             this.spotSounds = new ArrayList<>();
             this.spotSoundChance = 1200;
-            if (BOP_PRESENT) {
+            if (BOP_PRESENT && !Compat.isAngelicaBopFogActive()) {
                 // Optional integration: BOP biomes expose their fog through IBiomeFog. BOPFogIntegration loads the
-                // bridge only when BOP is present, so no BOP class is touched when the mod is absent.
+                // bridge only when BOP is present, so no BOP class is touched when the mod is absent. With Angelica
+                // installed, its late BOP fog mixin already owns the blend; importing it here would double-apply it.
                 IBOPFog bopFog = BOPFogIntegration.get();
                 if (bopFog.isFogBiome(biome)) {
                     int color = bopFog.getFogColor(biome);
                     if (color > 0) {
                         this.hasFog = true;
-                        this.fogColor = new Color(color);
+                        this.fogColor = new RgbColor(color);
                         this.fogDensity = bopFog.getFogDensity(biome);
                     }
                 }

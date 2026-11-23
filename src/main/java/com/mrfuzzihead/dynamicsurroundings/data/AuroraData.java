@@ -55,14 +55,28 @@ public final class AuroraData implements INBTSerialization {
         nbt.setInteger("p", this.preset);
     }
 
+    /** Aurora identity is its dimension and column; seed/color updates do not create a new identity. */
+    public boolean sameColumn(AuroraData other) {
+        return other != null && this.dimensionId == other.dimensionId
+            && this.posX == other.posX
+            && this.posZ == other.posZ;
+    }
+
     @Override
     public boolean equals(Object anObj) {
         if (!(anObj instanceof AuroraData)) {
             return false;
         } else {
-            AuroraData a = (AuroraData) anObj;
-            return this.dimensionId == a.dimensionId && this.posX == a.posX && this.posZ == a.posZ;
+            return this.sameColumn((AuroraData) anObj);
         }
+    }
+
+    @Override
+    public int hashCode() {
+        int result = this.dimensionId;
+        result = 31 * result + this.posX;
+        result = 31 * result + this.posZ;
+        return result;
     }
 
     @Override
@@ -82,13 +96,4 @@ public final class AuroraData implements INBTSerialization {
         return builder.toString();
     }
 
-    private static final class NBT {
-
-        public static final String DIMENSION = "d";
-        public static final String XCOORD = "x";
-        public static final String ZCOORD = "z";
-        public static final String SEED = "t";
-        public static final String COLOR_SET = "s";
-        public static final String PRESET = "p";
-    }
 }

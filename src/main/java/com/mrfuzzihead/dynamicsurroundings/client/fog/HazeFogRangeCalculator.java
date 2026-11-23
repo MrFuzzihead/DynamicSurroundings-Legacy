@@ -5,6 +5,8 @@ import javax.annotation.Nonnull;
 import net.minecraftforge.client.event.EntityViewRenderEvent.RenderFogEvent;
 
 import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironmentSnapshot;
+import com.mrfuzzihead.dynamicsurroundings.compat.notfine.NotFineBridge;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 
 import cpw.mods.fml.relauncher.Side;
@@ -22,16 +24,25 @@ public class HazeFogRangeCalculator extends VanillaFogRangeCalculator {
     @Nonnull
     @Override
     public FogResult calculate(@Nonnull RenderFogEvent event) {
-        DimensionRegistry di = EnvironStateHandler.EnvironState.getDimensionInfo();
+        EnvironmentSnapshot snapshot = EnvironStateHandler.EnvironState.getSnapshot();
+        DimensionRegistry di = snapshot.getDimensionInfo();
         if (di == null) {
             this.cached.set(event);
             return this.cached;
         } else {
             if (di.getHasHaze()) {
-                float lowY = di.getCloudHeight() - 15;
-                float highY = di.getCloudHeight() + 15 + 10;
-                double eyeHeight = EnvironStateHandler.EnvironState.getPlayer().posY
-                    + EnvironStateHandler.EnvironState.getPlayer().eyeHeight;
+                int cloudHeight = di.getCloudHeight();
+                if (!di.hasExplicitCloudHeight()) {
+                    cloudHeight = NotFineBridge.cloudHeight(cloudHeight);
+                }
+
+                float lowY = cloudHeight - 15;
+                float highY = cloudHeight + 15 + 10;
+                net.minecraft.entity.player.EntityPlayer player = snapshot.getPlayer();
+                if (player == null) {
+                    player = EnvironStateHandler.EnvironState.getPlayer();
+                }
+                double eyeHeight = player.posY + player.eyeHeight;
                 if (eyeHeight >= lowY && eyeHeight <= highY) {
                     float coreLowY = lowY + 15.0F;
                     float coreHighY = coreLowY + 10.0F;
@@ -47,9 +58,7 @@ public class HazeFogRangeCalculator extends VanillaFogRangeCalculator {
                         scaleNear *= factor;
                     }
 
-                    float end = event.farPlaneDistance * (1.0F - scaleFar);
-                    float start = event.farPlaneDistance * (1.0F - scaleNear);
-                    this.cached.set(start, end);
+                    this.cached.set(event.fogMode, (1.0F - scaleNear) / FogResult.DEFAULT_PLANE_SCALE, 1.0F - scaleFar);
                     return this.cached;
                 }
             }

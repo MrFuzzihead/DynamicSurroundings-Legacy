@@ -1,7 +1,7 @@
 package com.mrfuzzihead.dynamicsurroundings.data;
 
-import java.text.DecimalFormat;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 import net.minecraft.nbt.NBTTagCompound;
@@ -16,14 +16,12 @@ import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 public final class DimensionEffectData implements INBTSerialization {
 
     private static final XorShiftRandom random = new XorShiftRandom();
-    private static final DecimalFormat FORMATTER = new DecimalFormat("0");
-    public static final float MIN_INTENSITY = 0.0F;
-    public static final float MAX_INTENSITY = 1.0F;
     private int dimensionId = 0;
     private float intensity = 0.0F;
     private float minIntensity = ModOptions.defaultMinRainStrength;
     private float maxIntensity = ModOptions.defaultMaxRainStrength;
     private final Set<AuroraData> auroras = new HashSet<>();
+    private Runnable dirtyCallback = () -> {};
 
     public DimensionEffectData() {}
 
@@ -41,6 +39,15 @@ public final class DimensionEffectData implements INBTSerialization {
 
     public void setRainIntensity(float intensity) {
         this.intensity = MathHelper.clamp_float(intensity, 0.0F, 1.0F);
+        this.markDirty();
+    }
+
+    public void setDirtyCallback(Runnable callback) {
+        this.dirtyCallback = callback == null ? () -> {} : callback;
+    }
+
+    public void markDirty() {
+        this.dirtyCallback.run();
     }
 
     public float getMinRainIntensity() {
@@ -49,6 +56,7 @@ public final class DimensionEffectData implements INBTSerialization {
 
     public void setMinRainIntensity(float intensity) {
         this.minIntensity = MathHelper.clamp_float(intensity, 0.0F, this.maxIntensity);
+        this.markDirty();
     }
 
     public float getMaxRainIntensity() {
@@ -57,6 +65,7 @@ public final class DimensionEffectData implements INBTSerialization {
 
     public void setMaxRainIntensity(float intensity) {
         this.maxIntensity = MathHelper.clamp_float(intensity, this.minIntensity, 1.0F);
+        this.markDirty();
     }
 
     public Set<AuroraData> getAuroraList() {
@@ -69,8 +78,7 @@ public final class DimensionEffectData implements INBTSerialization {
         if (delta <= 0.0F) {
             result = this.minIntensity;
         } else {
-            float mid = delta / 2.0F;
-            result = random.nextFloat() * mid + random.nextFloat() * mid;
+            result = this.minIntensity + random.nextFloat() * delta;
         }
 
         this.setRainIntensity(MathHelper.clamp_float(result, 0.01F, 1.0F));
@@ -126,23 +134,15 @@ public final class DimensionEffectData implements INBTSerialization {
             .append(this.dimensionId)
             .append(": ");
         builder.append("intensity: ")
-            .append(FORMATTER.format(this.intensity * 100.0F));
+            .append(String.format(Locale.ENGLISH, "%.0f", this.intensity * 100.0F));
         builder.append(" [")
-            .append(FORMATTER.format(this.minIntensity * 100.0F));
+            .append(String.format(Locale.ENGLISH, "%.0f", this.minIntensity * 100.0F));
         builder.append(",")
-            .append(FORMATTER.format(this.maxIntensity * 100.0F));
+            .append(String.format(Locale.ENGLISH, "%.0f", this.maxIntensity * 100.0F));
         builder.append("]");
         builder.append(", auroras: ")
             .append(this.auroras.size());
         return builder.toString();
     }
 
-    private final class NBT {
-
-        public static final String DIMENSION = "d";
-        public static final String INTENSITY = "s";
-        public static final String MIN_INTENSITY = "min";
-        public static final String MAX_INTENSITY = "max";
-        public static final String AURORA_LIST = "al";
-    }
 }

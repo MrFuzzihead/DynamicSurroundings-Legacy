@@ -11,17 +11,25 @@ import cpw.mods.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public class LegacyCapableBlockMap extends BasicBlockMap {
 
+    static int findLegacySeparator(String key) {
+        int colon = key.indexOf(':');
+        if (colon >= 0) {
+            return colon;
+        }
+
+        int caret = key.indexOf('^');
+        if (caret >= 0) {
+            return caret;
+        }
+
+        int dot = key.indexOf('.');
+        return dot >= 0 ? dot : key.length();
+    }
+
     @Override
     public void register(String key, String value) {
         try {
-            int endOfNumber = key.indexOf(94);
-            if (endOfNumber == -1) {
-                endOfNumber = key.indexOf(46);
-            }
-
-            if (endOfNumber == -1) {
-                endOfNumber = key.length();
-            }
+            int endOfNumber = findLegacySeparator(key);
 
             String number = key.substring(0, endOfNumber);
             int id = Integer.parseInt(number);

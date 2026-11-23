@@ -7,7 +7,6 @@ import java.util.UUID;
 
 import org.junit.Test;
 
-import com.mrfuzzihead.dynamicsurroundings.client.DamageEffectHandler;
 import com.mrfuzzihead.dynamicsurroundings.data.AuroraData;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
@@ -39,8 +38,8 @@ public class PacketCodecTest {
         AuroraData aurora = new AuroraData(-1, 320, -640, 0x1122334455667788L, 3, 2);
         ByteBuf encoded = encode(new PacketAurora(aurora));
 
-        // int dimension, long seed, int x, int z, byte colour set, byte preset.
-        assertEquals(4 + 8 + 4 + 4 + 1 + 1, encoded.readableBytes());
+        // int dimension, long seed, int x, int z, int colour set, int preset.
+        assertEquals(4 + 8 + 4 + 4 + 4 + 4, encoded.readableBytes());
 
         assertBytes(encoded, reencode(copy(encoded), new PacketAurora()));
     }
@@ -53,8 +52,15 @@ public class PacketCodecTest {
     }
 
     @Test
+    public void reloadHasAnEmptyPayload() {
+        ByteBuf encoded = encode(new PacketReload());
+        assertEquals(0, encoded.readableBytes());
+        assertBytes(encoded, reencode(copy(encoded), new PacketReload()));
+    }
+
+    @Test
     public void healthChangeRoundTrips() {
-        DamageEffectHandler.HealthData data = new DamageEffectHandler.HealthData(
+        HealthData data = new HealthData(
             UUID.fromString("123e4567-e89b-12d3-a456-426614174000"),
             1.5F,
             2.5F,

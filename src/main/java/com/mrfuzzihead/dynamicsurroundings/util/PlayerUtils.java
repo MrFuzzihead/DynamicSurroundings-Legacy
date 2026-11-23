@@ -17,7 +17,6 @@ import cpw.mods.fml.relauncher.SideOnly;
 
 public final class PlayerUtils {
 
-    private static final int INSIDE_Y_ADJUST = 3;
     private static final Pattern REGEX_DEEP_OCEAN = Pattern.compile("(?i).*deep.*ocean.*|.*abyss.*");
     private static final Pattern REGEX_OCEAN = Pattern.compile("(?i)(?!.*deep.*)(.*ocean.*|.*kelp.*|.*coral.*)");
     private static final Pattern REGEX_RIVER = Pattern.compile("(?i).*river.*");
@@ -69,18 +68,17 @@ public final class PlayerUtils {
         int targetY = MathHelper.floor_double(entity.posY);
         int baseX = MathHelper.floor_double(entity.posX);
         int baseZ = MathHelper.floor_double(entity.posZ);
-        int seeSky = 0;
+        int blocked = 0;
 
-        for (int x = -3; x <= 3; x++) {
-            for (int z = -3; z <= 3; z++) {
-                int y = world.getTopSolidOrLiquidBlock(baseX + x, baseZ + z);
-                if (y - targetY < 2) {
-                    seeSky++;
+        for (int x = -RANGE; x <= RANGE; x++) {
+            for (int z = -RANGE; z <= RANGE; z++) {
+                if (!world.canBlockSeeTheSky(baseX + x, targetY, baseZ + z)) {
+                    blocked++;
                 }
             }
         }
 
-        return 1.0F - seeSky / 49.0F;
+        return blocked / (float) AREA;
     }
 
     public static boolean isReallyInside(EntityPlayer entity) {

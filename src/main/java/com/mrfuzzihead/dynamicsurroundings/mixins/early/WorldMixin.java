@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.mrfuzzihead.dynamicsurroundings.compat.ExternalWeatherPolicy;
 import com.mrfuzzihead.dynamicsurroundings.server.WorldHandler;
 
 /**
@@ -20,6 +21,9 @@ public abstract class WorldMixin {
 
     @Inject(method = "updateWeatherBody", at = @At("HEAD"), cancellable = true, remap = false, require = 1)
     private void dynamicsurroundings$updateWeatherBody(CallbackInfo ci) {
+        if (ExternalWeatherPolicy.isDeferred()) {
+            return;
+        }
         WorldHandler.updateWeatherBody((World) (Object) this);
         ci.cancel();
     }

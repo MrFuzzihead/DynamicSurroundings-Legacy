@@ -1,6 +1,7 @@
 package com.mrfuzzihead.dynamicsurroundings.client;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import net.minecraft.block.Block;
@@ -17,8 +18,8 @@ import net.minecraftforge.event.entity.EntityEvent.EntityConstructing;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
-import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundManager;
 import com.mrfuzzihead.dynamicsurroundings.client.weather.Weather;
 import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
@@ -34,13 +35,58 @@ import gnu.trove.map.hash.TObjectIntHashMap;
 public class PlayerSoundEffectHandler implements IClientEffectHandler {
 
     private static final List<EntityDropParticleFX> drops = new ArrayList<>();
+    private static String cachedConditions;
+    private static int cachedRevision = -1;
+    private static List<SoundEffect> cachedSounds = Collections.emptyList();
+    private static String cachedPlayerConditions;
+    private static List<SoundEffect> cachedPlayerSounds = Collections.emptyList();
+    private static String cachedAmbientConditions;
+    private static boolean cachedAmbientBiomes;
+    private static int cachedAmbientRevision = -1;
+    private static List<SoundEffect> cachedAmbientSounds = Collections.emptyList();
 
     private static boolean doBiomeSounds() {
         return EnvironStateHandler.EnvironState.isPlayerUnderground()
             || !EnvironStateHandler.EnvironState.isPlayerInside();
     }
 
+    private static List<SoundEffect> getPlayerSounds(String conditions) {
+        if (conditions.equals(cachedPlayerConditions)) {
+            return cachedPlayerSounds;
+        }
+
+        cachedPlayerConditions = conditions;
+        cachedPlayerSounds = Collections
+            .unmodifiableList(new ArrayList<>(BiomeRegistry.getSounds(BiomeRegistry.PLAYER, conditions)));
+        return cachedPlayerSounds;
+    }
+
+    private static List<SoundEffect> getAmbientSounds(String conditions, boolean biomeSounds) {
+        int revision = BiomeSurveyHandler.getRevision();
+        if (revision == cachedAmbientRevision && biomeSounds == cachedAmbientBiomes
+            && conditions.equals(cachedAmbientConditions)) {
+            return cachedAmbientSounds;
+        }
+
+        List<SoundEffect> result = new ArrayList<>();
+        if (biomeSounds) {
+            result.addAll(getBiomeSounds(conditions));
+        }
+
+        result.addAll(getPlayerSounds(conditions));
+        cachedAmbientConditions = conditions;
+        cachedAmbientBiomes = biomeSounds;
+        cachedAmbientRevision = revision;
+        cachedAmbientSounds = Collections.unmodifiableList(result);
+        return cachedAmbientSounds;
+    }
+
     private static List<SoundEffect> getBiomeSounds(String conditions) {
+        int revision = BiomeSurveyHandler.getRevision();
+        if (revision == cachedRevision && conditions.equals(cachedConditions)) {
+            return cachedSounds;
+        }
+
         TObjectIntHashMap<SoundEffect> sounds = new TObjectIntHashMap();
         TObjectIntHashMap<BiomeGenBase> weights = BiomeSurveyHandler.getBiomes();
 
@@ -58,12 +104,21 @@ public class PlayerSoundEffectHandler implements IClientEffectHandler {
             result.add(SoundEffect.scaleVolume(sound, scale));
         }
 
-        return result;
+        cachedConditions = conditions;
+        cachedRevision = revision;
+        cachedSounds = Collections.unmodifiableList(result);
+        return cachedSounds;
     }
 
     private static void resetSounds() {
-        SoundManager.clearSounds();
+        DynamicSoundManager.clearSounds();
         drops.clear();
+        cachedConditions = null;
+        cachedPlayerConditions = null;
+        cachedAmbientConditions = null;
+        cachedRevision = -1;
+        cachedPlayerSounds = Collections.emptyList();
+        cachedAmbientSounds = Collections.emptyList();
     }
 
     @Override
@@ -71,31 +126,25 @@ public class PlayerSoundEffectHandler implements IClientEffectHandler {
         if (player.isDead) {
             resetSounds();
         } else {
-            BiomeGenBase playerBiome = EnvironStateHandler.EnvironState.getPlayerBiome();
-            String conditions = EnvironStateHandler.EnvironState.getConditions();
-            List<SoundEffect> sounds = new ArrayList<>();
-            if (doBiomeSounds()) {
-                sounds.addAll(getBiomeSounds(conditions));
-            }
-
-            sounds.addAll(BiomeRegistry.getSounds(BiomeRegistry.PLAYER, conditions));
-            SoundManager.queueAmbientSounds(sounds);
+            EnvironmentSnapshot snapshot = EnvironStateHandler.EnvironState.getSnapshot();
+            BiomeGenBase playerBiome = snapshot.getPlayerBiome();
+            String conditions = snapshot.getConditions();
+            DynamicSoundManager.queueAmbientSounds(getAmbientSounds(conditions, doBiomeSounds()));
             if (doBiomeSounds()) {
                 SoundEffect sound = BiomeRegistry
                     .getSpotSound(playerBiome, conditions, EnvironStateHandler.EnvironState.RANDOM);
                 if (sound != null) {
-                    SoundManager.playSoundAtPlayer(player, sound);
+                    DynamicSoundManager.playSoundAtPlayer(player, sound);
                 }
             }
 
             SoundEffect sound = BiomeRegistry
                 .getSpotSound(BiomeRegistry.PLAYER, conditions, EnvironStateHandler.EnvironState.RANDOM);
             if (sound != null) {
-                SoundManager.playSoundAtPlayer(player, sound);
+                DynamicSoundManager.playSoundAtPlayer(player, sound);
             }
 
-            this.processWaterDrops();
-            SoundManager.update();
+            this.processWaterDrops(snapshot.getWorld());
         }
     }
 
@@ -120,12 +169,12 @@ public class PlayerSoundEffectHandler implements IClientEffectHandler {
     public void diagnostics(DiagnosticEvent.Gather event) {
         StringBuilder builder = new StringBuilder();
         builder.append("SoundSystem: ")
-            .append(SoundManager.currentSoundCount())
+            .append(DynamicSoundManager.currentSoundCount())
             .append('/')
-            .append(SoundManager.maxSoundCount());
+            .append(DynamicSoundManager.maxSoundCount());
         event.output.add(builder.toString());
 
-        for (String sound : SoundManager.getSounds()) {
+        for (String sound : DynamicSoundManager.getSounds()) {
             event.output.add(sound);
         }
     }
@@ -137,10 +186,8 @@ public class PlayerSoundEffectHandler implements IClientEffectHandler {
         }
     }
 
-    private void processWaterDrops() {
+    private void processWaterDrops(World world) {
         if (!drops.isEmpty()) {
-            World world = EnvironStateHandler.EnvironState.getWorld();
-
             for (EntityDropParticleFX drop : drops) {
                 if (drop.isEntityAlive() && !(drop.posY < 1.0)) {
                     int x = MathHelper.floor_double(drop.posX);
@@ -157,7 +204,7 @@ public class PlayerSoundEffectHandler implements IClientEffectHandler {
                         if (soundY > 0 && block.getMaterial()
                             .isSolid()) {
                             int distance = y - soundY;
-                            SoundManager.playSoundAt(
+                            DynamicSoundManager.playSoundAt(
                                 new BlockPos(x, soundY + 1, z),
                                 BiomeRegistry.WATER_DRIP,
                                 40 + distance * 2);

@@ -4,8 +4,8 @@ import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.data.AuroraData;
 import com.mrfuzzihead.dynamicsurroundings.data.AuroraPreset;
 import com.mrfuzzihead.dynamicsurroundings.data.ColorPair;
-import com.mrfuzzihead.dynamicsurroundings.util.Color;
 import com.mrfuzzihead.dynamicsurroundings.util.MathStuff;
+import com.mrfuzzihead.dynamicsurroundings.util.RgbColor;
 import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 import cpw.mods.fml.relauncher.Side;
@@ -14,12 +14,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public final class Aurora {
 
-    private static final float ANGLE1 = (float) (Math.PI / 16);
     private static final float ANGLE2 = MathStuff.toRadians(12.857142F);
-    private static final int FADE_LIMIT = 1280;
-    private static final float AURORA_SPEED = 0.75F;
-    private static final float AURORA_AMPLITUDE = 18.0F;
-    private static final float AURORA_WAVELENGTH = 8.0F;
     public float posX;
     public float posZ;
     private Node[][] bands;
@@ -31,9 +26,10 @@ public final class Aurora {
     private float nodeLength;
     private float nodeWidth;
     private int bandOffset;
-    private final Color baseColor;
-    private final Color fadeColor;
+    private final RgbColor baseColor;
+    private final RgbColor fadeColor;
     private int alpha = 1;
+    private int geometryVersion;
 
     public Aurora(AuroraData data) {
         this(data.posX, data.posZ, data.seed, data.colorSet, data.preset);
@@ -63,16 +59,20 @@ public final class Aurora {
         this.bandOffset = p.bandOffset;
     }
 
-    public Color getBaseColor() {
+    public RgbColor getBaseColor() {
         return this.baseColor;
     }
 
-    public Color getFadeColor() {
+    public RgbColor getFadeColor() {
         return this.fadeColor;
     }
 
     public int getAlpha() {
         return this.alpha;
+    }
+
+    public int getGeometryVersion() {
+        return this.geometryVersion;
     }
 
     public boolean isAlive() {
@@ -245,6 +245,7 @@ public final class Aurora {
             findAngles(second);
             findAngles(third);
         }
+        this.geometryVersion++;
     }
 
     private static void findAngles(Node[] nodeList) {

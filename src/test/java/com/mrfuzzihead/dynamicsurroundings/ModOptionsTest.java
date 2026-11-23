@@ -6,7 +6,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.util.Collections;
 
+import net.minecraftforge.common.config.ConfigCategory;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
 
@@ -15,6 +17,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
+import com.mrfuzzihead.dynamicsurroundings.util.ConfigProcessor;
 
 /**
  * {@link ModOptions} is loaded twice - by the coremod at discovery time and again in pre-init - and both paths go
@@ -28,17 +32,23 @@ public class ModOptionsTest {
 
     private float originalSoundLevel;
     private int originalParticleCount;
+    private boolean originalVersionChecking;
+    private String originalVersionUrl;
 
     @Before
     public void rememberDefaults() {
         originalSoundLevel = ModOptions.soundLevel;
         originalParticleCount = ModOptions.particleCountBase;
+        originalVersionChecking = ModOptions.enableVersionChecking;
+        originalVersionUrl = ModOptions.versionCheckUrl;
     }
 
     @After
     public void restoreDefaults() {
         ModOptions.soundLevel = originalSoundLevel;
         ModOptions.particleCountBase = originalParticleCount;
+        ModOptions.enableVersionChecking = originalVersionChecking;
+        ModOptions.versionCheckUrl = originalVersionUrl;
     }
 
     @Test
@@ -48,8 +58,10 @@ public class ModOptionsTest {
 
         assertEquals(1.0F, ModOptions.soundLevel, 0.0F);
         assertEquals(100, ModOptions.particleCountBase);
-        assertTrue(ModOptions.enableVersionChecking);
+        assertFalse(ModOptions.enableVersionChecking);
+        assertTrue(ModOptions.versionCheckUrl.contains("api.github.com"));
         assertFalse(ModOptions.disableWeatherEffects);
+        assertTrue(ModOptions.respectExternalFog);
     }
 
     @Test
@@ -81,6 +93,32 @@ public class ModOptionsTest {
 
         assertEquals(0.25F, ModOptions.soundLevel, 0.0F);
         assertEquals(250, ModOptions.particleCountBase);
+    }
+
+    @Test
+    public void initTimeOptionsDeclareRestartRequired() throws Exception {
+        String[] restartBound = { "auroraEnable", "enableBiomeSounds", "enableFootstepSounds", "enableJumpSound",
+            "enableSwingSound", "enableCraftingSound", "enableBowPullSound", "culledSounds", "blockedSounds",
+            "potionHudEnabled", "disableWeatherEffects", "suppressPotionParticles", "deferToBetterRain",
+            "deferToWeather2" };
+        for (String name : restartBound) {
+            assertNotNull(
+                name + " must declare RestartRequired",
+                ModOptions.class.getField(name)
+                    .getAnnotation(ConfigProcessor.RestartRequired.class));
+        }
+    }
+
+    @Test
+    public void scrubbingKeepsKnownCommentlessPropertiesAndDropsUnknownOnes() {
+        ConfigCategory category = new ConfigCategory("test");
+        category.put("Known", new Property("Known", "value", Property.Type.STRING));
+        category.put("Unknown", new Property("Unknown", "value", Property.Type.STRING));
+
+        ModOptions.scrubCategory(category, Collections.singleton("Known"));
+
+        assertTrue(category.containsKey("Known"));
+        assertFalse(category.containsKey("Unknown"));
     }
 
     @Test

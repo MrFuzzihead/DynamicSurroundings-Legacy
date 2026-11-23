@@ -5,33 +5,53 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.common.config.ConfigCategory;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.google.common.collect.ImmutableList;
 import com.mrfuzzihead.dynamicsurroundings.util.ConfigProcessor;
+import com.mrfuzzihead.dynamicsurroundings.util.ConfigSchema;
 
 public final class ModOptions {
 
+    public static final String CATEGORY_COMPATIBILITY = "compatibility";
+    public static final String CONFIG_DEFER_BETTER_RAIN = "Defer To Better Rain";
+    public static final String CONFIG_DEFER_WEATHER2 = "Defer To Weather2";
+    @ConfigProcessor.Parameter(category = "compatibility", property = "Defer To Better Rain", defaultValue = "false")
+    @ConfigProcessor.Comment("Let Better Rain own weather rendering/state instead of Dynamic Surroundings")
+    @ConfigProcessor.RestartRequired
+    public static boolean deferToBetterRain = false;
+    @ConfigProcessor.Parameter(category = "compatibility", property = "Defer To Weather2", defaultValue = "false")
+    @ConfigProcessor.Comment("Let Weather2 own weather rendering/state instead of Dynamic Surroundings")
+    @ConfigProcessor.RestartRequired
+    public static boolean deferToWeather2 = false;
     public static final String CATEGORY_LOGGING_CONTROL = "logging";
     public static final String CONFIG_ENABLE_DEBUG_LOGGING = "Enable Debug Logging";
     public static final String CONFIG_ENABLE_ONLINE_VERSION_CHECK = "Enable Online Version Check";
+    public static final String CONFIG_VERSION_CHECK_URL = "Version Check URL";
     private static final List<String> loggingSort = Arrays
-        .asList("Enable Online Version Check", "Enable Debug Logging");
+        .asList("Enable Online Version Check", "Version Check URL", "Enable Debug Logging");
     @ConfigProcessor.Parameter(category = "logging", property = "Enable Debug Logging", defaultValue = "false")
     @ConfigProcessor.Comment("Enables/disables debug logging of the mod")
     @ConfigProcessor.RestartRequired
     public static boolean enableDebugLogging = false;
-    @ConfigProcessor.Parameter(category = "logging", property = "Enable Online Version Check", defaultValue = "true")
+    @ConfigProcessor.Parameter(category = "logging", property = "Enable Online Version Check", defaultValue = "false")
     @ConfigProcessor.Comment("Enables/disables online version checking")
     @ConfigProcessor.RestartRequired
-    public static boolean enableVersionChecking = true;
+    public static boolean enableVersionChecking = false;
+    @ConfigProcessor.Parameter(
+        category = "logging",
+        property = "Version Check URL",
+        defaultValue = "https://api.github.com/repos/MrFuzzihead/DynamicSurroundings-Legacy/releases/latest")
+    @ConfigProcessor.Comment("URL of the GitHub latest-release API used for online version checking")
+    @ConfigProcessor.RestartRequired
+    public static String versionCheckUrl = "https://api.github.com/repos/MrFuzzihead/DynamicSurroundings-Legacy/releases/latest";
     public static final String CATEGORY_RAIN = "rain";
     public static final String CONFIG_DISABLE_WEATHER_EFFECTS = "Disable Weather Effects";
     public static final String CONFIG_RAIN_VOLUME = "Sound Level";
@@ -71,8 +91,15 @@ public final class ModOptions {
     public static final String CONFIG_ENABLE_MORNING_FOG = "Morning Fog";
     public static final String CONFIG_MORNING_FOG_CHANCE = "Morning Fog Chance";
     public static final String CONFIG_ENABLE_WEATHER_FOG = "Weather Fog";
-    private static final List<String> fogSort = Arrays
-        .asList("Desert Fog", "Elevation Haze", "Biome Fog", "Morning Fog", "Morning Fog Chance", "Weather Fog");
+    public static final String CONFIG_RESPECT_EXTERNAL_FOG = "Respect External Fog";
+    private static final List<String> fogSort = Arrays.asList(
+        "Desert Fog",
+        "Elevation Haze",
+        "Biome Fog",
+        "Morning Fog",
+        "Morning Fog Chance",
+        "Weather Fog",
+        "Respect External Fog");
     @ConfigProcessor.Parameter(category = "fog", property = "Desert Fog", defaultValue = "true")
     @ConfigProcessor.Comment("Allow desert fog when raining")
     public static boolean allowDesertFog = true;
@@ -86,12 +113,15 @@ public final class ModOptions {
     @ConfigProcessor.Comment("Enable morning fog")
     public static boolean enableMorningFog = true;
     @ConfigProcessor.Parameter(category = "fog", property = "Morning Fog Chance", defaultValue = "1")
-    @ConfigProcessor.Comment("Enable morning fog")
+    @ConfigProcessor.Comment("One-in-N chance per day to enable morning fog")
     @ConfigProcessor.MinMaxInt(min = 1, max = 10)
     public static int morningFogChance = 1;
     @ConfigProcessor.Parameter(category = "fog", property = "Weather Fog", defaultValue = "true")
-    @ConfigProcessor.Comment("Enable morning fog")
+    @ConfigProcessor.Comment("Enable rain/thunder fog")
     public static boolean enableWeatherFog = true;
+    @ConfigProcessor.Parameter(category = "fog", property = "Respect External Fog", defaultValue = "true")
+    @ConfigProcessor.Comment("Apply DS fog relative to the fog produced by NotFine/other mods instead of overwriting it")
+    public static boolean respectExternalFog = true;
     public static final String CATEGORY_GENERAL = "general";
     public static final String CONFIG_MIN_RAIN_STRENGTH = "Default Minimum Rain Strength";
     public static final String CONFIG_MAX_RAIN_STRENGTH = "Default Maximum Rain Strength";
@@ -118,13 +148,21 @@ public final class ModOptions {
     public static final String CONFIG_MULTIPLE_BANDS = "Multiple Bands";
     public static final String CONFIG_AURORA_ANIMATE = "Animate";
     public static final String CONFIG_AURORA_SPAWN_OFFSET = "Spawn Offset";
+    public static final String CONFIG_AURORA_MAX_COUNT = "Max Auroras";
+    public static final String CONFIG_AURORA_SHADERS = "Render With Shaders";
+    public static final String CONFIG_AURORA_ONLY_NORTH = "Only When Looking North";
+    public static final String CONFIG_AURORA_DEBUG = "Debug Wireframe";
     private static final List<String> auroraSort = Arrays.asList(
         "Enabled",
         "Animate",
         "Multiple Bands",
         "Height Player Relative",
         "Player Fixed Height",
-        "Spawn Offset");
+        "Spawn Offset",
+        "Max Auroras",
+        "Render With Shaders",
+        "Only When Looking North",
+        "Debug Wireframe");
     @ConfigProcessor.Parameter(category = "aurora", property = "Enabled", defaultValue = "true")
     @ConfigProcessor.Comment("Whether to enable Aurora processing on server/client")
     @ConfigProcessor.RestartRequired
@@ -146,6 +184,19 @@ public final class ModOptions {
     @ConfigProcessor.MinMaxInt(min = 0, max = 200)
     @ConfigProcessor.Comment("Number of blocks north of player location to spawn an aurora")
     public static int auroraSpawnOffset = 150;
+    @ConfigProcessor.Parameter(category = "aurora", property = "Max Auroras", defaultValue = "32")
+    @ConfigProcessor.MinMaxInt(min = 1, max = 32)
+    @ConfigProcessor.Comment("Maximum simultaneous auroras per dimension")
+    public static int auroraMaxCount = 32;
+    @ConfigProcessor.Parameter(category = "aurora", property = "Render With Shaders", defaultValue = "true")
+    @ConfigProcessor.Comment("Render the aurora when an Iris shader pipeline is active")
+    public static boolean auroraRenderWithShaders = true;
+    @ConfigProcessor.Parameter(category = "aurora", property = "Only When Looking North", defaultValue = "false")
+    @ConfigProcessor.Comment("Only draw the aurora when the player is looking north")
+    public static boolean auroraOnlyWhenLookingNorth = false;
+    @ConfigProcessor.Parameter(category = "aurora", property = "Debug Wireframe", defaultValue = "false")
+    @ConfigProcessor.Comment("Draw the aurora as a debug wireframe")
+    public static boolean auroraDebugWireframe = false;
     public static final String CATEGORY_BIOMES = "biomes";
     public static final String CONFIG_BIOME_CONFIG_FILES = "Config Files";
     public static final String CONFIG_BIOME_ALIASES = "Biome Alias";
@@ -266,6 +317,7 @@ public final class ModOptions {
         defaultValue = "dynamicsurroundings:bison")
     @ConfigProcessor.Comment("Sounds to block from playing")
     @ConfigProcessor.Hidden
+    @ConfigProcessor.RestartRequired
     public static String[] blockedSounds = new String[] { "dynamicsurroundings:bison" };
     @ConfigProcessor.Parameter(category = "sound", property = "Sound Volume", defaultValue = "")
     @ConfigProcessor.Comment("Individual sound scaling factors")
@@ -323,6 +375,23 @@ public final class ModOptions {
     @ConfigProcessor.Comment("Size scale of icons (lower is smaller)")
     public static float potionHudScale = 0.5F;
 
+    private static final ConfigSchema SCHEMA = new ConfigSchema()
+        .category("compatibility", "Options for deferring weather ownership to another weather mod")
+        .category("logging", "Defines how Dynamic Surroundings logging will behave", loggingSort.toArray(new String[0]))
+        .category("rain", "Options that control rain effects in the client", rainSort.toArray(new String[0]))
+        .category("general", "Miscellaneous settings", generalSort.toArray(new String[0]))
+        .category(
+            "player",
+            "General options for defining sound and effects the player entity",
+            playerSort.toArray(new String[0]))
+        .category("aurora", "Options that control Aurora behavior and rendering", auroraSort.toArray(new String[0]))
+        .category("fog", "Options that control the various fog effects in the client", fogSort.toArray(new String[0]))
+        .category("biomes", "Options for controlling biome sound/effects", biomesSort.toArray(new String[0]))
+        .category("dimensions", "Options for defining per dimension parameters for Dynamic Surroundings")
+        .category("block", "Options for defining block specific sounds/effects")
+        .category("sound", "General options for defining sound effects", soundsSort.toArray(new String[0]))
+        .category("player.potion hud", "Options for the Potion HUD overlay", potionHudSort.toArray(new String[0]));
+
     /** Canonical path of the config file that has already been loaded, if any. */
     private static File synchronizedConfigurationFile;
 
@@ -357,60 +426,27 @@ public final class ModOptions {
 
     public static void load(Configuration config) {
         ConfigProcessor.process(config, ModOptions.class);
-        config.setCategoryRequiresMcRestart("logging", false);
-        config.setCategoryRequiresWorldRestart("logging", false);
-        config.setCategoryComment("logging", "Defines how Dynamic Surroundings logging will behave");
-        config.setCategoryPropertyOrder("logging", new ArrayList<>(loggingSort));
-        config.setCategoryRequiresMcRestart("rain", false);
-        config.setCategoryRequiresWorldRestart("rain", false);
-        config.setCategoryComment("rain", "Options that control rain effects in the client");
-        config.setCategoryPropertyOrder("rain", new ArrayList<>(rainSort));
-        config.setCategoryRequiresMcRestart("general", false);
-        config.setCategoryRequiresWorldRestart("general", false);
-        config.setCategoryComment("general", "Miscellaneous settings");
-        config.setCategoryPropertyOrder("general", new ArrayList<>(generalSort));
-        config.setCategoryRequiresMcRestart("player", false);
-        config.setCategoryRequiresWorldRestart("player", false);
-        config.setCategoryComment("player", "General options for defining sound and effects the player entity");
-        config.setCategoryPropertyOrder("player", new ArrayList<>(playerSort));
-        config.setCategoryRequiresMcRestart("aurora", false);
-        config.setCategoryRequiresWorldRestart("aurora", false);
-        config.setCategoryComment("aurora", "Options that control Aurora behavior and rendering");
-        config.setCategoryPropertyOrder("aurora", new ArrayList<>(auroraSort));
-        config.setCategoryRequiresMcRestart("fog", false);
-        config.setCategoryRequiresWorldRestart("fog", false);
-        config.setCategoryComment("fog", "Options that control the various fog effects in the client");
-        config.setCategoryPropertyOrder("fog", new ArrayList<>(fogSort));
-        config.setCategoryRequiresMcRestart("biomes", false);
-        config.setCategoryRequiresWorldRestart("biomes", false);
-        config.setCategoryComment("biomes", "Options for controlling biome sound/effects");
-        config.setCategoryPropertyOrder("biomes", new ArrayList<>(biomesSort));
-        config.setCategoryRequiresMcRestart("dimensions", false);
-        config.setCategoryRequiresWorldRestart("dimensions", false);
-        config
-            .setCategoryComment("dimensions", "Options for defining per dimension parameters for Dynamic Surroundings");
-        config.setCategoryRequiresMcRestart("block", false);
-        config.setCategoryRequiresWorldRestart("block", false);
-        config.setCategoryComment("block", "Options for defining block specific sounds/effects");
-        config.setCategoryRequiresMcRestart("sound", false);
-        config.setCategoryRequiresWorldRestart("sound", false);
-        config.setCategoryComment("sound", "General options for defining sound effects");
-        config.setCategoryPropertyOrder("sound", new ArrayList<>(soundsSort));
-        config.setCategoryRequiresMcRestart("player.potion hud", false);
-        config.setCategoryRequiresWorldRestart("player.potion hud", false);
-        config.setCategoryComment("player.potion hud", "Options for the Potion HUD overlay");
-        config.setCategoryPropertyOrder("player.potion hud", new ArrayList<>(potionHudSort));
+        SCHEMA.apply(config);
 
+        for (String unknown : SCHEMA.unknownProperties(config, ModOptions.class)) {
+            ModLog.warn("Unknown configuration option %s", unknown);
+        }
+
+        Map<String, Set<String>> known = SCHEMA.knownProperties(ModOptions.class);
         for (String cat : config.getCategoryNames()) {
-            scrubCategory(config.getCategory(cat));
+            scrubCategory(config.getCategory(cat), known.get(cat));
         }
     }
 
-    private static void scrubCategory(ConfigCategory category) {
+    static void scrubCategory(ConfigCategory category, Set<String> known) {
+        if (known == null) {
+            return;
+        }
+
         List<String> killList = new ArrayList<>();
 
         for (Entry<String, Property> entry : category.entrySet()) {
-            if (StringUtils.isEmpty(entry.getValue().comment)) {
+            if (!known.contains(entry.getKey())) {
                 killList.add(entry.getKey());
             }
         }

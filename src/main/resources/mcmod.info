@@ -18,7 +18,11 @@
 		"parent": "",
 		"requiredMods": [],
 		"dependencies": [
-		  "UniMixins"
+		  "UniMixins",
+		  "after:angelica",
+		  "after:notfine",
+		  "after:iris",
+		  "after:biomesoplenty"
 		],
 		"dependants": [],
 		"useDependencyInformation": false

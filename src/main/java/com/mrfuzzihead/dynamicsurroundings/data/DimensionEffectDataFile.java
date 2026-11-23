@@ -1,5 +1,9 @@
 package com.mrfuzzihead.dynamicsurroundings.data;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
+
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
@@ -10,6 +14,8 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 public final class DimensionEffectDataFile extends WorldSavedData {
 
     private static final String IDENTIFIER = "dynamicsurroundings";
+    private static final Map<World, DimensionEffectDataFile> WORLD_CACHE = Collections
+        .synchronizedMap(new WeakHashMap<>());
     private final TIntObjectHashMap<DimensionEffectData> dataList = new TIntObjectHashMap();
 
     public DimensionEffectDataFile() {
@@ -21,24 +27,34 @@ public final class DimensionEffectDataFile extends WorldSavedData {
     }
 
     private static DimensionEffectDataFile getFile(World world) {
-        DimensionEffectDataFile data = (DimensionEffectDataFile) world
-            .loadItemData(DimensionEffectDataFile.class, "dynamicsurroundings");
+        DimensionEffectDataFile data = WORLD_CACHE.get(world);
+        if (data != null) {
+            return data;
+        }
+
+        data = (DimensionEffectDataFile) world.loadItemData(DimensionEffectDataFile.class, "dynamicsurroundings");
         if (data == null) {
             data = new DimensionEffectDataFile();
             world.setItemData("dynamicsurroundings", data);
         }
 
-        data.markDirty();
+        WORLD_CACHE.put(world, data);
         return data;
     }
 
-    private DimensionEffectData getData(int dimensionId) {
+    public static void unload(World world) {
+        WORLD_CACHE.remove(world);
+    }
+
+    public DimensionEffectData getData(int dimensionId) {
         DimensionEffectData data = (DimensionEffectData) this.dataList.get(dimensionId);
         if (data != null) {
             return data;
         } else {
             data = new DimensionEffectData(dimensionId);
+            data.setDirtyCallback(this::markDirty);
             this.dataList.put(dimensionId, data);
+            data.markDirty();
             return data;
         }
     }
@@ -53,6 +69,7 @@ public final class DimensionEffectDataFile extends WorldSavedData {
         for (int i = 0; i < list.tagCount(); i++) {
             NBTTagCompound tag = list.getCompoundTagAt(i);
             DimensionEffectData data = new DimensionEffectData();
+            data.setDirtyCallback(this::markDirty);
             data.readFromNBT(tag);
             this.dataList.put(data.getDimensionId(), data);
         }
@@ -70,8 +87,4 @@ public final class DimensionEffectDataFile extends WorldSavedData {
         nbt.setTag("e", list);
     }
 
-    private final class NBT {
-
-        public static final String ENTRIES = "e";
-    }
 }

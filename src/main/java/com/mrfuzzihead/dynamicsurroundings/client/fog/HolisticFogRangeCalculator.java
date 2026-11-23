@@ -23,16 +23,16 @@ public class HolisticFogRangeCalculator implements IFogRangeCalculator {
     @Nonnull
     @Override
     public FogResult calculate(@Nonnull RenderFogEvent event) {
-        float start = event.farPlaneDistance;
-        float end = event.farPlaneDistance;
+        float startScale = 1.0F;
+        float endScale = 1.0F;
 
         for (IFogRangeCalculator calc : this.calculators) {
             FogResult result = calc.calculate(event);
-            start = Math.min(start, result.getStart());
-            end = Math.min(end, result.getEnd());
+            startScale = Math.min(startScale, result.getStartScale());
+            endScale = Math.min(endScale, result.getEndScale());
         }
 
-        this.cached.set(start, end);
+        this.cached.set(event.fogMode, startScale, endScale);
         return this.cached;
     }
 

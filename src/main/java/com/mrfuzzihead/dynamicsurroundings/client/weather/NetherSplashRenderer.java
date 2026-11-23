@@ -2,11 +2,10 @@ package com.mrfuzzihead.dynamicsurroundings.client.weather;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.particle.EntityFX;
-import net.minecraft.init.Blocks;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
-import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
 import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.ParticleFactory;
 
 public class NetherSplashRenderer extends StormSplashRenderer {
@@ -23,21 +22,21 @@ public class NetherSplashRenderer extends StormSplashRenderer {
     }
 
     @Override
-    protected int getPrecipitationHeight(World world, int range, int x, int z) {
-        int y = MathHelper.floor_double(EnvironStateHandler.EnvironState.getPlayer().posY);
+    protected int getPrecipitationHeight(World world, int range, int x, int z, EntityLivingBase view) {
+        int y = view == null ? 64 : MathHelper.floor_double(view.posY);
         boolean airBlockFound = false;
 
         for (int i = range; i >= -range; i--) {
             int yEffective = y + i;
-            Block block = world.getBlock(x, yEffective, z);
-            if (airBlockFound && block != Blocks.air
-                && block.getMaterial()
-                    .isSolid()) {
-                return yEffective + 1;
+            if (world.isAirBlock(x, yEffective, z)) {
+                airBlockFound = true;
+                continue;
             }
 
-            if (block == Blocks.air) {
-                airBlockFound = true;
+            Block block = world.getBlock(x, yEffective, z);
+            if (airBlockFound && block.getMaterial()
+                .isSolid()) {
+                return yEffective + 1;
             }
         }
 

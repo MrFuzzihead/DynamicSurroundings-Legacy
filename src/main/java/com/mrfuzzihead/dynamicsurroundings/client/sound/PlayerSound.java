@@ -30,7 +30,6 @@ class PlayerSound extends MovingSound {
     public PlayerSound(SoundEffect sound) {
         super(new ResourceLocation(sound.sound));
         this.sound = sound;
-        this.volume = sound.volume;
         this.maxVolume = sound.getVolume();
         this.volume = 0.002F;
         this.field_147663_c = sound.getPitch(RANDOM);

@@ -10,16 +10,14 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
-import net.minecraftforge.client.IRenderHandler;
 
 import org.lwjgl.opengl.GL11;
 
 import com.mrfuzzihead.dynamicsurroundings.client.IAtmosRenderer;
-import com.mrfuzzihead.dynamicsurroundings.client.WeatherUtils;
 import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.EntityRendererAccessor;
-import com.mrfuzzihead.dynamicsurroundings.util.Color;
+import com.mrfuzzihead.dynamicsurroundings.util.RgbColor;
 import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
 import cpw.mods.fml.relauncher.Side;
@@ -47,10 +45,12 @@ public class StormRenderer implements IAtmosRenderer {
         Minecraft mc = Minecraft.getMinecraft();
         int rendererUpdateCount = ((EntityRendererAccessor) renderer).dynamicsurroundings$getRendererUpdateCount();
         WorldClient world = mc.theWorld;
-        IRenderHandler r = null;
-        if ((r = world.provider.getWeatherRenderer()) != null) {
-            r.render(partialTicks, world, mc);
-        } else if (DimensionRegistry.hasWeather(world)) {
+        if (DimensionRegistry.hasWeather(world)) {
+            int radius = WeatherBackend.downfallDistance();
+            if (radius <= 0) {
+                return;
+            }
+
             float rainStrength = world.getRainStrength(partialTicks);
             if (!(rainStrength <= 0.0F)) {
                 float alphaRatio;
@@ -74,23 +74,23 @@ public class StormRenderer implements IAtmosRenderer {
                 double spawnY = entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * partialTicks;
                 double spawnZ = entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * partialTicks;
                 int locY = MathHelper.floor_double(spawnY);
-                int b0 = mc.gameSettings.fancyGraphics ? 10 : 5;
                 byte b1 = -1;
                 float f5 = rendererUpdateCount + partialTicks;
                 GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
                 Tessellator tessellator = Tessellator.instance;
 
-                for (int locZ = playerZ - b0; locZ <= playerZ + b0; locZ++) {
-                    for (int locX = playerX - b0; locX <= playerX + b0; locX++) {
+                for (int locZ = playerZ - radius; locZ <= playerZ + radius; locZ++) {
+                    for (int locX = playerX - radius; locX <= playerX + radius; locX++) {
                         int idx = (locZ - playerZ + 16) * 32 + locX - playerX + 16;
                         float f6 = RAIN_X_COORDS[idx] * 0.5F;
                         float f7 = RAIN_Y_COORDS[idx] * 0.5F;
-                        BiomeGenBase biome = world.getBiomeGenForCoords(locX, locZ);
-                        boolean hasDust = WeatherUtils.biomeHasDust(biome);
-                        if (hasDust || BiomeRegistry.hasPrecipitation(biome)) {
-                            int k1 = getPrecipitationHeight(world, locX, locZ);
-                            int l1 = playerY - b0;
-                            int i2 = playerY + b0;
+                        WeatherColumnCache.Column column = WeatherColumnCache.INSTANCE.get(world, locX, locZ);
+                        BiomeGenBase biome = column.biome;
+                        boolean hasDust = column.hasDust;
+                        if (hasDust || column.hasPrecipitation) {
+                            int k1 = column.precipitationHeight;
+                            int l1 = playerY - radius;
+                            int i2 = playerY + radius;
                             if (l1 < k1) {
                                 l1 = k1;
                             }
@@ -108,8 +108,7 @@ public class StormRenderer implements IAtmosRenderer {
                             if (l1 != i2) {
                                 random.setSeed(
                                     locX * locX * 3121 + locX * 45238971 ^ locZ * locZ * 418711 + locZ * 13761);
-                                float heightTemp = world.getWorldChunkManager()
-                                    .getTemperatureAtHeight(biome.getFloatTemperature(locX, l1, locZ), k1);
+                                float heightTemp = column.temperatureAt(world, l1);
                                 if (!hasDust && heightTemp >= 0.15F) {
                                     if (b1 != 0) {
                                         if (b1 >= 0) {
@@ -128,8 +127,8 @@ public class StormRenderer implements IAtmosRenderer {
                                         + locZ * 13761 & 31) + partialTicks) / 32.0F * (3.0F + random.nextFloat());
                                     double deltaX = locX + 0.5F - entity.posX;
                                     double deltaZ = locZ + 0.5F - entity.posZ;
-                                    float dist = MathHelper.sqrt_double(deltaX * deltaX + deltaZ * deltaZ) / b0;
-                                    tessellator.setBrightness(world.getLightBrightnessForSkyBlocks(locX, j2, locZ, 0));
+                                    float dist = MathHelper.sqrt_double(deltaX * deltaX + deltaZ * deltaZ) / radius;
+                                    tessellator.setBrightness(column.lightAt(world, j2));
                                     tessellator.setColorRGBA_F(
                                         1.0F,
                                         1.0F,
@@ -184,13 +183,13 @@ public class StormRenderer implements IAtmosRenderer {
                                     float f11 = random.nextFloat() + f5 * (float) random.nextGaussian() * 0.001F;
                                     double deltaX = locX + 0.5F - entity.posX;
                                     double deltaZ = locZ + 0.5F - entity.posZ;
-                                    float dist = MathHelper.sqrt_double(deltaX * deltaX + deltaZ * deltaZ) / b0;
-                                    tessellator.setBrightness(
-                                        (world.getLightBrightnessForSkyBlocks(locX, j2, locZ, 0) * 3 + 15728880) / 4);
-                                    Color color = new Color(1.0F, 1.0F, 1.0F);
+                                    float dist = MathHelper.sqrt_double(deltaX * deltaX + deltaZ * deltaZ) / radius;
+                                    tessellator.setBrightness((column.lightAt(world, j2) * 3 + 15728880) / 4);
+                                    RgbColor color = RgbColor.WHITE;
                                     if (world.provider.dimensionId == -1) {
-                                        Color c = BiomeRegistry.getDustColor(biome);
+                                        RgbColor c = BiomeRegistry.getDustColor(biome);
                                         if (c != null) {
+                                            color = new RgbColor(RgbColor.WHITE);
                                             color.mix(c);
                                         }
                                     }
@@ -244,12 +243,20 @@ public class StormRenderer implements IAtmosRenderer {
         }
     }
 
+    static float rainXAt(int i, int j) {
+        return RAIN_X_COORDS[i << 5 | j];
+    }
+
+    static float rainYAt(int i, int j) {
+        return RAIN_Y_COORDS[i << 5 | j];
+    }
+
     static {
         for (int i = 0; i < 32; i++) {
             for (int j = 0; j < 32; j++) {
                 float f2 = j - 16;
                 float f3 = i - 16;
-                float f4 = MathHelper.sqrt_float(f2 * f2 + f3 * f3);
+                float f4 = Math.max(1.0E-4F, MathHelper.sqrt_float(f2 * f2 + f3 * f3));
                 RAIN_X_COORDS[i << 5 | j] = -f3 / f4;
                 RAIN_Y_COORDS[i << 5 | j] = f2 / f4;
             }

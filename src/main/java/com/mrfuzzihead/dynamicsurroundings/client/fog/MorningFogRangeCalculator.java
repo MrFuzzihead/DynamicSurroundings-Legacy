@@ -6,6 +6,7 @@ import net.minecraftforge.client.event.EntityViewRenderEvent.RenderFogEvent;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.EnvironmentSnapshot;
 import com.mrfuzzihead.dynamicsurroundings.util.MathStuff;
 import com.mrfuzzihead.dynamicsurroundings.util.random.XorShiftRandom;
 
@@ -27,17 +28,20 @@ public class MorningFogRangeCalculator extends VanillaFogRangeCalculator {
     @Override
     public FogResult calculate(@Nonnull RenderFogEvent event) {
         this.cache.set(event);
-        if (this.doFog && this.cache.getStart() > 10.0F
-            && EnvironStateHandler.EnvironState.getDimensionId() != 1
-            && EnvironStateHandler.EnvironState.getDimensionId() != -1) {
+        EnvironmentSnapshot snapshot = EnvironStateHandler.EnvironState.getSnapshot();
+        if (this.doFog && event.farPlaneDistance * FogResult.DEFAULT_PLANE_SCALE > 10.0F
+            && snapshot.getDimensionId() != 1
+            && snapshot.getDimensionId() != -1) {
             float ca = EnvironStateHandler.EnvironState.getWorld()
                 .getCelestialAngle((float) event.renderPartialTicks);
-            if (ca >= 0.63F && ca <= 0.83F) {
-                float factor = 1.0F - MathStuff.abs(ca - 0.73F) / 0.100000024F;
-                float shift = this.cache.getStart() * factor;
-                float newEnd = this.cache.getEnd() - shift;
-                float newStart = MathStuff.clamp(this.cache.getStart() - shift * 2.0F, 11.0F, newEnd);
-                this.cache.set(newStart, newEnd);
+            if (ca >= START && ca <= END) {
+                float factor = 1.0F - MathStuff.abs(ca - MID) / 0.100000024F;
+                float endScale = 1.0F - FogResult.DEFAULT_PLANE_SCALE * factor;
+                float startScale = 1.0F - 2.0F * factor;
+                if (event.farPlaneDistance > 0.0F) {
+                    startScale = Math.max(startScale, 11.0F / (event.farPlaneDistance * FogResult.DEFAULT_PLANE_SCALE));
+                }
+                this.cache.set(event.fogMode, startScale, endScale);
             }
         }
 

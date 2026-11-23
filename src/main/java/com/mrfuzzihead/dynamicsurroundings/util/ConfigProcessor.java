@@ -5,6 +5,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
@@ -15,11 +18,18 @@ import com.mrfuzzihead.dynamicsurroundings.ModLog;
 
 public final class ConfigProcessor {
 
+    private static final List<String> lastErrors = new ArrayList<>();
+
+    public static List<String> getLastErrors() {
+        return Collections.unmodifiableList(lastErrors);
+    }
+
     public static void process(Configuration config, Class<?> clazz) {
         process(config, clazz, null);
     }
 
     public static void process(Configuration config, Class<?> clazz, Object parameters) {
+        lastErrors.clear();
         for (Field field : clazz.getFields()) {
             ConfigProcessor.Parameter annotation = field.getAnnotation(ConfigProcessor.Parameter.class);
             if (annotation != null) {
@@ -55,7 +65,7 @@ public final class ConfigProcessor {
                                 maxInt,
                                 comment));
                     } else if (defaultValue instanceof Float) {
-                        float minFloat = Float.MIN_VALUE;
+                        float minFloat = -Float.MAX_VALUE;
                         float maxFloat = Float.MAX_VALUE;
                         ConfigProcessor.MinMaxFloat mmf = field.getAnnotation(ConfigProcessor.MinMaxFloat.class);
                         if (mmf != null) {
@@ -72,6 +82,34 @@ public final class ConfigProcessor {
                                 minFloat,
                                 maxFloat,
                                 comment));
+                    } else if (defaultValue instanceof Double) {
+                        field.set(
+                            parameters,
+                            config.get(category, property, annotation.defaultValue(), comment)
+                                .getDouble(Double.parseDouble(annotation.defaultValue())));
+                    } else if (defaultValue instanceof Long) {
+                        field.set(
+                            parameters,
+                            Long.parseLong(
+                                config.get(category, property, annotation.defaultValue(), comment)
+                                    .getString()));
+                    } else if (defaultValue instanceof Enum) {
+                        String value = config.getString(property, category, ((Enum<?>) defaultValue).name(), comment);
+                        try {
+                            @SuppressWarnings({ "unchecked", "rawtypes" })
+                            Object parsed = Enum.valueOf((Class<? extends Enum>) defaultValue.getClass(), value);
+                            field.set(parameters, parsed);
+                        } catch (IllegalArgumentException e) {
+                            String message = "Invalid enum value '" + value
+                                + "' for "
+                                + category
+                                + "."
+                                + property
+                                + "; keeping "
+                                + ((Enum<?>) defaultValue).name();
+                            lastErrors.add(message);
+                            ModLog.warn(message);
+                        }
                     } else if (defaultValue instanceof String) {
                         field.set(parameters, config.getString(property, category, annotation.defaultValue(), comment));
                     } else if (defaultValue instanceof String[]) {
@@ -98,7 +136,9 @@ public final class ConfigProcessor {
 
                     prop.setShowInGui(field.getAnnotation(ConfigProcessor.Hidden.class) == null);
                 } catch (Throwable var15) {
-                    ModLog.error("Unable to parse configuration", var15);
+                    String message = "Unable to parse configuration " + category + "." + property;
+                    lastErrors.add(message + ": " + var15);
+                    ModLog.error(message, var15);
                 }
             }
         }
@@ -119,7 +159,7 @@ public final class ConfigProcessor {
     @Target({ ElementType.FIELD })
     public @interface MinMaxFloat {
 
-        float min() default Float.MIN_VALUE;
+        float min() default -Float.MAX_VALUE;
 
         float max() default Float.MAX_VALUE;
     }

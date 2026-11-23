@@ -2,6 +2,7 @@ package com.mrfuzzihead.dynamicsurroundings.data;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.fx.JetEffect;
 import com.mrfuzzihead.dynamicsurroundings.client.sound.SoundEffect;
 import com.mrfuzzihead.dynamicsurroundings.data.config.BlockConfig;
 import com.mrfuzzihead.dynamicsurroundings.data.config.SoundConfig;
+import com.mrfuzzihead.dynamicsurroundings.util.WeightedRandom;
 
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.ModContainer;
@@ -41,49 +43,35 @@ public final class BlockRegistry {
         }
     }
 
+    public static boolean hasEffectsOrSounds() {
+        for (BlockRegistry.Entry entry : registry.values()) {
+            if (!entry.effects.isEmpty() || !entry.sounds.isEmpty() || !entry.stepSounds.isEmpty()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static List<BlockEffect> getEffects(Block block) {
         BlockRegistry.Entry entry = registry.get(block);
-        return entry != null ? entry.effects : null;
+        return entry != null ? entry.effectsView : null;
     }
 
     private static SoundEffect getRandomSound(List<SoundEffect> list, Random random, String conditions) {
-        int totalWeight = 0;
-        List<SoundEffect> candidates = new ArrayList<>();
-
-        for (SoundEffect s : list) {
-            if (s.matches(conditions)) {
-                candidates.add(s);
-                totalWeight += s.weight;
-            }
-        }
-
-        if (totalWeight <= 0) {
-            return null;
-        } else if (candidates.size() == 1) {
-            return candidates.get(0);
-        } else {
-            int targetWeight = random.nextInt(totalWeight);
-            int i = 0;
-            i = candidates.size();
-
-            while ((targetWeight -= candidates.get(i - 1).weight) >= 0) {
-                i--;
-            }
-
-            return candidates.get(i - 1);
-        }
+        return WeightedRandom.pick(list, s -> s.matches(conditions) ? s.weight : 0, random);
     }
 
     public static SoundEffect getSound(Block block, Random random, String conditions) {
         BlockRegistry.Entry entry = registry.get(block);
-        return entry != null && !entry.sounds.isEmpty() && random.nextInt(entry.chance) == 0
+        return entry != null && !entry.sounds.isEmpty() && WeightedRandom.roll(random, entry.chance)
             ? getRandomSound(entry.sounds, random, conditions)
             : null;
     }
 
     public static SoundEffect getStepSound(Block block, Random random, String conditions) {
         BlockRegistry.Entry entry = registry.get(block);
-        return entry != null && !entry.stepSounds.isEmpty() && random.nextInt(entry.stepChance) == 0
+        return entry != null && !entry.stepSounds.isEmpty() && WeightedRandom.roll(random, entry.stepChance)
             ? getRandomSound(entry.stepSounds, random, conditions)
             : null;
     }
@@ -92,7 +80,7 @@ public final class BlockRegistry {
         try {
             process(BlockConfig.load("blocks"));
         } catch (Exception var9) {
-            var9.printStackTrace();
+            ModLog.error("Unable to load default block config", var9);
         }
 
         for (ModContainer mod : Loader.instance()
@@ -100,7 +88,7 @@ public final class BlockRegistry {
             try {
                 process(BlockConfig.load(mod.getModId() + "_blocks"));
             } catch (Exception var8) {
-                var8.printStackTrace();
+                ModLog.error("Unable to load block config for " + mod.getModId(), var8);
             }
         }
 
@@ -209,6 +197,7 @@ public final class BlockRegistry {
         public final List<SoundEffect> sounds = new ArrayList<>();
         public final List<SoundEffect> stepSounds = new ArrayList<>();
         public final List<BlockEffect> effects = new ArrayList<>();
+        private final List<BlockEffect> effectsView = Collections.unmodifiableList(this.effects);
 
         public Entry(Block block) {
             this.block = block;

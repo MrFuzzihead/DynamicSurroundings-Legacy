@@ -8,10 +8,13 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.world.WorldEvent.Load;
+import net.minecraftforge.event.world.WorldEvent.Unload;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.Footsteps;
 import com.mrfuzzihead.dynamicsurroundings.client.fx.BlockEffectHandler;
+import com.mrfuzzihead.dynamicsurroundings.client.sound.DynamicSoundManager;
+import com.mrfuzzihead.dynamicsurroundings.compat.angelica.AngelicaWeatherProvider;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 
 import cpw.mods.fml.client.FMLClientHandler;
@@ -66,9 +69,10 @@ public class ClientEffectHandler {
             register(new PlayerSoundEffectHandler());
         }
 
-        if (ModOptions.suppressPotionParticles) {
-            register(new PotionParticleScrubHandler());
-        }
+    }
+
+    static boolean canProcess(World world, EntityPlayer player) {
+        return world != null && player != null;
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -77,15 +81,31 @@ public class ClientEffectHandler {
             .isGamePaused()) {
             World world = FMLClientHandler.instance()
                 .getClient().theWorld;
-            if (world != null) {
+            EntityPlayer player = FMLClientHandler.instance()
+                .getClient().thePlayer;
+            if (canProcess(world, player)) {
                 if (event.phase == Phase.START) {
-                    EntityPlayer player = FMLClientHandler.instance()
-                        .getClient().thePlayer;
-
+                    // Build one immutable environment snapshot before any handler reads it.
+                    EnvironStateHandler.refreshState(world, player);
                     for (IClientEffectHandler handler : effectHandlers) {
                         handler.process(world, player);
                     }
+
+                    // The ambience handler is conditional, but the sound queue also receives block/step sounds from
+                    // always-registered handlers. Drive it unconditionally so those sounds play with biome sounds off.
+                    DynamicSoundManager.update();
                 }
+            }
+        }
+    }
+
+    public static void reloadRuntime() {
+        com.mrfuzzihead.dynamicsurroundings.compat.ExternalWeatherPolicy.invalidate();
+        com.mrfuzzihead.dynamicsurroundings.data.RegistryManager.reloadAll();
+
+        for (IClientEffectHandler handler : effectHandlers) {
+            if (handler instanceof FogEffectHandler) {
+                ((FogEffectHandler) handler).reloadTheme();
             }
         }
     }
@@ -94,6 +114,14 @@ public class ClientEffectHandler {
     public void onWorldLoad(Load e) {
         if (e.world.isRemote) {
             DimensionRegistry.loading(e.world);
+            AngelicaWeatherProvider.install(e.world);
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onWorldUnload(Unload e) {
+        if (e.world.isRemote) {
+            AngelicaWeatherProvider.uninstall(e.world);
         }
     }
 }

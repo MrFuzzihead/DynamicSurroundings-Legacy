@@ -7,6 +7,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.Ev
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.IAcoustic;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.IOptions;
 import com.mrfuzzihead.dynamicsurroundings.client.footsteps.engine.interfaces.ISoundPlayer;
+import com.mrfuzzihead.dynamicsurroundings.util.WeightedRandom;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -16,34 +17,21 @@ public class ProbabilityWeightsAcoustic implements IAcoustic {
 
     protected final List<IAcoustic> acoustics;
     protected final int[] weights;
-    protected final int totalWeight;
 
     public ProbabilityWeightsAcoustic(List<IAcoustic> acoustics, List<Integer> weights) {
         this.acoustics = new ArrayList<>(acoustics);
         this.weights = new int[weights.size()];
-        int tWeight = 0;
 
         for (int i = 0; i < weights.size(); i++) {
             this.weights[i] = weights.get(i);
-            tWeight += this.weights[i];
         }
-
-        this.totalWeight = tWeight;
     }
 
     @Override
     public void playSound(ISoundPlayer player, Object location, EventType event, IOptions inputOptions) {
-        if (this.totalWeight > 0) {
-            int targetWeight = player.getRNG()
-                .nextInt(this.totalWeight);
-            int i = 0;
-            i = this.weights.length;
-
-            while ((targetWeight -= this.weights[i - 1]) >= 0) {
-                i--;
-            }
-
-            this.acoustics.get(i - 1)
+        int index = WeightedRandom.pickIndex(this.weights, player.getRNG());
+        if (index >= 0 && index < this.acoustics.size()) {
+            this.acoustics.get(index)
                 .playSound(player, location, event, inputOptions);
         }
     }

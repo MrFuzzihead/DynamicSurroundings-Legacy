@@ -16,11 +16,9 @@ import net.minecraft.world.gen.NoiseGeneratorSimplex;
 import org.apache.commons.lang3.StringUtils;
 
 import com.mrfuzzihead.dynamicsurroundings.ModOptions;
-import com.mrfuzzihead.dynamicsurroundings.client.EnvironStateHandler;
 import com.mrfuzzihead.dynamicsurroundings.client.WeatherUtils;
 import com.mrfuzzihead.dynamicsurroundings.client.fx.particle.ParticleFactory;
 import com.mrfuzzihead.dynamicsurroundings.compat.IParticleFactory;
-import com.mrfuzzihead.dynamicsurroundings.data.BiomeRegistry;
 import com.mrfuzzihead.dynamicsurroundings.data.DimensionRegistry;
 import com.mrfuzzihead.dynamicsurroundings.mixins.early.accessors.EntityRendererAccessor;
 import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
@@ -36,11 +34,11 @@ public class StormSplashRenderer {
     private static final TIntObjectHashMap<StormSplashRenderer> splashRenderers = new TIntObjectHashMap();
     private static final StormSplashRenderer DEFAULT = new StormSplashRenderer();
     protected static final int PARTICLE_SOUND_CHANCE = 20;
-    protected static final int RANGE = 10;
     protected static final XorShiftRandom RANDOM = new XorShiftRandom();
     protected static final NoiseGeneratorSimplex GENERATOR = new NoiseGeneratorSimplex(RANDOM);
 
-    public static void renderStormSplashes(int dimensionId, EntityRenderer renderer) {
+    public static void renderStormSplashes(EntityRenderer renderer) {
+        int dimensionId = Minecraft.getMinecraft().theWorld.provider.dimensionId;
         StormSplashRenderer splash = (StormSplashRenderer) splashRenderers.get(dimensionId);
         if (splash == null) {
             splash = DEFAULT;
@@ -87,8 +85,8 @@ public class StormSplashRenderer {
         }
     }
 
-    protected int getPrecipitationHeight(World world, int range, int x, int z) {
-        return world.getPrecipitationHeight(x, z);
+    protected int getPrecipitationHeight(World world, int range, int x, int z, EntityLivingBase view) {
+        return WeatherColumnCache.INSTANCE.get(world, x, z).precipitationHeight;
     }
 
     protected void playSplashSound(EntityRenderer renderer, WorldClient world, EntityLivingBase player, double x,
@@ -115,8 +113,9 @@ public class StormSplashRenderer {
 
     public void addRainParticles(EntityRenderer theThis) {
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc.gameSettings.particleSetting != 2) {
-            if (DimensionRegistry.hasWeather(EnvironStateHandler.EnvironState.getWorld())) {
+        int radius = WeatherBackend.downfallDistance();
+        if (mc.gameSettings.particleSetting != 2 && radius > 0) {
+            if (DimensionRegistry.hasWeather(mc.theWorld)) {
                 float rainStrengthFactor = mc.theWorld.getRainStrength(1.0F);
                 if (!mc.gameSettings.fancyGraphics) {
                     rainStrengthFactor /= 2.0F;
@@ -140,14 +139,15 @@ public class StormSplashRenderer {
                     }
 
                     for (int j1 = 0; j1 < particleCount; j1++) {
-                        int locX = playerX + RANDOM.nextInt(10) - RANDOM.nextInt(10);
-                        int locZ = playerZ + RANDOM.nextInt(10) - RANDOM.nextInt(10);
-                        int locY = this.getPrecipitationHeight(worldclient, 5, locX, locZ);
-                        BiomeGenBase biome = worldclient.getBiomeGenForCoords(locX, locZ);
-                        boolean hasDust = WeatherUtils.biomeHasDust(biome);
-                        if (locY <= playerY + 10 && locY >= playerY - 10
-                            && (hasDust || BiomeRegistry.hasPrecipitation(biome)
-                                && biome.getFloatTemperature(locX, locY, locZ) >= 0.15F)) {
+                        int locX = playerX + RANDOM.nextInt(radius) - RANDOM.nextInt(radius);
+                        int locZ = playerZ + RANDOM.nextInt(radius) - RANDOM.nextInt(radius);
+                        int locY = this.getPrecipitationHeight(worldclient, radius, locX, locZ, entity);
+                        WeatherColumnCache.Column column = WeatherColumnCache.INSTANCE.get(worldclient, locX, locZ);
+                        BiomeGenBase biome = column.biome;
+                        boolean hasDust = column.hasDust;
+                        if (locY <= playerY + radius && locY >= playerY - radius
+                            && (hasDust
+                                || column.hasPrecipitation && column.temperatureAt(worldclient, locY) >= 0.15F)) {
                             Block block = worldclient.getBlock(locX, locY - 1, locZ);
                             double posX = locX + RANDOM.nextFloat();
                             double posY = locY + 0.1F - block.getBlockBoundsMinY();

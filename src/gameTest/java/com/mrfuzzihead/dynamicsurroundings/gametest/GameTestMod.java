@@ -4,6 +4,7 @@ import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartedEvent;
+import cpw.mods.fml.relauncher.Side;
 
 /**
  * Test-only mod: a separate, non-shipped {@code @Mod} that asserts Dynamic Surroundings works against the real game.
@@ -41,12 +42,15 @@ public class GameTestMod {
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
-        // Nothing to register: this mod only asserts on the other mod's finished state.
+        if (FMLCommonHandler.instance()
+            .getSide() == Side.CLIENT && Boolean.getBoolean("dynamicsurroundings.clientSmoke")) {
+            ClientSmokeTest.install();
+        }
     }
 
     @Mod.EventHandler
     public void onServerStarted(FMLServerStartedEvent event) {
-        if (ran) return;
+        if (ran || Boolean.getBoolean("dynamicsurroundings.clientSmoke")) return;
         ran = true;
 
         int failures;

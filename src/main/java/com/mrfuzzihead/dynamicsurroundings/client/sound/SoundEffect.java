@@ -8,6 +8,7 @@ import net.minecraft.world.World;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.mrfuzzihead.dynamicsurroundings.ModLog;
 import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
 import com.mrfuzzihead.dynamicsurroundings.data.config.SoundConfig;
 
@@ -42,7 +43,7 @@ public final class SoundEffect {
         this.volume = volume;
         this.pitch = pitch;
         this.conditions = ".*";
-        this.pattern = null;
+        this.pattern = Pattern.compile(this.conditions);
         this.weight = 1;
         this.type = SoundEffect.SoundType.SPOT;
         this.variable = variable;
@@ -104,7 +105,7 @@ public final class SoundEffect {
     }
 
     public void doEffect(Block block, World world, BlockPos pos, Random random) {
-        SoundManager.playSoundAt(pos, this, 0);
+        DynamicSoundManager.playSoundAt(pos, this, 0);
     }
 
     @Override
@@ -177,7 +178,8 @@ public final class SoundEffect {
                 try {
                     return valueOf(soundType.toUpperCase());
                 } catch (Throwable var2) {
-                    var2.printStackTrace();
+                    ModLog.warn("Unknown sound type '%s'; using BACKGROUND", soundType);
+                    ModLog.catching(var2);
                     return BACKGROUND;
                 }
             }

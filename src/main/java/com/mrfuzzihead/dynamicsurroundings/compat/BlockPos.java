@@ -45,9 +45,7 @@ public class BlockPos {
     }
 
     public BlockPos(BlockPos pos) {
-        this.x = pos.x;
-        this.y = pos.y;
-        this.z = pos.z;
+        this(pos.getX(), pos.getY(), pos.getZ());
     }
 
     public int getX() {
@@ -129,6 +127,26 @@ public class BlockPos {
                 this.getX() + facing.getFrontOffsetX() * n,
                 this.getY() + facing.getFrontOffsetY() * n,
                 this.getZ() + facing.getFrontOffsetZ() * n);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        } else if (!(other instanceof BlockPos)) {
+            return false;
+        }
+
+        BlockPos pos = (BlockPos) other;
+        return this.getX() == pos.getX() && this.getY() == pos.getY() && this.getZ() == pos.getZ();
+    }
+
+    @Override
+    public int hashCode() {
+        int result = this.getX();
+        result = 31 * result + this.getY();
+        result = 31 * result + this.getZ();
+        return result;
     }
 
     public long toLong() {

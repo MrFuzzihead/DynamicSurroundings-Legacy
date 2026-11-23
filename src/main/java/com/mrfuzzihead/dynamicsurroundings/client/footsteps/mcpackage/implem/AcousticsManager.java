@@ -30,8 +30,6 @@ import cpw.mods.fml.relauncher.SideOnly;
 public class AcousticsManager extends AcousticsLibrary implements ISoundPlayer, IDefaultStepPlayer {
 
     private static final Random RANDOM = new XorShiftRandom();
-    private static final boolean USING_LATENESS = true;
-    private static final boolean USING_EARLYNESS = true;
     private static final float LATENESS_THRESHOLD_DIVIDER = 1.2F;
     private static final double EARLYNESS_THRESHOLD_POW = 0.75;
     private final List<PendingSound> pending = new ArrayList<>();
@@ -49,7 +47,8 @@ public class AcousticsManager extends AcousticsLibrary implements ISoundPlayer, 
             if (!block.getMaterial()
                 .isLiquid() && block.stepSound != null && block.stepSound.soundName != null) {
                 SoundType soundType = block.stepSound;
-                if (EnvironStateHandler.EnvironState.getWorld()
+                if (EnvironStateHandler.EnvironState.getSnapshot()
+                    .getWorld()
                     .getBlock(assos.x, assos.y + 1, assos.z) == Blocks.snow_layer) {
                     soundType = Blocks.snow_layer.stepSound;
                 }
@@ -66,7 +65,7 @@ public class AcousticsManager extends AcousticsLibrary implements ISoundPlayer, 
         if (location instanceof Entity) {
             if (options != null) {
                 if (options.hasOption(IOptions.Option.DELAY_MIN) && options.hasOption(IOptions.Option.DELAY_MAX)) {
-                    long delay = this.randAB(
+                    long delay = randomDelay(
                         RANDOM,
                         (Long) options.getOption(IOptions.Option.DELAY_MIN),
                         (Long) options.getOption(IOptions.Option.DELAY_MAX));
@@ -109,8 +108,17 @@ public class AcousticsManager extends AcousticsLibrary implements ISoundPlayer, 
         }
     }
 
-    private long randAB(Random rng, long a, long b) {
-        return a >= b ? a : a + rng.nextInt((int) b + 1);
+    static long randomDelay(Random rng, long a, long b) {
+        if (a >= b) {
+            return a;
+        }
+
+        long span = b - a;
+        if (span >= Integer.MAX_VALUE) {
+            return a + (long) (rng.nextDouble() * (span + 1));
+        }
+
+        return a + rng.nextInt((int) span + 1);
     }
 
     @Override
@@ -128,24 +136,25 @@ public class AcousticsManager extends AcousticsLibrary implements ISoundPlayer, 
             while (iter.hasNext()) {
                 PendingSound sound = iter.next();
                 if (time < sound.getTimeToPlay()
-                    && !(time >= sound.getTimeToPlay() - Math.pow(sound.getMaximumBase(), 0.75))) {
-                    newMinimum = sound.getTimeToPlay();
+                    && !(time >= sound.getTimeToPlay() - Math.pow(sound.getMaximumBase(), EARLYNESS_THRESHOLD_POW))) {
+                    newMinimum = Math.min(newMinimum, sound.getTimeToPlay());
                 } else {
                     if (ModLog.DEBUGGING && time < sound.getTimeToPlay()) {
                         ModLog.debug(
                             "    Playing early sound (early by " + (sound.getTimeToPlay() - time)
                                 + "ms, tolerence is "
-                                + Math.pow(sound.getMaximumBase(), 0.75));
+                                + Math.pow(sound.getMaximumBase(), EARLYNESS_THRESHOLD_POW));
                     }
 
                     long lateness = time - sound.getTimeToPlay();
-                    if (sound.getMaximumBase() < 0L || (float) lateness <= (float) sound.getMaximumBase() / 1.2F) {
+                    if (sound.getMaximumBase() < 0L
+                        || (float) lateness <= (float) sound.getMaximumBase() / LATENESS_THRESHOLD_DIVIDER) {
                         sound.playSound(this);
                     } else if (ModLog.DEBUGGING) {
                         ModLog.debug(
                             "    Skipped late sound (late by " + lateness
                                 + "ms, tolerence is "
-                                + (float) sound.getMaximumBase() / 1.2F
+                                + (float) sound.getMaximumBase() / LATENESS_THRESHOLD_DIVIDER
                                 + "ms)");
                     }
 

@@ -3,6 +3,8 @@ package com.mrfuzzihead.dynamicsurroundings.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Random;
+
 import org.junit.Test;
 
 /**
@@ -34,10 +36,21 @@ public class MathStuffTest {
     }
 
     @Test
-    public void doubleOverloadsMatchTheFloatOnes() {
-        float radians = 0.75F;
-        assertEquals(MathStuff.sin(radians), MathStuff.sin((double) radians), EPSILON);
-        assertEquals(MathStuff.cos(radians), MathStuff.cos((double) radians), EPSILON);
+    public void floatTrigStaysWithinToleranceForRandomAngles() {
+        Random random = new Random(0x51A7AB1EL);
+        for (int i = 0; i < 1000; i++) {
+            double radians = (random.nextDouble() - 0.5D) * Math.PI * 8.0D;
+            assertEquals(Math.sin(radians), MathStuff.sin((float) radians), 5.0e-3);
+            assertEquals(Math.cos(radians), MathStuff.cos((float) radians), 5.0e-3);
+        }
+    }
+
+    @Test
+    public void doubleOverloadsUseTheAccurateJdkFunctions() {
+        double radians = 0.75D;
+        assertEquals(Math.sin(radians), MathStuff.sin(radians), 0.0D);
+        assertEquals(Math.cos(radians), MathStuff.cos(radians), 0.0D);
+        assertEquals(Math.tan(radians), MathStuff.tan(radians), 0.0D);
     }
 
     @Test
@@ -88,6 +101,8 @@ public class MathStuffTest {
         assertEquals(4, MathStuff.abs(-4));
         assertEquals(0, MathStuff.abs(0));
         assertEquals(7, MathStuff.abs(7));
+        assertEquals(Integer.MAX_VALUE, MathStuff.abs(Integer.MIN_VALUE));
+        assertEquals(Long.MAX_VALUE, MathStuff.abs(Long.MIN_VALUE));
     }
 
     @Test
@@ -109,18 +124,16 @@ public class MathStuffTest {
     }
 
     @Test
-    public void sqrtReturnsAFloatPrecisionResult() {
+    public void sqrtPreservesDoublePrecision() {
         assertEquals(3.0F, MathStuff.sqrt(9.0F), EPSILON);
-        assertEquals(3.0F, (float) MathStuff.sqrt(9.0D), EPSILON);
+        assertEquals(Math.sqrt(2.0D), MathStuff.sqrt(2.0D), 1.0e-15);
     }
 
     @Test
-    public void logUsesExactMathsOnlyForSmallInputs() {
-        // Below the 0.03 cut-over the JDK implementation is used, above it the polynomial approximation.
-        assertEquals(Math.log(0.01D), MathStuff.log(0.01D), 1.0e-6);
-        assertEquals(Math.log(2.0D), MathStuff.log(2.0D), 1.0e-3);
-        // The polynomial's relative error grows away from 1.0; it is ~0.8% at 10.
-        assertEquals(Math.log(10.0D), MathStuff.log(10.0D), 0.02);
+    public void logUsesTheJdkImplementation() {
+        assertEquals(Math.log(0.01D), MathStuff.log(0.01D), 0.0D);
+        assertEquals(Math.log(2.0D), MathStuff.log(2.0D), 0.0D);
+        assertEquals(Math.log(10.0D), MathStuff.log(10.0D), 0.0D);
     }
 
     @Test

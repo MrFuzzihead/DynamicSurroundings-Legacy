@@ -3,6 +3,7 @@ package com.mrfuzzihead.dynamicsurroundings.client;
 import javax.annotation.Nonnull;
 
 import net.minecraft.block.material.Material;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.EntityViewRenderEvent.FogColors;
@@ -21,7 +22,7 @@ import com.mrfuzzihead.dynamicsurroundings.client.fog.HolisticFogRangeCalculator
 import com.mrfuzzihead.dynamicsurroundings.client.fog.MorningFogRangeCalculator;
 import com.mrfuzzihead.dynamicsurroundings.client.fog.WeatherFogRangeCalculator;
 import com.mrfuzzihead.dynamicsurroundings.event.DiagnosticEvent;
-import com.mrfuzzihead.dynamicsurroundings.util.Color;
+import com.mrfuzzihead.dynamicsurroundings.util.RgbColor;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -33,6 +34,8 @@ public class FogEffectHandler implements IClientEffectHandler {
 
     protected HolisticFogColorCalculator fogColor = new HolisticFogColorCalculator();
     protected HolisticFogRangeCalculator fogRange = new HolisticFogRangeCalculator();
+    private static float lastFogStart = Float.NaN;
+    private static float lastFogEnd = Float.NaN;
 
     @Override
     public boolean hasEvents() {
@@ -40,7 +43,10 @@ public class FogEffectHandler implements IClientEffectHandler {
     }
 
     private boolean doFog() {
-        return ModOptions.enableBiomeFog || ModOptions.allowDesertFog;
+        return ModOptions.enableBiomeFog || ModOptions.allowDesertFog
+            || ModOptions.enableElevationHaze
+            || ModOptions.enableMorningFog
+            || ModOptions.enableWeatherFog;
     }
 
     @Override
@@ -56,7 +62,7 @@ public class FogEffectHandler implements IClientEffectHandler {
         if (this.doFog()) {
             Material material = event.block.getMaterial();
             if (material != Material.lava && material != Material.water) {
-                Color color = this.fogColor.calculate(event);
+                RgbColor color = this.fogColor.calculate(event);
                 if (color != null) {
                     event.red = color.red;
                     event.green = color.green;
@@ -70,21 +76,60 @@ public class FogEffectHandler implements IClientEffectHandler {
     public void fogRenderEvent(RenderFogEvent event) {
         if (this.doFog()) {
             Material material = event.block.getMaterial();
-            if (material != Material.lava && material != Material.water) {
+            if (material != Material.lava && material != Material.water && event.fogMode >= 0) {
                 FogResult result = this.fogRange.calculate(event);
-                if (result != null) {
-                    GL11.glFogf(2915, result.getStart());
-                    GL11.glFogf(2916, result.getEnd());
+                if (result != null && result.isValid(event)) {
+                    float baseStart;
+                    float baseEnd;
+                    if (ModOptions.respectExternalFog) {
+                        baseStart = GL11.glGetFloat(GL11.GL_FOG_START);
+                        baseEnd = GL11.glGetFloat(GL11.GL_FOG_END);
+                    } else {
+                        baseStart = event.farPlaneDistance * FogResult.DEFAULT_PLANE_SCALE;
+                        baseEnd = event.farPlaneDistance;
+                    }
+
+                    float[] range = computeRange(result, baseStart, baseEnd);
+                    if (range != null) {
+                        GL11.glFogf(GL11.GL_FOG_START, range[0]);
+                        GL11.glFogf(GL11.GL_FOG_END, range[1]);
+                        lastFogStart = range[0];
+                        lastFogEnd = range[1];
+                    }
                 }
             }
         }
+    }
+
+    /** Last range DS applied, for the F3/debug diagnostics. */
+    public static String effectiveFog() {
+        if (!Float.isFinite(lastFogStart) || !Float.isFinite(lastFogEnd)) {
+            return "n/a";
+        }
+        return "start=" + lastFogStart + ", end=" + lastFogEnd;
+    }
+
+    /**
+     * Applies a relative {@link FogResult} to the current base range. Kept separate from GL so the NotFine/Angelica
+     * composition rule can be tested without a context.
+     */
+    static float[] computeRange(FogResult result, float baseStart, float baseEnd) {
+        if (result == null || baseEnd <= 0.0F
+            || baseEnd <= baseStart
+            || result.getStartScale() == 1.0F && result.getEndScale() == 1.0F) {
+            return null;
+        }
+
+        float start = baseStart * result.getStartScale();
+        float end = baseEnd * result.getEndScale();
+        return end > start ? new float[] { start, end } : null;
     }
 
     @SubscribeEvent
     public void diagnostics(DiagnosticEvent.Gather event) {
         if (this.doFog()) {
             event.output.add("Fog Range: " + this.fogRange.toString());
-            event.output.add("Fog Color: " + this.fogColor.toString());
+            event.output.add("Fog RgbColor: " + this.fogColor.toString());
         } else {
             event.output.add("FOG: IGNORED");
         }
@@ -93,7 +138,16 @@ public class FogEffectHandler implements IClientEffectHandler {
     @SubscribeEvent(receiveCanceled = false, priority = EventPriority.LOWEST)
     public void onWorldLoad(@Nonnull Load event) {
         if (event.world.isRemote) {
+            lastFogStart = Float.NaN;
+            lastFogEnd = Float.NaN;
             this.setupTheme(event.world);
+        }
+    }
+
+    public void reloadTheme() {
+        World world = Minecraft.getMinecraft().theWorld;
+        if (world != null) {
+            this.setupTheme(world);
         }
     }
 

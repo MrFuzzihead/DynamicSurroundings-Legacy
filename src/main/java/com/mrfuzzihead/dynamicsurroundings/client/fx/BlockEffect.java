@@ -6,6 +6,7 @@ import net.minecraft.block.Block;
 import net.minecraft.world.World;
 
 import com.mrfuzzihead.dynamicsurroundings.compat.BlockPos;
+import com.mrfuzzihead.dynamicsurroundings.util.WeightedRandom;
 
 public abstract class BlockEffect {
 
@@ -28,7 +29,7 @@ public abstract class BlockEffect {
     }
 
     public boolean trigger(Block block, World world, BlockPos pos, Random random) {
-        return random.nextInt(this.getChance()) == 0;
+        return WeightedRandom.roll(random, this.getChance());
     }
 
     public abstract void doEffect(Block var1, World var2, BlockPos var3, Random var4);

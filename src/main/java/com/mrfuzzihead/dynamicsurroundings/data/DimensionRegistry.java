@@ -15,7 +15,6 @@ import com.mrfuzzihead.dynamicsurroundings.Module;
 import com.mrfuzzihead.dynamicsurroundings.data.config.DimensionConfig;
 import com.mrfuzzihead.dynamicsurroundings.util.DiurnalUtils;
 
-import cpw.mods.fml.common.Loader;
 import foxie.calendar.api.CalendarAPI;
 import foxie.calendar.api.ICalendarProvider;
 import foxie.calendar.api.ISeasonProvider;
@@ -24,17 +23,27 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 public final class DimensionRegistry {
 
     private static final int SPACE_HEIGHT_OFFSET = 32;
-    private static final boolean CALENDAR_API = Loader.isModLoaded("CalendarAPI");
+    private static final boolean CALENDAR_API = isClassPresent("foxie.calendar.api.CalendarAPI");
     private static final String SEASON_NOT_AVAILABLE = "noseason";
     private static final List<DimensionConfig.Entry> cache = new ArrayList<>();
     private static final TIntObjectHashMap<DimensionRegistry> dimensionData = new TIntObjectHashMap();
-    private static boolean isFlatWorld = false;
+
+    private static boolean isClassPresent(String className) {
+        try {
+            Class.forName(className, false, DimensionRegistry.class.getClassLoader());
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     protected final int dimensionId;
     protected boolean initialized;
     protected String name = "<NOT SET>";
     protected Integer seaLevel;
     protected Integer skyHeight;
     protected Integer cloudHeight;
+    protected boolean explicitCloudHeight;
     protected Integer spaceHeight;
     protected Boolean hasHaze;
     protected Boolean hasAuroras;
@@ -43,12 +52,17 @@ public final class DimensionRegistry {
     private static final String CONDITION_TOKEN_DAY = "day";
     private static final String CONDITION_TOKEN_NIGHT = "night";
     private static final char CONDITION_SEPARATOR = '#';
+    private static String cachedConditions;
+    private static int cachedConditionDimension = Integer.MIN_VALUE;
+    private static boolean cachedConditionDay;
+    private static boolean cachedConditionRain;
+    private static String cachedConditionSeason;
 
     public static void initialize() {
         try {
             process(DimensionConfig.load("dimensions"));
         } catch (Exception var7) {
-            var7.printStackTrace();
+            ModLog.error("Unable to load default dimension config", var7);
         }
 
         for (String file : ModOptions.dimensionConfigFiles) {
@@ -78,10 +92,6 @@ public final class DimensionRegistry {
 
     public static void loading(World world) {
         getData(world).initialize(world.provider);
-        if (world.provider.dimensionId == 0) {
-            isFlatWorld = world.getWorldInfo()
-                .getTerrainType() == WorldType.FLAT;
-        }
     }
 
     private static DimensionConfig.Entry getData(DimensionConfig.Entry entry) {
@@ -151,6 +161,7 @@ public final class DimensionRegistry {
         this.hasAuroras = entry.hasAurora;
         this.hasWeather = entry.hasWeather;
         this.cloudHeight = entry.cloudHeight;
+        this.explicitCloudHeight = entry.cloudHeight != null;
         this.initialize(world.provider);
     }
 
@@ -210,6 +221,11 @@ public final class DimensionRegistry {
 
     public int getCloudHeight() {
         return this.cloudHeight;
+    }
+
+    /** True when the cloud height came from the dimension config rather than the computed default. */
+    public boolean hasExplicitCloudHeight() {
+        return this.explicitCloudHeight;
     }
 
     public int getSpaceHeight() {
@@ -279,7 +295,12 @@ public final class DimensionRegistry {
     }
 
     public static int getSeaLevel(World world) {
-        return world.provider.dimensionId == 0 && isFlatWorld ? 0 : getData(world).getSeaLevel();
+        if (world.provider.dimensionId == 0 && world.getWorldInfo()
+            .getTerrainType() == WorldType.FLAT) {
+            return 0;
+        }
+
+        return getData(world).getSeaLevel();
     }
 
     public static int getSkyHeight(World world) {
@@ -288,6 +309,10 @@ public final class DimensionRegistry {
 
     public static int getCloudHeight(World world) {
         return getData(world).getCloudHeight();
+    }
+
+    public static boolean hasExplicitCloudHeight(World world) {
+        return getData(world).hasExplicitCloudHeight();
     }
 
     public static int getSpaceHeight(World world) {
@@ -307,25 +332,35 @@ public final class DimensionRegistry {
     }
 
     public static String getConditions(World world) {
-        StringBuilder builder = new StringBuilder();
-        builder.append('#');
-        if (DiurnalUtils.isDaytime(world)) {
-            builder.append("day");
-        } else {
-            builder.append("night");
+        int dimension = world.provider.dimensionId;
+        boolean day = DiurnalUtils.isDaytime(world);
+        boolean raining = world.getRainStrength(1.0F) > 0.0F;
+        String season = getSeason(world);
+        if (dimension == cachedConditionDimension && day == cachedConditionDay
+            && raining == cachedConditionRain
+            && season.equals(cachedConditionSeason)) {
+            return cachedConditions;
         }
 
+        StringBuilder builder = new StringBuilder();
+        builder.append('#')
+            .append(day ? "day" : "night");
         builder.append('#')
             .append(world.provider.getDimensionName());
-        if (world.getRainStrength(1.0F) > 0.0F) {
+        if (raining) {
             builder.append('#')
                 .append("raining");
         }
 
         builder.append('#')
-            .append(getSeason(world));
+            .append(season);
         builder.append('#');
-        return builder.toString();
+        cachedConditionDimension = dimension;
+        cachedConditionDay = day;
+        cachedConditionRain = raining;
+        cachedConditionSeason = season;
+        cachedConditions = builder.toString();
+        return cachedConditions;
     }
 
     @Override
