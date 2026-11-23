@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,6 +16,7 @@ import net.minecraftforge.common.config.Property;
 
 import com.google.common.collect.ImmutableList;
 import com.mrfuzzihead.dynamicsurroundings.util.ConfigProcessor;
+import com.mrfuzzihead.dynamicsurroundings.util.ConfigSchema;
 
 public final class ModOptions {
 
@@ -344,6 +343,22 @@ public final class ModOptions {
     @ConfigProcessor.Comment("Size scale of icons (lower is smaller)")
     public static float potionHudScale = 0.5F;
 
+    private static final ConfigSchema SCHEMA = new ConfigSchema()
+        .category("logging", "Defines how Dynamic Surroundings logging will behave", loggingSort.toArray(new String[0]))
+        .category("rain", "Options that control rain effects in the client", rainSort.toArray(new String[0]))
+        .category("general", "Miscellaneous settings", generalSort.toArray(new String[0]))
+        .category(
+            "player",
+            "General options for defining sound and effects the player entity",
+            playerSort.toArray(new String[0]))
+        .category("aurora", "Options that control Aurora behavior and rendering", auroraSort.toArray(new String[0]))
+        .category("fog", "Options that control the various fog effects in the client", fogSort.toArray(new String[0]))
+        .category("biomes", "Options for controlling biome sound/effects", biomesSort.toArray(new String[0]))
+        .category("dimensions", "Options for defining per dimension parameters for Dynamic Surroundings")
+        .category("block", "Options for defining block specific sounds/effects")
+        .category("sound", "General options for defining sound effects", soundsSort.toArray(new String[0]))
+        .category("player.potion hud", "Options for the Potion HUD overlay", potionHudSort.toArray(new String[0]));
+
     /** Canonical path of the config file that has already been loaded, if any. */
     private static File synchronizedConfigurationFile;
 
@@ -378,51 +393,13 @@ public final class ModOptions {
 
     public static void load(Configuration config) {
         ConfigProcessor.process(config, ModOptions.class);
-        config.setCategoryRequiresMcRestart("logging", false);
-        config.setCategoryRequiresWorldRestart("logging", false);
-        config.setCategoryComment("logging", "Defines how Dynamic Surroundings logging will behave");
-        config.setCategoryPropertyOrder("logging", new ArrayList<>(loggingSort));
-        config.setCategoryRequiresMcRestart("rain", false);
-        config.setCategoryRequiresWorldRestart("rain", false);
-        config.setCategoryComment("rain", "Options that control rain effects in the client");
-        config.setCategoryPropertyOrder("rain", new ArrayList<>(rainSort));
-        config.setCategoryRequiresMcRestart("general", false);
-        config.setCategoryRequiresWorldRestart("general", false);
-        config.setCategoryComment("general", "Miscellaneous settings");
-        config.setCategoryPropertyOrder("general", new ArrayList<>(generalSort));
-        config.setCategoryRequiresMcRestart("player", false);
-        config.setCategoryRequiresWorldRestart("player", false);
-        config.setCategoryComment("player", "General options for defining sound and effects the player entity");
-        config.setCategoryPropertyOrder("player", new ArrayList<>(playerSort));
-        config.setCategoryRequiresMcRestart("aurora", false);
-        config.setCategoryRequiresWorldRestart("aurora", false);
-        config.setCategoryComment("aurora", "Options that control Aurora behavior and rendering");
-        config.setCategoryPropertyOrder("aurora", new ArrayList<>(auroraSort));
-        config.setCategoryRequiresMcRestart("fog", false);
-        config.setCategoryRequiresWorldRestart("fog", false);
-        config.setCategoryComment("fog", "Options that control the various fog effects in the client");
-        config.setCategoryPropertyOrder("fog", new ArrayList<>(fogSort));
-        config.setCategoryRequiresMcRestart("biomes", false);
-        config.setCategoryRequiresWorldRestart("biomes", false);
-        config.setCategoryComment("biomes", "Options for controlling biome sound/effects");
-        config.setCategoryPropertyOrder("biomes", new ArrayList<>(biomesSort));
-        config.setCategoryRequiresMcRestart("dimensions", false);
-        config.setCategoryRequiresWorldRestart("dimensions", false);
-        config
-            .setCategoryComment("dimensions", "Options for defining per dimension parameters for Dynamic Surroundings");
-        config.setCategoryRequiresMcRestart("block", false);
-        config.setCategoryRequiresWorldRestart("block", false);
-        config.setCategoryComment("block", "Options for defining block specific sounds/effects");
-        config.setCategoryRequiresMcRestart("sound", false);
-        config.setCategoryRequiresWorldRestart("sound", false);
-        config.setCategoryComment("sound", "General options for defining sound effects");
-        config.setCategoryPropertyOrder("sound", new ArrayList<>(soundsSort));
-        config.setCategoryRequiresMcRestart("player.potion hud", false);
-        config.setCategoryRequiresWorldRestart("player.potion hud", false);
-        config.setCategoryComment("player.potion hud", "Options for the Potion HUD overlay");
-        config.setCategoryPropertyOrder("player.potion hud", new ArrayList<>(potionHudSort));
+        SCHEMA.apply(config);
 
-        Map<String, Set<String>> known = knownProperties();
+        for (String unknown : SCHEMA.unknownProperties(config, ModOptions.class)) {
+            ModLog.warn("Unknown configuration option %s", unknown);
+        }
+
+        Map<String, Set<String>> known = SCHEMA.knownProperties(ModOptions.class);
         for (String cat : config.getCategoryNames()) {
             scrubCategory(config.getCategory(cat), known.get(cat));
         }
@@ -444,18 +421,5 @@ public final class ModOptions {
         for (String kill : killList) {
             category.remove(kill);
         }
-    }
-
-    private static Map<String, Set<String>> knownProperties() {
-        Map<String, Set<String>> known = new HashMap<>();
-        for (java.lang.reflect.Field field : ModOptions.class.getFields()) {
-            ConfigProcessor.Parameter annotation = field.getAnnotation(ConfigProcessor.Parameter.class);
-            if (annotation != null) {
-                known.computeIfAbsent(annotation.category(), key -> new HashSet<>())
-                    .add(annotation.property());
-            }
-        }
-
-        return known;
     }
 }

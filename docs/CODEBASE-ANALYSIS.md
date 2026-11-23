@@ -1,8 +1,8 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1–61 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
-**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 79 test suites / 325 unit tests, plus a non-shipped in-game test mod.
+**Scope:** analysis + the implementation log below. Batches 1–62 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
+**Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 81 test suites / 328 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
 
@@ -417,6 +417,13 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - Server post-init, client runtime reload, `PacketReload`, and `/rain reload` now call the manager instead of repeating the registry list.
 - A failing registry is logged without preventing the remaining registries from reloading; covered by `RegistryManagerTest`.
 
+**Batch 62 — P2 design/refactor completion (328 unit tests, 79/79 game checks)**
+
+- **M9 — config schema.** Added `ConfigSchema`: category comments, order and restart flags now come from one declarative table instead of repeated `setCategory*` calls, and unknown properties are logged before scrubbing. `ConfigSchemaTest` covers metadata and unknown-option detection.
+- **M10 — resource loading.** Added `ResourceLoader.forEachPack` for the shared open/consume/close lifecycle and refactored the footsteps block map, primitive map and acoustics loaders onto it. `ResourceLoaderTest` covers success, null streams and per-pack failures.
+- **M11 — build hygiene.** Moved the test/game-test/JaCoCo harness from `addon.gradle.kts` into `gradle/test-harness.gradle.kts`, applied from `addon.gradle.kts`. Root `build.gradle.kts` and `settings.gradle.kts` are unchanged.
+- Coverage is now **56.7 % line / 41.3 % branch / 71.1 % class** over **159/177 classes (90 %)**.
+
 **What remains:** the headless correctness backlog is exhausted. The release gate is the real client compatibility matrix; the authoritative remaining-work register is §11.
 
 ### The three compatibility moves that unlock the most value
@@ -427,7 +434,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 ### Coverage reality
 
-The JaCoCo floor now measures **56.7 % lines / 40.8 % branches / 70.5 % classes** over **156 of 177 classes (88 %)**, after batch 57 narrowed the exclusion from all of `client/**` to GL/audio/client-bound classes (`addon.gradle.kts`). The floor is a regression guard plus per-package floors, not a target; see §8.
+The JaCoCo floor now measures **56.7 % lines / 41.3 % branches / 71.1 % classes** over **159 of 177 classes (90 %)**, after batch 57 narrowed the exclusion from all of `client/**` to GL/audio/client-bound classes (`addon.gradle.kts`). The floor is a regression guard plus per-package floors, not a target; see §8.
 
 ---
 
@@ -878,13 +885,13 @@ Ordered by expected win. Each item is independent and testable.
 5. **Side-safe proxies.** `Proxy` should not import `client.*`. Move `DamageEffectHandler.initialize`, `WailaHandler.register` and `SoundRegistry` client bits into `ProxyClient`; create a `ServerPacketSender` for the health/rain packets. `DamageEffectHandler` should be split into `client/…/DamageEffectClient` and `server/…/DamageEffectServer`.
 6. **Rename the clashing classes.** **Done in batch 60:** `DynamicSoundManager` and `RgbColor`; no Minecraft or `java.awt` name collision remains.
 7. **Registry lifecycle.** **Done in batches 42+61:** `RegistryManager` handles named init/reload, server reload broadcasts `PacketReload`, and client reload rebuilds fog/sound.
-8. **Config schema.** Replace the 422-line `ModOptions` with an annotated schema per module and generated category/sort/flags; add a validation pass that reports unknown options instead of silently dropping them. Keep the current `ConfigProcessor` for compatibility but fix `Float.MIN_VALUE`.
-9. **Resource loading.** One `ResourceLoader`/`JsonConfigLoader` with strict parsing, error aggregation and a `reload` lifecycle; the footsteps engine currently has four near-identical try/catch/close blocks.
+8. **Config schema.** **Done in batch 62:** `ConfigSchema` owns category metadata and unknown-option reporting; `ConfigProcessor` remains the compatibility bridge.
+9. **Resource loading.** **Done in batch 62:** `ResourceLoader` centralizes the resource-pack stream lifecycle and error isolation; the four footsteps copies are gone.
 10. **Mixins.** **Done in batches 1+60:** weather ownership/order checks, an exclusion test for the mixin package, and a `@Unique`/`@Shadow` field audit.
 11. **Immutable value types.** `Color`, `AuroraData` (or document identity), `FogResult`, `AuroraPreset` (already immutable), `SoundEffect` (make `pattern` non-null).
 12. **Deterministic time/random.** Inject a `Clock`/`Random` into `AcousticsManager`, `WorldHandler`, `AuroraEffectHandler`, `EnvironState` so tests can run without sleeping or seeding global random state.
 13. **Logging.** Use `ModLog`/Log4j parameterized calls and pass throwables; replace `printStackTrace` (10 occurrences) and empty `catch` blocks in resource loaders with `ModLog.warn(..., e)`.
-14. **Build hygiene.** Consider moving the test/game-test/JaCoCo setup from `addon.gradle.kts` into a small convention plugin; it is ~250 lines of Kotlin DSL inside a mod project. Not required for the refactor, but it will make the compat CI job easier.
+14. **Build hygiene.** **Done in batch 62:** the test/game-test/JaCoCo harness lives in `gradle/test-harness.gradle.kts`, applied from `addon.gradle.kts`.
 
 ---
 
@@ -935,7 +942,7 @@ Confirmed unused (or production-dead) items to remove after the refactors land:
 
 ### 8.1 Fix the metric first
 
-**Implemented in batch 57.** The floor now covers 156/177 classes (88 %) instead of excluding all client code: renderers, handlers, GUI/HUD, audio-cache and biome-grid scans are the only exclusions. Global floors are 50 % line / 35 % branch, with per-package floors for the logic-heavy packages. The original plan was:
+**Implemented in batch 57.** The floor now covers 159/177 classes (90 %) instead of excluding all client code: renderers, handlers, GUI/HUD, audio-cache and biome-grid scans are the only exclusions. Global floors are 50 % line / 35 % branch, with per-package floors for the logic-heavy packages. The original plan was:
 
 1. **Narrow the JaCoCo exclusion** from `client/**` to the actual GL/audio-bound classes, e.g. `client/**Renderer*`, `client/**Handler*` (only those that touch `GL11`/`Tessellator`), `client/gui/**`, `client/hud/**`, `client/fx/particle/**`, `client/waila/**`, `client/sound/cache/**` (or leave the cache testable with mocks). Include pure classes such as `FogResult`, `Aurora`/`Node` geometry, `Weather` (after splitting the state from Minecraft), `SoundEffect`, `ConfigProperty`, `AuroraPreset`, `ColorPair`, `MathStuff`, `PlayerUtils` (after extracting a world-access interface), `BiomeRegistry`/`BlockRegistry` weighted pick (after extraction).
 2. **Better: move pure logic to a `core/`/`logic/` package** (no `client` in the name) so the coverage configuration stays simple and the code is obviously side-neutral. E.g. `logic/fog/FogResult`, `logic/aurora/AuroraGeometry`, `logic/weather/WeatherState`, `logic/sound/WeightedRandom`.
@@ -1028,7 +1035,7 @@ Keep each PR small and keep the game test + new compat job green. The compatibil
 
 ## 11. Remaining work register (after batch 56)
 
-**Baseline:** `./gradlew check` green with **325 unit tests / 79 suites**; `gameTestServer` **79/79**; production code has no `System.out`/`System.err`/`printStackTrace`. **No known headless-testable correctness bug remains.**
+**Baseline:** `./gradlew check` green with **328 unit tests / 81 suites**; `gameTestServer` **79/79**; production code has no `System.out`/`System.err`/`printStackTrace`. **No known headless-testable correctness bug remains.**
 
 This register is authoritative where an earlier table still describes a finding as open even though a later batch fixed it (notably B15, B25, B30, B75, B80 and P1/P5/P6/P9/P11/P12/P16). The dead-code list in §6 also predates batches 11–49 and must be re-verified item by item rather than removed wholesale.
 
@@ -1094,7 +1101,7 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 ### 11.3 P2 — medium priority
 
-**M1–M7 are complete in batches 60–61.** The remaining P2 items are M8–M11.
+**M1–M11 are complete in batches 60–62.** No P2 items remain.
 
 #### Fully automatable (A)
 
@@ -1123,9 +1130,9 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 | ID | Item | Sev | Notes |
 |---|---|---|---|
-| M9 | **Config schema (#8)** | M | Replace the 422-line `ModOptions` with an annotated schema per module, generated categories/flags, and an unknown-option report. `ConfigProcessor` remains the compatibility bridge. |
-| M10 | **ResourceLoader consolidation (#9)** | M | One strict JSON/resource loader with aggregated errors and a reload lifecycle; the footsteps engine still has four near-identical try/catch/close blocks. |
-| M11 | **Build hygiene (#14)** | L | Move the test/game-test/JaCoCo setup out of `addon.gradle.kts` into a small convention plugin, mainly to simplify the compat CI job. |
+| M9 | **Config schema (#8)** | M | **Complete (batch 62):** `ConfigSchema` centralizes category comments/order/flags and logs unknown options before scrubbing; field annotations remain the compatibility bridge. |
+| M10 | **ResourceLoader consolidation (#9)** | M | **Complete (batch 62):** `ResourceLoader.forEachPack` owns the open/consume/close lifecycle; block map, primitive map and acoustics use it. |
+| M11 | **Build hygiene (#14)** | L | **Complete (batch 62):** harness moved to `gradle/test-harness.gradle.kts`, applied from `addon.gradle.kts`; root build/settings scripts unchanged. |
 
 ### 11.4 P3 — low priority / opportunistic
 
@@ -1133,8 +1140,8 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 | ID | Item | Sev | Notes |
 |---|---|---|---|
-| L1 | **Unused asset cleanup** | L | Delete or wire the six unreferenced ogg files (`ambient/steve/bowpull2-4`, `ambient/underground/rockfall1-3`) and decide whether `variator.json` should exist. |
-| L2 | **Small dead-code removals** | L | Duplicate `Color` constants, `RenderWeather.register` visibility, `WailaHandler` singleton registration, and any §6 entries that survive re-verification. |
+| L1 | **Unused asset cleanup** | L | **Complete (batch 60):** the six unreferenced ogg files and empty `variator.json` were removed. |
+| L2 | **Small dead-code removals** | L | **Complete (batch 60):** duplicate color constants, `RenderWeather.register`, and the `WailaHandler` singleton path were cleaned up. |
 | L3 | **Comment/doc drift** | L | Several §3/§4/§6 rows are historical; mark fixed rows consistently so the next audit does not re-open closed work. |
 
 #### Design/refactor (D)
@@ -1148,5 +1155,5 @@ No P0 item is fully headless: the remaining release risk is integration behaviou
 
 1. **P0:** build the client smoke harness (C1/C2), then run the full manual matrix (C3). Fix anything it finds before release.
 2. **P1:** complete — R1–R10 are done.
-3. **P2:** M1–M7 are done; next are config/resource-loader structure (M9/M10) and diagnostics (M8).
+3. **P2:** M1–M11 are done; only the optional diagnostics expansion (M8) remains.
 4. **P3:** opportunistic cleanup and feature work (L1–L5).
