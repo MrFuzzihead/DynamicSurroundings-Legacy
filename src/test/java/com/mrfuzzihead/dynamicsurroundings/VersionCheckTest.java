@@ -18,6 +18,18 @@ public class VersionCheckTest {
     }
 
     @Test
+    public void aSourceBuildWithoutTagsFallsBackInsteadOfCrashing() {
+        assertEquals(
+            "0.0.0",
+            VersionCheck.parseModVersion("026c435")
+                .toString());
+        assertEquals(
+            "5.1.0",
+            VersionCheck.parseModVersion("26.3-5.1.0-108-g6dafdc41")
+                .toString());
+    }
+
+    @Test
     public void parsesGitDescribeAndGitHubTags() {
         assertEquals("5.2.0", new VersionCheck.SoftwareVersion("26.3-5.2.0-70-gc0d4f92f").toString());
         assertEquals(

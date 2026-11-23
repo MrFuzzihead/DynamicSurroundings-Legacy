@@ -9,9 +9,8 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.JavaExec
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
@@ -72,18 +71,16 @@ abstract class JacocoAgentArgumentProvider : CommandLineArgumentProvider {
 /** Fails a game-test run when the JaCoCo execution data produced an empty report. */
 abstract class VerifyGameTestReport : DefaultTask() {
 
-    @get:InputFile
-    @get:Optional
+    @get:Internal
     abstract val executionData: RegularFileProperty
 
-    @get:InputFile
-    @get:Optional
+    @get:Internal
     abstract val reportXml: RegularFileProperty
 
     @TaskAction
     fun verify() {
         if (!executionData.get().asFile.exists()) {
-            return
+            throw GradleException("gameTest.exec was not produced; the game test did not run to completion")
         }
         val xml = reportXml.get().asFile
         if (!xml.exists() || !xml.readText().contains("<counter")) {
@@ -472,8 +469,4 @@ tasks.register("gameTestServer") {
     description = "Boots a dedicated server, runs the in-game game test mod, and exits with its result"
     dependsOn(tasks.named("runServer"))
     finalizedBy(verifyGameTestReport)
-}
-
-tasks.named("check").configure {
-    dependsOn(verifyGameTestReport)
 }

@@ -42,8 +42,11 @@ public final class AuroraRenderHandler {
             return;
         }
 
-        if (ModOptions.auroraOnlyWhenLookingNorth && Minecraft.getMinecraft().thePlayer.getLookVec().zCoord > -0.5D) {
-            return;
+        if (ModOptions.auroraOnlyWhenLookingNorth) {
+            if (Minecraft.getMinecraft().thePlayer == null
+                || Minecraft.getMinecraft().thePlayer.getLookVec().zCoord > -0.5D) {
+                return;
+            }
         }
 
         Aurora aurora = AuroraEffectHandler.currentAurora;

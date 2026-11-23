@@ -1,7 +1,7 @@
 # Dynamic Surroundings (Legacy) — codebase review & compatibility plan
 
 **Branch:** `refactor/angelica-notfine-compat`
-**Scope:** analysis + the implementation log below. Batches 1–69 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
+**Scope:** analysis + the implementation log below. Batches 1–70 are merged into the branch (weather/aurora, relative fog, client-thread safety, NotFine/Angelica compatibility, text-pop-off instancing, the compileOnly Angelica API, validation hardening, config/runtime reload, and the headless test expansion).
 **Codebase:** 1.7.10 Forge port of Dynamic Surroundings, 177 production classes / ~14 k LOC, 81 test suites / 328 unit tests, plus a non-shipped in-game test mod.
 
 This document is the working backlog for the refactor branch. It is ordered by risk: the compatibility work with **Angelica** and **NotFine** comes first because two of those conflicts are functional regressions today, not just polish.
@@ -492,6 +492,15 @@ This document is the working backlog for the refactor branch. It is ordered by r
 - Coverage is now **56.2 % line / 40.7 % branch / 70.8 % class** over **161/177 classes (91 %)**.
 - **L1–L5 complete.**
 
+**Batch 70 — clean-build CI fixes and review follow-ups (334 unit tests, 79/79 game checks)**
+
+- `VersionCheck` now falls back to `0.0.0` when the generated version is a bare commit hash, so source builds without reachable git tags no longer crash during startup.
+- `verifyGameTestReport` is no longer attached to `check`; it remains the `gameTestServer` finalizer and now fails clearly when `gameTest.exec` is missing instead of failing Gradle input validation on every clean checkout.
+- Suppressing potion particles now affects only the local player, matching the option text and the old client handler.
+- The aurora north-facing gate null-guards the player.
+- `./gradlew check` and `./gradlew build` pass on a clean tree with no prior `gameTest.exec`; `gameTestServer` still passes **79/79**.
+- Coverage remains **56.2 % line / 40.7 % branch / 70.8 % class** over **161/177 classes (91 %)**.
+
 **What remains:** the manual C3 compatibility matrix and C4 config-GUI check.
 
 ### The three compatibility moves that unlock the most value
@@ -502,7 +511,7 @@ This document is the working backlog for the refactor branch. It is ordered by r
 
 ### Coverage reality
 
-The JaCoCo floor now measures **56.2 % lines / 40.7 % branches / 70.8 % classes** over **161 of 177 classes (91 %)**, after batch 57 narrowed the exclusion from all of `client/**` to GL/audio/client-bound classes (`addon.gradle.kts`). The floor is a regression guard plus per-package floors, not a target; see §8.
+The JaCoCo floor now measures **56.2 % lines / 40.7 % branches / 70.8 % classes** over **161 of 177 classes (91 %)**, after batch 57 narrowed the exclusion from all of `client/**` to GL/audio/client-bound classes (`gradle/test-harness.gradle.kts`). The floor is a regression guard plus per-package floors, not a target; see §8.
 
 ---
 
@@ -1089,7 +1098,7 @@ Keep each PR small and keep the game test + new compat job green. The compatibil
 
 ## 11. Remaining work register (after batch 56)
 
-**Baseline:** `./gradlew check` green with **333 unit tests / 83 suites**; `gameTestServer` **79/79**; production code has no `System.out`/`System.err`/`printStackTrace`. **No known headless-testable correctness bug remains.**
+**Baseline:** `./gradlew check` green with **334 unit tests / 83 suites**; `gameTestServer` **79/79**; production code has no `System.out`/`System.err`/`printStackTrace`. **No known headless-testable correctness bug remains.**
 
 This register is authoritative where an earlier table still describes a finding as open even though a later batch fixed it (notably B15, B25, B30, B75, B80 and P1/P5/P6/P9/P11/P12/P16). The dead-code list in §6 also predates batches 11–49 and must be re-verified item by item rather than removed wholesale.
 

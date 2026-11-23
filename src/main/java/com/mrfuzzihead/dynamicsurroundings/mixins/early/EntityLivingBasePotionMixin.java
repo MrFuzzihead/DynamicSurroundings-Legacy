@@ -1,5 +1,6 @@
 package com.mrfuzzihead.dynamicsurroundings.mixins.early;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -20,7 +21,8 @@ public abstract class EntityLivingBasePotionMixin {
         cancellable = true,
         require = 1)
     private void dynamicsurroundings$suppressPotionParticles(CallbackInfo ci) {
-        if (ModOptions.suppressPotionParticles && (Object) this instanceof EntityPlayer) {
+        if (ModOptions.suppressPotionParticles && (Object) this instanceof EntityPlayer
+            && (Object) this == Minecraft.getMinecraft().thePlayer) {
             ci.cancel();
         }
     }

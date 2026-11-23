@@ -24,13 +24,23 @@ public final class VersionCheck implements Runnable {
 
     private static final int VERSION_CHECK_RETRIES = 3;
     private static final int VERSION_CHECK_INTERVAL = 10000;
-    public static final VersionCheck.SoftwareVersion modVersion = new VersionCheck.SoftwareVersion(Module.VERSION);
+    public static final VersionCheck.SoftwareVersion modVersion = parseModVersion(Module.VERSION);
     public static VersionCheck.SoftwareVersion currentVersion = new VersionCheck.SoftwareVersion();
     public static VersionCheck.UpdateStatus status = VersionCheck.UpdateStatus.UNKNOWN;
     private static final String mcVersion = resolveMinecraftVersion();
     private static final String RELEASES_URL = "https://github.com/MrFuzzihead/DynamicSurroundings-Legacy/releases/latest";
 
     private VersionCheck() {}
+
+    static SoftwareVersion parseModVersion(String version) {
+        try {
+            return new SoftwareVersion(version);
+        } catch (IllegalArgumentException e) {
+            // Source builds without a reachable git tag have a commit hash as their version. Keep the mod usable;
+            // the online check will simply treat that build as older than any published release.
+            return new SoftwareVersion("0.0.0");
+        }
+    }
 
     private static String resolveMinecraftVersion() {
         try {
